@@ -23,6 +23,7 @@ public class MonumentaRelay extends JavaPlugin {
 	@Override
 	public void onLoad() {
 		BroadcastCommand.register(this);
+		RelayReloadCommand.register(this);
 
 		try {
 			mHttpManager = new HttpManager(this);
@@ -37,6 +38,9 @@ public class MonumentaRelay extends JavaPlugin {
 		INSTANCE = this;
 		PluginManager manager = getServer().getPluginManager();
 
+		// Load info.
+		reloadMonumentaConfig(null);
+
 		mHttpManager.start();
 
 		try {
@@ -49,9 +53,6 @@ public class MonumentaRelay extends JavaPlugin {
 				ex.printStackTrace();
 			}
 		}
-
-		// Load info.
-		reloadMonumentaConfig(null);
 
 		manager.registerEvents(new RelayListener(this), this);
 	}

@@ -38,7 +38,7 @@
         <dependency>
             <groupId>dev.jorel</groupId>
             <artifactId>commandapi-core</artifactId>
-            <version>4.3</version>
+            <version>5.2</version>
             <scope>provided</scope>
         </dependency>
 
@@ -51,7 +51,7 @@
     </dependencies>
 
     <build>
-        <finalName>Monumenta-Relay_${project.version}_${maven.build.timestamp}</finalName>
+        <finalName>MonumentaRelay_${project.version}_${maven.build.timestamp}</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>

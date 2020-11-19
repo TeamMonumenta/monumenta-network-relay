@@ -2,10 +2,6 @@ package com.playmonumenta.relay;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -14,7 +10,6 @@ import com.playmonumenta.relay.utils.FileUtils;
 import com.playmonumenta.relay.utils.MessagingUtils;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 

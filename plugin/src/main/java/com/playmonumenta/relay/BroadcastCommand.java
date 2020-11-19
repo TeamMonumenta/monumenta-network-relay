@@ -1,7 +1,5 @@
 package com.playmonumenta.relay;
 
-import java.util.LinkedHashMap;
-
 import com.playmonumenta.relay.network.SocketManager;
 
 import org.bukkit.ChatColor;
@@ -12,7 +10,6 @@ import org.bukkit.plugin.Plugin;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 
 public class BroadcastCommand {
@@ -20,12 +17,10 @@ public class BroadcastCommand {
 
 	public static void register(Plugin plugin) {
 		CommandPermission perms = CommandPermission.fromString("monumenta.command.broadcastcommand");
-		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
 
-		arguments.put("command", new GreedyStringArgument());
 		new CommandAPICommand(COMMAND)
 			.withPermission(perms)
-			.withArguments(arguments)
+			.withArguments(new GreedyStringArgument("command"))
 			.executes((sender, args) -> {
 				run(plugin, sender, (String)args[0]);
 			})
