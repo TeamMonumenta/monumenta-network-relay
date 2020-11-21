@@ -54,6 +54,7 @@ public class MonumentaRelay extends JavaPlugin {
 			}
 		}
 
+		manager.registerEvents(new AdvancementListener(this), this);
 		manager.registerEvents(new RelayListener(this), this);
 	}
 
