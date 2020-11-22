@@ -28,6 +28,10 @@ public class AdvancementListener implements Listener {
 		Advancement advancement = event.getAdvancement();
 		String advancementId = advancement.getKey().toString();
 
+		if (!DataPackUtils.isAnnouncedToChat(advancement)) {
+			return;
+		}
+
 		String announcementCommand = null;
 		for (JsonObject advancementJson : DataPackUtils.getAdvancementJsonObjects(advancement)) {
 			announcementCommand = DataPackUtils.getChatAnnouncement(player, advancementJson);
@@ -35,7 +39,7 @@ public class AdvancementListener implements Listener {
 				break;
 			}
 		}
-		if (announcementCommand != null) {
+		if (announcementCommand == null || announcementCommand.isEmpty()) {
 			return;
 		}
 
@@ -43,7 +47,7 @@ public class AdvancementListener implements Listener {
 		Instant instant = DataPackUtils.getEarnedInstant(player, advancement);
 
 		String announceElsewhereCommand = "broadcastcommand execute unless entity " + player.getName() + " run " + announcementCommand;
-		mPlugin.getServer().dispatchCommand(mPlugin.getServer().getConsoleSender(), announcementCommand);
+		mPlugin.getServer().dispatchCommand(mPlugin.getServer().getConsoleSender(), announceElsewhereCommand);
 
 		player.sendMessage("You earned " + advancementId + " at " + instant.toString() + ", or as a timestamp " + Long.toString(instant.toEpochMilli()));
 	}

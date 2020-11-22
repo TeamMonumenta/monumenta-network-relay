@@ -89,10 +89,17 @@ public class DataPackUtils {
 
 		String frame = getChatAdvancementFrame(advancementJson);
 
+		JsonObject chatPlayer = getChatPlayer(player);
+		JsonObject chatAdvancement = getChatAdvancement(advancementJson);
+
+		if (chatPlayer == null || chatAdvancement == null) {
+			return null;
+		}
+
 		// Put the whole message together
 		JsonArray translateWith = new JsonArray();
-		translateWith.add(getChatPlayer(player));
-		translateWith.add(getChatAdvancement(advancementJson));
+		translateWith.add(chatPlayer);
+		translateWith.add(chatAdvancement);
 
 		JsonObject advancementMessage = new JsonObject();
 		advancementMessage.addProperty("translate", "chat.type.advancement." + frame);
@@ -197,7 +204,7 @@ public class DataPackUtils {
 		String teamPrefix = "";
 		String teamSuffix = "";
 		if (team != null) {
-			teamColor = team.getColor().toString().toLowerCase();
+			teamColor = team.getColor().name().toLowerCase();
 			teamPrefix = team.getPrefix();
 			if (teamPrefix == null) {
 				teamPrefix = "";
