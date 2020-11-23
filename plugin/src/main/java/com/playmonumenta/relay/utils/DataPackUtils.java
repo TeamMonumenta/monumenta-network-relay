@@ -4,6 +4,8 @@ import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -31,30 +33,9 @@ public class DataPackUtils {
 		// The namespace (ie minecraft) and local path (ie nether/root.json) for an advancement.
 		String advancementNamespace = advancement.getKey().getNamespace();
 		String advancementLocalPath = advancement.getKey().getKey() + ".json";
-		String pathWithinDatapack = "data/" + advancementNamespace + "/advancements/" + advancementLocalPath;
+		String pathWithinDataPack = "data/" + advancementNamespace + "/advancements/" + advancementLocalPath;
 
-		String content = null;
-		if (dataPackRoot.isDirectory()) {
-			// Attempt to read as a datapack folder
-			File advancementFile = new File(dataPackRoot, pathWithinDatapack.replace('/', File.separatorChar));
-			if (advancementFile == null) {
-				// Advancement not found, but it could be in another datapack.
-				return null;
-			}
-
-			try {
-				content = FileUtils.readFile(advancementFile.getPath());
-			} catch (Exception e) {
-				return null;
-			}
-		} else if (dataPackRoot.isFile() && dataPackRoot.getName().endsWith(".zip")) {
-			// Attempt to read as a datapack zip
-			try {
-				content = FileUtils.readZipFile(dataPackRoot.getPath(), pathWithinDatapack);
-			} catch (Exception e) {
-				return null;
-			}
-		}
+		String content = getContentFromDataPack(dataPackRoot, pathWithinDataPack);
 
 		try {
 			if (content == null || content.isEmpty()) {
@@ -78,6 +59,7 @@ public class DataPackUtils {
 				advancementObjects.add(object);
 			}
 		}
+
 		return advancementObjects;
 	}
 
@@ -199,7 +181,7 @@ public class DataPackUtils {
 		String playerUuid = player.getUniqueId().toString();
 
 		// Team part
-		Team team = Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(playerName);
+		Team team = getTeam(player);
 		String teamColor = "reset";
 		String teamPrefix = "";
 		String teamSuffix = "";
@@ -260,6 +242,38 @@ public class DataPackUtils {
 		return textComponent;
 	}
 
+	// Returns file contents from a datapack, or null.
+	public static String getContentFromDataPack(File dataPackRoot, String pathWithinDataPack) {
+		if (dataPackRoot == null || pathWithinDataPack == null) {
+			return null;
+		}
+
+		String content = null;
+		if (dataPackRoot.isDirectory()) {
+			// Attempt to read as a datapack folder
+			File advancementFile = new File(dataPackRoot, pathWithinDataPack.replace('/', File.separatorChar));
+			if (advancementFile == null) {
+				// Advancement not found, but it could be in another datapack.
+				return null;
+			}
+
+			try {
+				content = FileUtils.readFile(advancementFile.getPath());
+			} catch (Exception e) {
+				return null;
+			}
+		} else if (dataPackRoot.isFile() && dataPackRoot.getName().endsWith(".zip")) {
+			// Attempt to read as a datapack zip
+			try {
+				content = FileUtils.readZipFile(dataPackRoot.getPath(), pathWithinDataPack);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		return content;
+	}
+
 	// Returns a list of datapack zip files and root folders.
 	// Note that the built-in datapack is not returned. It can be unzipped from a client jar of the same version.
 	// Also note that Bukkit does not include a way to directly list or access enabled datapacks.
@@ -315,6 +329,21 @@ public class DataPackUtils {
 		return instant;
 	}
 
+	public static Team getTeam(Player player) {
+		if (player == null) {
+			return null;
+		}
+		String playerName = player.getName();
+		return getTeam(playerName);
+	}
+
+	public static Team getTeam(String entry) {
+		if (entry == null) {
+			return null;
+		}
+		return Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(entry);
+	}
+
 	// Returns true if the advancement is visible within any available datapack, whether loaded or not.
 	public static boolean isAnnouncedToChat(Advancement advancement) {
 		for (JsonObject advancementObject : getAdvancementJsonObjects(advancement)) {
@@ -322,6 +351,15 @@ public class DataPackUtils {
 				return true;
 			}
 		}
+
+		// Handle built-in advancements
+		if (advancement.getKey().getNamespace() == "minecraft") {
+			String key = advancement.getKey().getKey();
+			if (key.startsWith("recipes/") || key.endsWith("/root")) {
+				return false;
+			}
+		}
+
 		return false;
 	}
 
@@ -340,5 +378,53 @@ public class DataPackUtils {
 			return true;
 		}
 		return announceToChatPrimitive.getAsBoolean();
+	}
+
+	public static void runCommandWithReplacements(String command, Map<String, String> replacementMap) {
+		if (command == null || replacementMap == null) {
+			return;
+		}
+		if (command.startsWith("#")) {
+			return;
+		}
+		if (command.startsWith("/")) {
+			command = command.substring(1);
+		}
+
+		for (Map.Entry<String, String> entry : replacementMap.entrySet()) {
+			command = command.replace(entry.getKey(), entry.getValue());
+		}
+
+		if (command.isEmpty()) {
+			return;
+		}
+
+		Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), command);
+	}
+
+	// Since which datapacks are enabled or prioritized cannot be determined, all matching functions are run as found.
+	public static void runFunctionWithReplacements(String namespace, String functionKey, Map<String, String> replacementMap) {
+		if (namespace == null) {
+			namespace = "minecraft";
+		}
+		if (functionKey == null || replacementMap == null) {
+			return;
+		}
+
+		String pathWithinDataPack = "data/" + namespace + "/functions/" + functionKey + ".mcfunction";
+
+		for (File dataPackRoot : getDataPackRoots()) {
+			String content = getContentFromDataPack(dataPackRoot, pathWithinDataPack);
+			if (content == null) {
+				continue;
+			}
+
+			Scanner scanner = new Scanner(content);
+			while (scanner.hasNextLine()) {
+				String line = scanner.nextLine();
+				runCommandWithReplacements(line, replacementMap);
+			}
+			scanner.close();
+		}
 	}
 }
