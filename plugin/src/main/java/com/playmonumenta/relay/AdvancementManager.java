@@ -1,12 +1,14 @@
 package com.playmonumenta.relay;
 
-import java.time.Instant;
+import java.io.File;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
 
 import com.playmonumenta.relay.network.SocketManager;
 import com.playmonumenta.relay.utils.DataPackUtils;
+import com.playmonumenta.relay.utils.FileUtils;
 
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
@@ -19,13 +21,15 @@ import org.bukkit.plugin.Plugin;
 import com.google.gson.JsonObject;
 
 public class AdvancementManager implements Listener {
-	private Plugin mPlugin = null;
 	private static AdvancementManager INSTANCE = null;
-	private Map<String, AdvancementRecord> mRecords = new HashMap<String, AdvancementRecord>();
+	private static Plugin mPlugin = null;
+	private static File mConfigFile;
+	private static Map<String, AdvancementRecord> mRecords = new HashMap<String, AdvancementRecord>();
 
 	private AdvancementManager(Plugin plugin) {
-		mPlugin = plugin;
 		INSTANCE = this;
+		mPlugin = plugin;
+		mConfigFile = new File(plugin.getDataFolder(), "advancementRecords.json");
 	}
 
 	public static AdvancementManager getInstance() {
@@ -143,5 +147,22 @@ public class AdvancementManager implements Listener {
 		commandReplacements.put("[Team]", playerTeam);
 
 		return commandReplacements;
+	}
+
+	public void saveState() {
+		JsonObject allRecords = new JsonObject();
+		for (Map.Entry<String, AdvancementRecord> entry : mRecords.entrySet()) {
+			String advancementId = entry.getKey();
+
+			AdvancementRecord record = entry.getValue();
+			JsonObject recordObject = record.toJson();
+
+			allRecords.add(advancementId, recordObject);
+		}
+		try {
+			FileUtils.writeJson(mConfigFile.getPath(), allRecords);
+		} catch (Exception e) {
+			mPlugin.getLogger().log(Level.SEVERE, "Failed to save advancement records");
+		}
 	}
 }

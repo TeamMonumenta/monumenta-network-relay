@@ -69,6 +69,9 @@ public class MonumentaRelay extends JavaPlugin {
 		if (mSocketManager != null) {
 			mSocketManager.stop();
 		}
+		if (mAdvancementManager != null) {
+			mAdvancementManager.saveState();
+		}
 	}
 
 	/* Sender will be sent debugging info if non-null */

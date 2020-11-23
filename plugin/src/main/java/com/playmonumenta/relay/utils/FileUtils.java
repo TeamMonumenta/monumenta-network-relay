@@ -3,10 +3,17 @@ package com.playmonumenta.relay.utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonWriter;
 
 public class FileUtils {
 	public static String readFile(String fileName) throws Exception, FileNotFoundException {
@@ -43,6 +50,54 @@ public class FileUtils {
 		}
 
 		return content.toString();
+	}
+
+	public static void writeFile(String fileName, String contents) throws IOException {
+		// Do not attempt to catch exceptions here - let them propagate to the caller
+		File file = new File(fileName);
+
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+			file.createNewFile();
+		}
+
+		OutputStreamWriter writer = null;
+		try {
+			writer = new OutputStreamWriter(new FileOutputStream(fileName), StandardCharsets.UTF_8);
+			writer.write(contents);
+		} finally {
+			if (writer != null) {
+				writer.close();
+			}
+		}
+	}
+
+	public static void writeJson(String fileName, JsonObject json) throws IOException {
+		// Do not attempt to catch exceptions here - let them propagate to the caller
+		File file = new File(fileName);
+
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+			file.createNewFile();
+		}
+
+		OutputStreamWriter writer = null;
+		JsonWriter jsonWriter = null;
+		Gson gson;
+		try {
+			writer = new OutputStreamWriter(new FileOutputStream(fileName), StandardCharsets.UTF_8);
+			gson = new Gson();
+			jsonWriter = gson.newJsonWriter(writer);
+			jsonWriter.setIndent("    ");
+			gson.toJson(json, jsonWriter);
+		} finally {
+			if (jsonWriter != null) {
+				jsonWriter.close();
+			}
+			if (writer != null) {
+				writer.close();
+			}
+		}
 	}
 
 	public static String readZipFile(String zipFileName, String entryName) throws Exception {
