@@ -353,7 +353,7 @@ public class DataPackUtils {
 		}
 
 		// Handle built-in advancements
-		if (advancement.getKey().getNamespace() == "minecraft") {
+		if (advancement.getKey().getNamespace().equals("minecraft")) {
 			String key = advancement.getKey().getKey();
 			if (key.startsWith("recipes/") || key.endsWith("/root")) {
 				return false;

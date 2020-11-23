@@ -5,8 +5,10 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.playmonumenta.relay.AdvancementRecord;
 import com.playmonumenta.relay.ServerProperties;
 import com.playmonumenta.relay.packets.BasePacket;
+import com.playmonumenta.relay.packets.AdvancementRecordPacket;
 import com.playmonumenta.relay.packets.BroadcastCommandPacket;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -139,6 +141,9 @@ public class SocketManager {
 		mPlugin.getLogger().fine("Processing message from=" + source + " op=" + op);
 
 		switch (op) {
+			case AdvancementRecordPacket.PacketOperation:
+				AdvancementRecordPacket.handlePacket(mPlugin, data);
+				break;
 			case BroadcastCommandPacket.PacketOperation:
 				BroadcastCommandPacket.handlePacket(mPlugin, data);
 				break;
@@ -198,6 +203,12 @@ public class SocketManager {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	public static void recordAdvancement(Plugin plugin, AdvancementRecord record) throws Exception {
+		sendPacket(new AdvancementRecordPacket(record));
+
+		plugin.getLogger().fine("Requested record of advancement '" + record.getAdvancement() + "'");
 	}
 
 	public static void broadcastCommand(Plugin plugin, String command) throws Exception {
