@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class MonumentaRelay extends JavaPlugin {
 	public SocketManager mSocketManager = null;
 	private HttpManager mHttpManager = null;
-	public AdvancementListener mAdvancementListener = null;
+	public AdvancementManager mAdvancementManager = null;
 
 	private static Plugin INSTANCE = null;
 
@@ -38,7 +38,7 @@ public class MonumentaRelay extends JavaPlugin {
 	public void onEnable() {
 		INSTANCE = this;
 		PluginManager manager = getServer().getPluginManager();
-		mAdvancementListener = AdvancementListener.getInstance(this);
+		mAdvancementManager = AdvancementManager.getInstance(this);
 
 		// Load info.
 		reloadMonumentaConfig(null);
@@ -56,7 +56,7 @@ public class MonumentaRelay extends JavaPlugin {
 			}
 		}
 
-		manager.registerEvents(mAdvancementListener, this);
+		manager.registerEvents(mAdvancementManager, this);
 		manager.registerEvents(new RelayListener(this), this);
 	}
 

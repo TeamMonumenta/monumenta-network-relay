@@ -3,7 +3,7 @@ package com.playmonumenta.relay.packets;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.playmonumenta.relay.ServerProperties;
-import com.playmonumenta.relay.AdvancementListener;
+import com.playmonumenta.relay.AdvancementManager;
 import com.playmonumenta.relay.AdvancementRecord;
 
 import org.bukkit.Bukkit;
@@ -25,6 +25,6 @@ public class AdvancementRecordPacket extends BasePacket {
 		}
 		AdvancementRecord record = new AdvancementRecord(data.get("record").getAsJsonObject());
 
-		AdvancementListener.getInstance().addRemoteRecord(record);
+		AdvancementManager.getInstance().addRemoteRecord(record);
 	}
 }

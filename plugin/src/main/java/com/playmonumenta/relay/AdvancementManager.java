@@ -18,23 +18,23 @@ import org.bukkit.plugin.Plugin;
 
 import com.google.gson.JsonObject;
 
-public class AdvancementListener implements Listener {
+public class AdvancementManager implements Listener {
 	private Plugin mPlugin = null;
-	private static AdvancementListener INSTANCE = null;
+	private static AdvancementManager INSTANCE = null;
 	private Map<String, AdvancementRecord> mRecords = new HashMap<String, AdvancementRecord>();
 
-	private AdvancementListener(Plugin plugin) {
+	private AdvancementManager(Plugin plugin) {
 		mPlugin = plugin;
 		INSTANCE = this;
 	}
 
-	public static AdvancementListener getInstance() {
+	public static AdvancementManager getInstance() {
 		return INSTANCE;
 	}
 
-	public static AdvancementListener getInstance(Plugin plugin) {
+	public static AdvancementManager getInstance(Plugin plugin) {
 		if (INSTANCE == null) {
-			INSTANCE = new AdvancementListener(plugin);
+			INSTANCE = new AdvancementManager(plugin);
 		}
 		return INSTANCE;
 	}
