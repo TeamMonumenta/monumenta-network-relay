@@ -42,7 +42,6 @@ public class MonumentaRelay extends JavaPlugin {
 
 		// Load info.
 		reloadMonumentaConfig(null);
-		mAdvancementManager.reload();
 
 		mHttpManager.start();
 
@@ -59,6 +58,8 @@ public class MonumentaRelay extends JavaPlugin {
 
 		manager.registerEvents(mAdvancementManager, this);
 		manager.registerEvents(new RelayListener(this), this);
+
+		mAdvancementManager.reload();
 	}
 
 	@Override

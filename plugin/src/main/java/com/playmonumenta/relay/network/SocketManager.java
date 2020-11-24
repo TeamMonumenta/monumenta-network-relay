@@ -145,6 +145,9 @@ public class SocketManager {
 			case AdvancementRecordPacket.PacketOperation:
 				AdvancementRecordPacket.handlePacket(mPlugin, data);
 				break;
+			case AdvancementRecordRequestPacket.PacketOperation:
+				AdvancementRecordRequestPacket.handlePacket(mPlugin, data);
+				break;
 			case BroadcastCommandPacket.PacketOperation:
 				BroadcastCommandPacket.handlePacket(mPlugin, data);
 				break;

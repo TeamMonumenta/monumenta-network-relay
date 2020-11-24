@@ -135,22 +135,20 @@ public class AdvancementRecord {
 			// But, anything current is already accounted for, not "newly later"
 			newlyLaterPlayers.removeAll(getFirstPlayerTeams().entrySet());
 			newlyLaterPlayers.removeAll(getLaterPlayerTeams().entrySet());
-		} else if (oldComparedToNewRecord == 0) {
-			// Same time! Any new "later" entries are newly later...
-			newlyLaterPlayers = newRecord.getLaterPlayerTeams().entrySet();
 
-			// ...unless they're accounted for currently.
-			newlyLaterPlayers.removeAll(getLaterPlayerTeams().entrySet());
-		} else {
-			// New record was faster. Current first entries fall under "corrected later", not here.
-			// Instead, count any later entries from the new record...
-			newlyLaterPlayers = newRecord.getLaterPlayerTeams().entrySet();
-			
-			// ...and ignore the ones accounted for currently.
-			newlyLaterPlayers.removeAll(getLaterPlayerTeams().entrySet());
-
-			// This is identical to the last case, but duplicated with new comments for clarity.
+			return newlyLaterPlayers;
 		}
+
+		// If the new record is as fast or faster than this record, the logic is the same.
+
+		// Any new "later" entries are newly later...
+		newlyLaterPlayers = newRecord.getLaterPlayerTeams().entrySet();
+
+		// ...unless they're accounted for currently...
+		newlyLaterPlayers.removeAll(getLaterPlayerTeams().entrySet());
+
+		// ...or corrected to "later" times. Handle those separately.
+		newlyLaterPlayers.removeAll(getFirstPlayerTeams().entrySet());
 
 		return newlyLaterPlayers;
 	}
@@ -178,7 +176,7 @@ public class AdvancementRecord {
 		} else {
 			// New record was faster. Current first entries are "corrected later"...
 			correctedLaterPlayers = getFirstPlayerTeams().entrySet();
-			
+
 			// ...assuming they're not also fastest on the new record.
 			correctedLaterPlayers.removeAll(newRecord.getFirstPlayerTeams().entrySet());
 		}

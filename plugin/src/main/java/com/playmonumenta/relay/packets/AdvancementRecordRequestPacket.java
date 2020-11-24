@@ -15,6 +15,8 @@ public class AdvancementRecordRequestPacket extends BasePacket {
 	public AdvancementRecordRequestPacket() {
 		/* TODO: Some kind of timeout */
 		super("*", PacketOperation);
+		// TODO allow packets without extra data (need to refactor our other plugins)
+		getData().addProperty("foo", "bar");
 	}
 
 	public static void handlePacket(Plugin plugin, JsonObject data) throws Exception {
