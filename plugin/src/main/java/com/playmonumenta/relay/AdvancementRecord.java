@@ -210,12 +210,12 @@ public class AdvancementRecord {
 			}
 		} else {
 			// New record was faster. Update the instant...
-			mInstant = newRecord.getInstant();
+			updatedClone.mInstant = newRecord.getInstant();
 			// ...copy current "first" and new "later" to "later"...
-			mLaterPlayerTeams.putAll(mFirstPlayerTeams);
-			mLaterPlayerTeams.putAll(newRecord.getLaterPlayerTeams());
+			updatedClone.mLaterPlayerTeams.putAll(mFirstPlayerTeams);
+			updatedClone.mLaterPlayerTeams.putAll(newRecord.getLaterPlayerTeams());
 			// ...and replace updated "first" with new "first"
-			mFirstPlayerTeams = newRecord.getFirstPlayerTeams();
+			updatedClone.mFirstPlayerTeams = newRecord.getFirstPlayerTeams();
 		}
 
 		return updatedClone;

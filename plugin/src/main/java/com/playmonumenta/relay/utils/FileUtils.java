@@ -72,6 +72,35 @@ public class FileUtils {
 		}
 	}
 
+	public static JsonObject readJson(String fileName) throws Exception, FileNotFoundException {
+		// Do not attempt to catch exceptions here - let them propagate to the caller
+		File file;
+
+		if (fileName == null || fileName.isEmpty()) {
+			throw new Exception("Filename is null or empty");
+		}
+
+		file = new File(fileName);
+		if (!file.exists()) {
+			throw new FileNotFoundException("File '" + fileName + "' does not exist");
+		}
+
+		InputStreamReader reader = null;
+		Gson gson = new Gson();
+		JsonObject object = null;
+
+		try {
+			reader = new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8);
+			object = gson.fromJson(reader, JsonObject.class);
+		} finally {
+			if (reader != null) {
+				reader.close();
+			}
+		}
+
+		return object;
+	}
+
 	public static void writeJson(String fileName, JsonObject json) throws IOException {
 		// Do not attempt to catch exceptions here - let them propagate to the caller
 		File file = new File(fileName);

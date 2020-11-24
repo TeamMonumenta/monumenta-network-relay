@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.plugin.Plugin;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class AdvancementManager implements Listener {
@@ -41,6 +42,71 @@ public class AdvancementManager implements Listener {
 			INSTANCE = new AdvancementManager(plugin);
 		}
 		return INSTANCE;
+	}
+
+	public void reload() {
+		// Replace current state with previously saved state.
+		mRecords.clear();
+
+		// Load all records as json
+		JsonObject allRecords;
+		try {
+			allRecords = FileUtils.readJson(mConfigFile.getPath());
+		} catch (Exception e) {
+			mPlugin.getLogger().warning("No advancement records could be loaded - assuming the plugin was not previously installed.");
+			return;
+		}
+
+		// Load the json into our local copy of advancement records
+		try {
+			for (Map.Entry<String, JsonElement> entry : allRecords.entrySet()) {
+				String advancementId = entry.getKey();
+
+				JsonObject recordJsonObject = entry.getValue().getAsJsonObject();
+				AdvancementRecord record = new AdvancementRecord(recordJsonObject);
+
+				mRecords.put(advancementId, record);
+			}
+		} catch (Exception e) {
+			mPlugin.getLogger().log(Level.SEVERE, "Failed to load at least one advancement record. Aborting load.");
+			return;
+		}
+
+		broadcastAllAdvancementRecords();
+
+		try {
+			SocketManager.broadcastAdvancementRecordRequest(mPlugin);
+		} catch (Exception e) {
+			mPlugin.getLogger().log(Level.SEVERE, "Failed to request remote records.");
+		}
+	}
+
+	public void saveState() {
+		JsonObject allRecords = new JsonObject();
+		for (Map.Entry<String, AdvancementRecord> entry : mRecords.entrySet()) {
+			String advancementId = entry.getKey();
+
+			AdvancementRecord record = entry.getValue();
+			JsonObject recordObject = record.toJson();
+
+			allRecords.add(advancementId, recordObject);
+		}
+		try {
+			FileUtils.writeJson(mConfigFile.getPath(), allRecords);
+		} catch (Exception e) {
+			mPlugin.getLogger().log(Level.SEVERE, "Failed to save advancement records");
+		}
+	}
+
+	public void broadcastAllAdvancementRecords() {
+		// Broadcast local advancement records; remote servers will ignore non-changes
+		for (AdvancementRecord record : mRecords.values()) {
+			try {
+				SocketManager.broadcastAdvancementRecord(mPlugin, record);
+			} catch (Exception e) {
+				mPlugin.getLogger().warning("Failed to broadcast record");
+			}
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -78,7 +144,7 @@ public class AdvancementManager implements Listener {
 
 			applyEarnedFirst(newRecord.getFirstPlayerTeams().entrySet());
 
-			SocketManager.recordAdvancement(mPlugin, newRecord);
+			SocketManager.broadcastAdvancementRecord(mPlugin, newRecord);
 		} else {
 			// Not the first, but credit where it's due.
 			AdvancementRecord updatedRecord = oldRecord.cloneAndUpdate(newRecord);
@@ -88,7 +154,7 @@ public class AdvancementManager implements Listener {
 			applyEarnedLater(oldRecord.getNewlyLaterPlayerTeams(newRecord));
 			applyCorrectedLater(oldRecord.getCorrectedLaterPlayerTeams(newRecord));
 
-			SocketManager.recordAdvancement(mPlugin, updatedRecord);
+			SocketManager.broadcastAdvancementRecord(mPlugin, updatedRecord);
 		}
 	}
 
@@ -147,22 +213,5 @@ public class AdvancementManager implements Listener {
 		commandReplacements.put("[Team]", playerTeam);
 
 		return commandReplacements;
-	}
-
-	public void saveState() {
-		JsonObject allRecords = new JsonObject();
-		for (Map.Entry<String, AdvancementRecord> entry : mRecords.entrySet()) {
-			String advancementId = entry.getKey();
-
-			AdvancementRecord record = entry.getValue();
-			JsonObject recordObject = record.toJson();
-
-			allRecords.add(advancementId, recordObject);
-		}
-		try {
-			FileUtils.writeJson(mConfigFile.getPath(), allRecords);
-		} catch (Exception e) {
-			mPlugin.getLogger().log(Level.SEVERE, "Failed to save advancement records");
-		}
 	}
 }

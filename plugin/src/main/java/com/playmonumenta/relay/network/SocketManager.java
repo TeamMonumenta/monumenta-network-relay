@@ -9,6 +9,7 @@ import com.playmonumenta.relay.AdvancementRecord;
 import com.playmonumenta.relay.ServerProperties;
 import com.playmonumenta.relay.packets.BasePacket;
 import com.playmonumenta.relay.packets.AdvancementRecordPacket;
+import com.playmonumenta.relay.packets.AdvancementRecordRequestPacket;
 import com.playmonumenta.relay.packets.BroadcastCommandPacket;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -205,10 +206,16 @@ public class SocketManager {
 		}
 	}
 
-	public static void recordAdvancement(Plugin plugin, AdvancementRecord record) throws Exception {
+	public static void broadcastAdvancementRecord(Plugin plugin, AdvancementRecord record) throws Exception {
 		sendPacket(new AdvancementRecordPacket(record));
 
 		plugin.getLogger().fine("Requested record of advancement '" + record.getAdvancement() + "'");
+	}
+
+	public static void broadcastAdvancementRecordRequest(Plugin plugin) throws Exception {
+		sendPacket(new AdvancementRecordRequestPacket());
+
+		plugin.getLogger().fine("Requested remote advancement records");
 	}
 
 	public static void broadcastCommand(Plugin plugin, String command) throws Exception {
