@@ -142,7 +142,7 @@ public class AdvancementManager implements Listener {
 			// First time this advancement was earned! As far as we know anyways.
 			mRecords.put(advancementId, newRecord);
 
-			applyEarnedFirst(newRecord.getFirstPlayerTeams().entrySet());
+			applyFirstPlayer(newRecord.getFirstPlayerTeams().entrySet());
 
 			SocketManager.broadcastAdvancementRecord(mPlugin, newRecord);
 		} else {
@@ -150,9 +150,9 @@ public class AdvancementManager implements Listener {
 			AdvancementRecord updatedRecord = oldRecord.cloneAndUpdate(newRecord);
 			mRecords.put(advancementId, updatedRecord);
 
-			applyEarnedFirst(oldRecord.getNewlyFirstPlayerTeams(newRecord));
-			applyEarnedLater(oldRecord.getNewlyLaterPlayerTeams(newRecord));
-			applyCorrectedLater(oldRecord.getCorrectedLaterPlayerTeams(newRecord));
+			applyFirstPlayer(oldRecord.getNewlyFirstPlayerTeams(newRecord));
+			applyLaterPlayer(oldRecord.getNewlyLaterPlayerTeams(newRecord));
+			applyCorrectPlayer(oldRecord.getCorrectedLaterPlayerTeams(newRecord));
 
 			SocketManager.broadcastAdvancementRecord(mPlugin, updatedRecord);
 		}
@@ -169,37 +169,34 @@ public class AdvancementManager implements Listener {
 		if (localRecord == null) {
 			// The other server got it first! I'm sure we'll go first next time.
 			mRecords.put(advancementId, remoteRecord);
-			applyEarnedFirst(remoteRecord.getFirstPlayerTeams().entrySet());
-			applyEarnedLater(remoteRecord.getLaterPlayerTeams().entrySet());
+			applyFirstPlayer(remoteRecord.getFirstPlayerTeams().entrySet());
+			applyLaterPlayer(remoteRecord.getLaterPlayerTeams().entrySet());
 		} else {
 			AdvancementRecord updatedRecord = localRecord.cloneAndUpdate(remoteRecord);
 			mRecords.put(advancementId, updatedRecord);
-			applyEarnedFirst(localRecord.getNewlyFirstPlayerTeams(remoteRecord));
-			applyEarnedLater(localRecord.getNewlyLaterPlayerTeams(remoteRecord));
-			applyCorrectedLater(localRecord.getCorrectedLaterPlayerTeams(remoteRecord));
+			applyFirstPlayer(localRecord.getNewlyFirstPlayerTeams(remoteRecord));
+			applyLaterPlayer(localRecord.getNewlyLaterPlayerTeams(remoteRecord));
+			applyCorrectPlayer(localRecord.getCorrectedLaterPlayerTeams(remoteRecord));
 		}
 	}
 
-	private void applyEarnedFirst(Set<Map.Entry<String, String>> playerTeams) {
-		for (Map.Entry<String, String> entry : playerTeams) {
-			DataPackUtils.runFunctionWithReplacements("rivals",
-			                                          "advancement/earned_first",
-			                                          getCommandReplacements(entry));
-		}
+	private void applyFirstPlayer(Set<Map.Entry<String, String>> playerTeams) {
+		applyPlayerFunction(playerTeams, "rivals", "advancement/first_player", true);
 	}
 
-	private void applyEarnedLater(Set<Map.Entry<String, String>> playerTeams) {
-		for (Map.Entry<String, String> entry : playerTeams) {
-			DataPackUtils.runFunctionWithReplacements("rivals",
-			                                          "advancement/earned_later",
-			                                          getCommandReplacements(entry));
-		}
+	private void applyLaterPlayer(Set<Map.Entry<String, String>> playerTeams) {
+		applyPlayerFunction(playerTeams, "rivals", "advancement/later_player", true);
 	}
 
-	private void applyCorrectedLater(Set<Map.Entry<String, String>> playerTeams) {
+	private void applyCorrectPlayer(Set<Map.Entry<String, String>> playerTeams) {
+		applyPlayerFunction(playerTeams, "rivals", "advancement/correct_player", true);
+	}
+
+	private void applyPlayerFunction(Set<Map.Entry<String, String>> playerTeams, String namespace, String functionKey, boolean functionTag) {
 		for (Map.Entry<String, String> entry : playerTeams) {
-			DataPackUtils.runFunctionWithReplacements("rivals",
-			                                          "advancement/not_actually_earned_first",
+			DataPackUtils.runFunctionWithReplacements(namespace,
+			                                          functionKey,
+			                                          functionTag,
 			                                          getCommandReplacements(entry));
 		}
 	}

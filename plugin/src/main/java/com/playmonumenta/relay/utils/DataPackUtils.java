@@ -3,9 +3,9 @@ package com.playmonumenta.relay.utils;
 import java.io.File;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -16,6 +16,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.NamespacedKey;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.World;
+
+import dev.jorel.commandapi.wrappers.SimpleFunctionWrapper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -403,28 +405,35 @@ public class DataPackUtils {
 	}
 
 	// Since which datapacks are enabled or prioritized cannot be determined, all matching functions are run as found.
-	public static void runFunctionWithReplacements(String namespace, String functionKey, Map<String, String> replacementMap) {
+	public static void runFunctionWithReplacements(String namespace, String functionKey, boolean functionTag, Map<String, String> replacementMap) {
 		if (namespace == null) {
 			namespace = "minecraft";
 		}
 		if (functionKey == null || replacementMap == null) {
 			return;
 		}
-
-		String pathWithinDataPack = "data/" + namespace + "/functions/" + functionKey + ".mcfunction";
-
-		for (File dataPackRoot : getDataPackRoots()) {
-			String content = getContentFromDataPack(dataPackRoot, pathWithinDataPack);
-			if (content == null) {
-				continue;
+		NamespacedKey functionId = getNamespacedKey(namespace, functionKey);
+		Collection<SimpleFunctionWrapper> functions = new ArrayList<SimpleFunctionWrapper>();
+		if (functionTag) {
+			if (SimpleFunctionWrapper.getTags().contains(functionId)) {
+				functions = Arrays.asList(SimpleFunctionWrapper.getTag(functionId));
 			}
-
-			Scanner scanner = new Scanner(content);
-			while (scanner.hasNextLine()) {
-				String line = scanner.nextLine();
-				runCommandWithReplacements(line, replacementMap);
+			// If the function tag isn't found, assume it was not desired.
+		} else {
+			if (SimpleFunctionWrapper.getFunctions().contains(functionId)) {
+				functions.add(SimpleFunctionWrapper.getFunction(functionId));
 			}
-			scanner.close();
 		}
+
+		for (SimpleFunctionWrapper function : functions) {
+			for (String command : function.getCommands()) {
+				runCommandWithReplacements(command, replacementMap);
+			}
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	public static NamespacedKey getNamespacedKey(String namespace, String key) {
+		return new NamespacedKey(namespace, key);
 	}
 }
