@@ -141,19 +141,13 @@ public class AdvancementManager implements Listener {
 		if (oldRecord == null) {
 			// First time this advancement was earned! As far as we know anyways.
 			mRecords.put(advancementId, newRecord);
-
-			applyFirstPlayer(newRecord.getFirstPlayerTeams().entrySet());
-
+			runRecordChangeFunctions(newRecord, null);
 			SocketManager.broadcastAdvancementRecord(mPlugin, newRecord);
 		} else {
 			// Not the first, but credit where it's due.
 			AdvancementRecord updatedRecord = oldRecord.cloneAndUpdate(newRecord);
 			mRecords.put(advancementId, updatedRecord);
-
-			applyFirstPlayer(oldRecord.getNewlyFirstPlayerTeams(newRecord));
-			applyLaterPlayer(oldRecord.getNewlyLaterPlayerTeams(newRecord));
-			applyCorrectPlayer(oldRecord.getCorrectedLaterPlayerTeams(newRecord));
-
+			runRecordChangeFunctions(newRecord, oldRecord);
 			SocketManager.broadcastAdvancementRecord(mPlugin, updatedRecord);
 		}
 	}
@@ -169,35 +163,42 @@ public class AdvancementManager implements Listener {
 		if (localRecord == null) {
 			// The other server got it first! I'm sure we'll go first next time.
 			mRecords.put(advancementId, remoteRecord);
-			applyFirstPlayer(remoteRecord.getFirstPlayerTeams().entrySet());
-			applyLaterPlayer(remoteRecord.getLaterPlayerTeams().entrySet());
+			runRecordChangeFunctions(remoteRecord, null);
 		} else {
 			AdvancementRecord updatedRecord = localRecord.cloneAndUpdate(remoteRecord);
 			mRecords.put(advancementId, updatedRecord);
-			applyFirstPlayer(localRecord.getNewlyFirstPlayerTeams(remoteRecord));
-			applyLaterPlayer(localRecord.getNewlyLaterPlayerTeams(remoteRecord));
-			applyCorrectPlayer(localRecord.getCorrectedLaterPlayerTeams(remoteRecord));
+			runRecordChangeFunctions(remoteRecord, localRecord);
 		}
 	}
 
-	private void applyFirstPlayer(Set<Map.Entry<String, String>> playerTeams) {
-		applyPlayerFunction(playerTeams, "rivals", "advancement/first_player", true);
+	private void runRecordChangeFunctions(AdvancementRecord newRecord, AdvancementRecord oldRecord) {
+		if (newRecord == null) {
+			return;
+		}
+
+		applyFunctionsToPlayerTeams(newRecord.getNewlyFirstPlayers(oldRecord), "rivals", "advancement/first_player", true);
+		applyFunctionsToPlayerTeams(newRecord.getNewlyLaterPlayers(oldRecord), "rivals", "advancement/later_player", true);
+		applyFunctionsToPlayerTeams(newRecord.getCorrectedPlayers(oldRecord), "rivals", "advancement/correct_player", true);
+		applyFunctionsToTeams(newRecord.getNewlyFirstTeams(oldRecord), "rivals", "advancement/first_team", true);
+		applyFunctionsToTeams(newRecord.getNewlyLaterTeams(oldRecord), "rivals", "advancement/later_team", true);
+		applyFunctionsToTeams(newRecord.getCorrectedTeams(oldRecord), "rivals", "advancement/correct_team", true);
 	}
 
-	private void applyLaterPlayer(Set<Map.Entry<String, String>> playerTeams) {
-		applyPlayerFunction(playerTeams, "rivals", "advancement/later_player", true);
-	}
-
-	private void applyCorrectPlayer(Set<Map.Entry<String, String>> playerTeams) {
-		applyPlayerFunction(playerTeams, "rivals", "advancement/correct_player", true);
-	}
-
-	private void applyPlayerFunction(Set<Map.Entry<String, String>> playerTeams, String namespace, String functionKey, boolean functionTag) {
+	private void applyFunctionsToPlayerTeams(Set<Map.Entry<String, String>> playerTeams, String namespace, String functionKey, boolean functionTag) {
 		for (Map.Entry<String, String> entry : playerTeams) {
 			DataPackUtils.runFunctionWithReplacements(namespace,
 			                                          functionKey,
 			                                          functionTag,
 			                                          getCommandReplacements(entry));
+		}
+	}
+
+	private void applyFunctionsToTeams(Set<String> teams, String namespace, String functionKey, boolean functionTag) {
+		for (String playerTeam : teams) {
+			DataPackUtils.runFunctionWithReplacements(namespace,
+			                                          functionKey,
+			                                          functionTag,
+			                                          getCommandReplacements(playerTeam));
 		}
 	}
 
@@ -207,6 +208,13 @@ public class AdvancementManager implements Listener {
 
 		Map<String, String> commandReplacements = new HashMap<String, String>();
 		commandReplacements.put("[Player]", playerName);
+		commandReplacements.put("[Team]", playerTeam);
+
+		return commandReplacements;
+	}
+
+	private Map<String, String> getCommandReplacements(String playerTeam) {
+		Map<String, String> commandReplacements = new HashMap<String, String>();
 		commandReplacements.put("[Team]", playerTeam);
 
 		return commandReplacements;
