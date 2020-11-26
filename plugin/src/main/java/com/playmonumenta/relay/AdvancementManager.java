@@ -111,7 +111,7 @@ public class AdvancementManager implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
-	public void worldSaveEvent(WorldSaveEvent event) throws Exception {
+	public void worldSaveEvent(WorldSaveEvent event) {
 		saveState();
 	}
 
