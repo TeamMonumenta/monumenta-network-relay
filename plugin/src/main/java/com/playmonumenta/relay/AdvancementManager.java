@@ -16,6 +16,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
+import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.plugin.Plugin;
 
 import com.google.gson.JsonElement;
@@ -110,6 +111,11 @@ public class AdvancementManager implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
+	public void worldSaveEvent(WorldSaveEvent event) throws Exception {
+		saveState();
+	}
+
+	@EventHandler(priority = EventPriority.LOW)
 	public void playerAdvancementDoneEvent(PlayerAdvancementDoneEvent event) throws Exception {
 		Player player = event.getPlayer();
 
@@ -176,46 +182,50 @@ public class AdvancementManager implements Listener {
 			return;
 		}
 
-		applyFunctionsToPlayerTeams(newRecord.getNewlyFirstPlayers(oldRecord), "rivals", "advancement/first_player", true);
-		applyFunctionsToPlayerTeams(newRecord.getNewlyLaterPlayers(oldRecord), "rivals", "advancement/later_player", true);
-		applyFunctionsToPlayerTeams(newRecord.getCorrectedPlayers(oldRecord), "rivals", "advancement/correct_player", true);
-		applyFunctionsToTeams(newRecord.getNewlyFirstTeams(oldRecord), "rivals", "advancement/first_team", true);
-		applyFunctionsToTeams(newRecord.getNewlyLaterTeams(oldRecord), "rivals", "advancement/later_team", true);
-		applyFunctionsToTeams(newRecord.getCorrectedTeams(oldRecord), "rivals", "advancement/correct_team", true);
+		String advancementId = newRecord.getAdvancement();
+
+		applyFunctionsToPlayerTeams(advancementId, newRecord.getNewlyFirstPlayers(oldRecord), "rivals", "advancement/first_player", true);
+		applyFunctionsToPlayerTeams(advancementId, newRecord.getNewlyLaterPlayers(oldRecord), "rivals", "advancement/later_player", true);
+		applyFunctionsToPlayerTeams(advancementId, newRecord.getCorrectedPlayers(oldRecord), "rivals", "advancement/correct_player", true);
+		applyFunctionsToTeams(advancementId, newRecord.getNewlyFirstTeams(oldRecord), "rivals", "advancement/first_team", true);
+		applyFunctionsToTeams(advancementId, newRecord.getNewlyLaterTeams(oldRecord), "rivals", "advancement/later_team", true);
+		applyFunctionsToTeams(advancementId, newRecord.getCorrectedTeams(oldRecord), "rivals", "advancement/correct_team", true);
 	}
 
-	private void applyFunctionsToPlayerTeams(Set<Map.Entry<String, String>> playerTeams, String namespace, String functionKey, boolean functionTag) {
+	private void applyFunctionsToPlayerTeams(String advancementId, Set<Map.Entry<String, String>> playerTeams, String namespace, String functionKey, boolean functionTag) {
 		for (Map.Entry<String, String> entry : playerTeams) {
 			DataPackUtils.runFunctionWithReplacements(namespace,
 			                                          functionKey,
 			                                          functionTag,
-			                                          getCommandReplacements(entry));
+			                                          getCommandReplacements(advancementId, entry));
 		}
 	}
 
-	private void applyFunctionsToTeams(Set<String> teams, String namespace, String functionKey, boolean functionTag) {
+	private void applyFunctionsToTeams(String advancementId, Set<String> teams, String namespace, String functionKey, boolean functionTag) {
 		for (String playerTeam : teams) {
 			DataPackUtils.runFunctionWithReplacements(namespace,
 			                                          functionKey,
 			                                          functionTag,
-			                                          getCommandReplacements(playerTeam));
+			                                          getCommandReplacements(advancementId, playerTeam));
 		}
 	}
 
-	private Map<String, String> getCommandReplacements(Map.Entry<String, String> playerTeamPair) {
+	private Map<String, String> getCommandReplacements(String advancementId, Map.Entry<String, String> playerTeamPair) {
 		String playerName = playerTeamPair.getKey();
 		String playerTeam = playerTeamPair.getValue();
 
 		Map<String, String> commandReplacements = new HashMap<String, String>();
-		commandReplacements.put("[Player]", playerName);
-		commandReplacements.put("[Team]", playerTeam);
+		commandReplacements.put("__advancement__", advancementId);
+		commandReplacements.put("__player__", playerName);
+		commandReplacements.put("__team__", playerTeam);
 
 		return commandReplacements;
 	}
 
-	private Map<String, String> getCommandReplacements(String playerTeam) {
+	private Map<String, String> getCommandReplacements(String advancementId, String playerTeam) {
 		Map<String, String> commandReplacements = new HashMap<String, String>();
-		commandReplacements.put("[Team]", playerTeam);
+		commandReplacements.put("__advancement__", advancementId);
+		commandReplacements.put("__team__", playerTeam);
 
 		return commandReplacements;
 	}
