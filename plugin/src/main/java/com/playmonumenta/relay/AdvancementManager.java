@@ -138,8 +138,8 @@ public class AdvancementManager implements Listener {
 			return;
 		}
 
-		String announceElsewhereCommand = "broadcastcommand execute unless entity " + player.getName() + " run " + announcementCommand;
-		mPlugin.getServer().dispatchCommand(mPlugin.getServer().getConsoleSender(), announceElsewhereCommand);
+		String announceElsewhereCommand = "execute unless entity " + player.getName() + " run " + announcementCommand;
+		SocketManager.broadcastCommand(mPlugin, announceElsewhereCommand);
 
 		// Process the advancement records
 		AdvancementRecord newRecord = new AdvancementRecord(player, advancement);
