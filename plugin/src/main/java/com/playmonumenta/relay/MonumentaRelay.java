@@ -24,6 +24,7 @@ public class MonumentaRelay extends JavaPlugin {
 	@Override
 	public void onLoad() {
 		BroadcastCommand.register(this);
+		GlobalChatCommand.register(this);
 		SetupTeamCommand.register(this);
 		RelayReloadCommand.register(this);
 
