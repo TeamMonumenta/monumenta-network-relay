@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scoreboard.Team;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -212,20 +213,80 @@ public class AdvancementManager implements Listener {
 
 	private Map<String, String> getCommandReplacements(String advancementId, Map.Entry<String, String> playerTeamPair) {
 		String playerName = playerTeamPair.getKey();
-		String playerTeam = playerTeamPair.getValue();
+		String playerTeamId = playerTeamPair.getValue();
+
+		Team playerTeam = DataPackUtils.getTeam(playerTeamId);
+		String teamColor = null;
+		String teamDisplayName = null;
+		String teamPrefix = null;
+		String teamSuffix = null;
+		if (playerTeam != null) {
+			if (playerTeam.getColor() != null) {
+				teamColor = playerTeam.getColor().name().toLowerCase();
+			}
+			teamDisplayName = playerTeam.getDisplayName();
+			teamPrefix = playerTeam.getPrefix();
+			teamSuffix = playerTeam.getSuffix();
+		}
+		if (teamColor == null) {
+			teamColor = "reset";
+		}
+		if (teamDisplayName == null) {
+			teamDisplayName = playerTeamId;
+		}
+		if (teamPrefix == null) {
+			teamPrefix = "";
+		}
+		if (teamSuffix == null) {
+			teamSuffix = "";
+		}
 
 		Map<String, String> commandReplacements = new HashMap<String, String>();
 		commandReplacements.put("__advancement__", advancementId);
 		commandReplacements.put("__player__", playerName);
-		commandReplacements.put("__team__", playerTeam);
+		commandReplacements.put("__team_id__", playerTeamId);
+		commandReplacements.put("__team_color__", teamColor);
+		commandReplacements.put("__team_display_name__", teamDisplayName);
+		commandReplacements.put("__team_prefix__", teamPrefix);
+		commandReplacements.put("__team_suffix__", teamSuffix);
 
 		return commandReplacements;
 	}
 
-	private Map<String, String> getCommandReplacements(String advancementId, String playerTeam) {
+	private Map<String, String> getCommandReplacements(String advancementId, String playerTeamId) {
+		Team playerTeam = DataPackUtils.getTeam(playerTeamId);
+		String teamColor = null;
+		String teamDisplayName = null;
+		String teamPrefix = null;
+		String teamSuffix = null;
+		if (playerTeam != null) {
+			if (playerTeam.getColor() != null) {
+				teamColor = playerTeam.getColor().name().toLowerCase();
+			}
+			teamDisplayName = playerTeam.getDisplayName();
+			teamPrefix = playerTeam.getPrefix();
+			teamSuffix = playerTeam.getSuffix();
+		}
+		if (teamColor == null) {
+			teamColor = "reset";
+		}
+		if (teamDisplayName == null) {
+			teamDisplayName = playerTeamId;
+		}
+		if (teamPrefix == null) {
+			teamPrefix = "";
+		}
+		if (teamSuffix == null) {
+			teamSuffix = "";
+		}
+
 		Map<String, String> commandReplacements = new HashMap<String, String>();
 		commandReplacements.put("__advancement__", advancementId);
-		commandReplacements.put("__team__", playerTeam);
+		commandReplacements.put("__team_id__", playerTeamId);
+		commandReplacements.put("__team_color__", teamColor);
+		commandReplacements.put("__team_display_name__", teamDisplayName);
+		commandReplacements.put("__team_prefix__", teamPrefix);
+		commandReplacements.put("__team_suffix__", teamSuffix);
 
 		return commandReplacements;
 	}
