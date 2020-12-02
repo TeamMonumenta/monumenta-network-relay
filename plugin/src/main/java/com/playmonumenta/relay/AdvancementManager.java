@@ -157,6 +157,8 @@ public class AdvancementManager implements Listener {
 			runRecordChangeFunctions(newRecord, oldRecord);
 			SocketManager.broadcastAdvancementRecord(mPlugin, updatedRecord);
 		}
+
+		saveState();
 	}
 
 	public void addRemoteRecord(AdvancementRecord remoteRecord) {
@@ -176,6 +178,8 @@ public class AdvancementManager implements Listener {
 			mRecords.put(advancementId, updatedRecord);
 			runRecordChangeFunctions(remoteRecord, localRecord);
 		}
+
+		saveState();
 	}
 
 	private void runRecordChangeFunctions(AdvancementRecord newRecord, AdvancementRecord oldRecord) {
