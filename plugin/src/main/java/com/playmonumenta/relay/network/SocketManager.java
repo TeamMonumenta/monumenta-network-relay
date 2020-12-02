@@ -209,10 +209,10 @@ public class SocketManager {
 		}
 	}
 
-	public static void broadcastAdvancementRecord(Plugin plugin, AdvancementRecord record) throws Exception {
-		sendPacket(new AdvancementRecordPacket(record));
+	public static void broadcastAdvancementRecord(Plugin plugin, String advancementId, AdvancementRecord record) throws Exception {
+		sendPacket(new AdvancementRecordPacket(advancementId, record));
 
-		plugin.getLogger().fine("Requested record of advancement '" + record.getAdvancement() + "'");
+		plugin.getLogger().fine("Requested record of advancement '" + advancementId + "'");
 	}
 
 	public static void broadcastAdvancementRecordRequest(Plugin plugin) throws Exception {

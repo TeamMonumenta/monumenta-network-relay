@@ -16,20 +16,17 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 public class AdvancementRecord {
-	private String mAdvancement = null;
 	private Instant mInstant = null;
 	private Map<String, String> mFirstPlayerTeams = new HashMap<String, String>();
 	private Map<String, String> mLaterPlayerTeams = new HashMap<String, String>();
 
 	public AdvancementRecord(AdvancementRecord toClone) {
-		mAdvancement = toClone.getAdvancement();
 		mInstant = toClone.getInstant();
 		mFirstPlayerTeams = toClone.getFirstPlayerTeams();
 		mLaterPlayerTeams = toClone.getLaterPlayerTeams();
 	}
 
 	public AdvancementRecord(Player player, Advancement advancement) {
-		mAdvancement = advancement.getKey().toString();
 		mInstant = DataPackUtils.getEarnedInstant(player, advancement);
 
 		String playerName = player.getName();
@@ -51,8 +48,6 @@ public class AdvancementRecord {
 		JsonObject laterPlayerTeamsObject = record.getAsJsonObject("later_player_teams");
 
 		try {
-			mAdvancement = advancementPrimitive.getAsString();
-
 			Long instantMs = instantPrimitive.getAsLong();
 			mInstant = Instant.ofEpochMilli(instantMs);
 
@@ -77,15 +72,10 @@ public class AdvancementRecord {
 			throw new Exception("json is not in record format");
 		}
 
-		if (mAdvancement == null ||
-		    mInstant == null ||
+		if (mInstant == null ||
 		    mFirstPlayerTeams.isEmpty()) {
 			throw new Exception("json is not in record format");
 		}
-	}
-
-	public String getAdvancement() {
-		return mAdvancement;
 	}
 
 	public Instant getInstant() {
@@ -326,7 +316,6 @@ public class AdvancementRecord {
 
 		JsonObject record = new JsonObject();
 
-		record.addProperty("advancement", mAdvancement);
 		record.addProperty("instant", mInstant.toEpochMilli());
 		record.add("first_player_teams", firstPlayerTeams);
 		record.add("later_player_teams", laterPlayerTeams);

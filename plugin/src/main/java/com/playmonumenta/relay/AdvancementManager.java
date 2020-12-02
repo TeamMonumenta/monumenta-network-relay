@@ -102,9 +102,12 @@ public class AdvancementManager implements Listener {
 
 	public void broadcastAllAdvancementRecords() {
 		// Broadcast local advancement records; remote servers will ignore non-changes
-		for (AdvancementRecord record : mRecords.values()) {
+		for (Map.Entry<String, AdvancementRecord> recordPair : mRecords.entrySet()) {
+			String advancementId = recordPair.getKey();
+			AdvancementRecord record = recordPair.getValue();
+
 			try {
-				SocketManager.broadcastAdvancementRecord(mPlugin, record);
+				SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, record);
 			} catch (Exception e) {
 				mPlugin.getLogger().warning("Failed to broadcast record");
 			}
@@ -148,46 +151,42 @@ public class AdvancementManager implements Listener {
 		if (oldRecord == null) {
 			// First time this advancement was earned! As far as we know anyways.
 			mRecords.put(advancementId, newRecord);
-			runRecordChangeFunctions(newRecord, null);
-			SocketManager.broadcastAdvancementRecord(mPlugin, newRecord);
+			runRecordChangeFunctions(advancementId, newRecord, null);
+			SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, newRecord);
 		} else {
 			// Not the first, but credit where it's due.
 			AdvancementRecord updatedRecord = oldRecord.cloneAndUpdate(newRecord);
 			mRecords.put(advancementId, updatedRecord);
-			runRecordChangeFunctions(newRecord, oldRecord);
-			SocketManager.broadcastAdvancementRecord(mPlugin, updatedRecord);
+			runRecordChangeFunctions(advancementId, newRecord, oldRecord);
+			SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, updatedRecord);
 		}
 
 		saveState();
 	}
 
-	public void addRemoteRecord(AdvancementRecord remoteRecord) {
-		if (remoteRecord == null) {
+	public void addRemoteRecord(String advancementId, AdvancementRecord remoteRecord) {
+		if (advancementId == null || remoteRecord == null) {
 			return;
 		}
-
-		String advancementId = remoteRecord.getAdvancement();
 
 		AdvancementRecord localRecord = mRecords.get(advancementId);
 		if (localRecord == null) {
 			// The other server got it first! I'm sure we'll go first next time.
 			mRecords.put(advancementId, remoteRecord);
-			runRecordChangeFunctions(remoteRecord, null);
+			runRecordChangeFunctions(advancementId, remoteRecord, null);
 		} else {
 			AdvancementRecord updatedRecord = localRecord.cloneAndUpdate(remoteRecord);
 			mRecords.put(advancementId, updatedRecord);
-			runRecordChangeFunctions(remoteRecord, localRecord);
+			runRecordChangeFunctions(advancementId, remoteRecord, localRecord);
 		}
 
 		saveState();
 	}
 
-	private void runRecordChangeFunctions(AdvancementRecord newRecord, AdvancementRecord oldRecord) {
-		if (newRecord == null) {
+	private void runRecordChangeFunctions(String advancementId, AdvancementRecord newRecord, AdvancementRecord oldRecord) {
+		if (advancementId == null || newRecord == null) {
 			return;
 		}
-
-		String advancementId = newRecord.getAdvancement();
 
 		applyFunctionsToPlayerTeams(advancementId, newRecord.getNewlyFirstPlayers(oldRecord), "rivals", "advancement/first_player", true);
 		applyFunctionsToPlayerTeams(advancementId, newRecord.getNewlyLaterPlayers(oldRecord), "rivals", "advancement/later_player", true);
