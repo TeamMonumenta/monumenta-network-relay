@@ -3,6 +3,7 @@ package com.playmonumenta.relay;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.playmonumenta.relay.AdvancementManager;
 import com.playmonumenta.relay.utils.DataPackUtils;
 
 import org.bukkit.Bukkit;
@@ -74,5 +75,7 @@ public class SetupTeamCommand {
 		                                          "setup_team",
 		                                          true,
 		                                          commandReplacements);
+
+		AdvancementManager.getInstance().watchTeamId(teamId, teamName);
 	}
 }

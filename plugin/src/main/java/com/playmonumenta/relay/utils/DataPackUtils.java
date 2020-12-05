@@ -346,23 +346,21 @@ public class DataPackUtils {
 		return Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(entry);
 	}
 
-	// Returns true if the advancement is visible within any available datapack, whether loaded or not.
-	public static boolean isAnnouncedToChat(Advancement advancement) {
-		for (JsonObject advancementObject : getAdvancementJsonObjects(advancement)) {
-			if (isAnnouncedToChat(advancementObject)) {
-				return true;
-			}
+	public static boolean isTeamAnnouncedToChat(JsonObject advancementJson) {
+		if (advancementJson == null) {
+			return false;
 		}
 
-		// Handle built-in advancements
-		if (advancement.getKey().getNamespace().equals("minecraft")) {
-			String key = advancement.getKey().getKey();
-			if (key.startsWith("recipes/") || key.endsWith("/root")) {
-				return false;
-			}
+		JsonObject displayObject = advancementJson.getAsJsonObject("display");
+		if (displayObject == null || !displayObject.has("title")) {
+			return false;
 		}
 
-		return false;
+		JsonPrimitive announceToChatPrimitive = displayObject.getAsJsonPrimitive("announce_team_to_chat");
+		if (announceToChatPrimitive == null) {
+			return false;
+		}
+		return announceToChatPrimitive.getAsBoolean();
 	}
 
 	public static boolean isAnnouncedToChat(JsonObject advancementJson) {
@@ -430,6 +428,16 @@ public class DataPackUtils {
 				runCommandWithReplacements(command, replacementMap);
 			}
 		}
+	}
+
+	public static NamespacedKey getNamespacedKey(String id) {
+		int colonPosition = id.lastIndexOf(':');
+		if (colonPosition == -1) {
+			return getNamespacedKey("minecraft", id);
+		}
+		String namespace = id.substring(0, colonPosition);
+		String key = id.substring(colonPosition + 1);
+		return getNamespacedKey(namespace, key);
 	}
 
 	@SuppressWarnings("deprecation")
