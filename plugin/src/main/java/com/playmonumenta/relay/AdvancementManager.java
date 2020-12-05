@@ -227,34 +227,12 @@ public class AdvancementManager implements Listener {
 		}
 
 		// Process the advancement records
-		AdvancementRecord newRecord = new AdvancementRecord(player, advancement);
-		AdvancementRecord oldRecord = mRecords.get(advancementId);
-		if (oldRecord == null) {
-			// First time this advancement was earned! As far as we know anyways.
+		if (!announceByTeam) {
 			String announceElsewhereCommand = "execute unless entity " + player.getName() + " run " + announcementCommand;
 			SocketManager.broadcastCommand(mPlugin, announceElsewhereCommand);
-
-			mRecords.put(advancementId, newRecord);
-			runRecordChangeFunctions(advancementId, advancementJson, newRecord, null);
-			SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, newRecord);
-		} else {
-			// Not the first, but credit where it's due.
-			if (announceByTeam) {
-				if (false /*Confirm this is the first time it's earned for the team*/) {
-					SocketManager.broadcastCommand(mPlugin, announcementCommand);
-				}
-			} else {
-				String announceElsewhereCommand = "execute unless entity " + player.getName() + " run " + announcementCommand;
-				SocketManager.broadcastCommand(mPlugin, announceElsewhereCommand);
-			}
-
-			AdvancementRecord updatedRecord = oldRecord.cloneAndUpdate(newRecord);
-			mRecords.put(advancementId, updatedRecord);
-			runRecordChangeFunctions(advancementId, advancementJson, newRecord, oldRecord);
-			SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, updatedRecord);
 		}
-
-		saveState();
+		AdvancementRecord newRecord = new AdvancementRecord(player, advancement);
+		SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, newRecord);
 	}
 
 	public void addRemoteRecord(String advancementId, AdvancementRecord remoteRecord) {

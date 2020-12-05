@@ -336,7 +336,11 @@ public class AdvancementRecord {
 			return updatedClone;
 		}
 
-		Set<String> teamIds;
+		Set<String> teamIds = new HashSet<String>(newRecord.getFirstPlayerTeams().keySet());
+		teamIds.addAll(newRecord.getLaterPlayerTeams().keySet());
+		teamIds.addAll(updatedClone.getFirstPlayerTeams().keySet());
+		teamIds.addAll(updatedClone.getLaterPlayerTeams().keySet());
+
 		Set<String> firstTeamPlayers;
 		Set<String> laterTeamPlayers;
 		Set<String> newFirstTeamPlayers;
@@ -345,9 +349,6 @@ public class AdvancementRecord {
 		int currentComparedToNewRecord = mInstant.compareTo(newRecord.getInstant());
 		if (currentComparedToNewRecord < 0) {
 			// Current was faster.
-			teamIds = new HashSet<String>(newRecord.getFirstPlayerTeams().keySet());
-			teamIds.addAll(newRecord.getLaterPlayerTeams().keySet());
-
 			for (String teamId : teamIds) {
 				firstTeamPlayers = updatedClone.mFirstPlayerTeams.get(teamId);
 				laterTeamPlayers = updatedClone.mLaterPlayerTeams.get(teamId);
@@ -382,9 +383,6 @@ public class AdvancementRecord {
 			}
 		} else if (currentComparedToNewRecord == 0) {
 			// Same time!
-			teamIds = new HashSet<String>(newRecord.getFirstPlayerTeams().keySet());
-			teamIds.addAll(newRecord.getLaterPlayerTeams().keySet());
-
 			for (String teamId : teamIds) {
 				firstTeamPlayers = updatedClone.mFirstPlayerTeams.get(teamId);
 				laterTeamPlayers = updatedClone.mLaterPlayerTeams.get(teamId);
@@ -426,8 +424,9 @@ public class AdvancementRecord {
 			}
 		} else {
 			// New record was faster.
-			teamIds = new HashSet<String>(newRecord.getFirstPlayerTeams().keySet());
-			teamIds.addAll(newRecord.getLaterPlayerTeams().keySet());
+
+			// Update the instant...
+			updatedClone.mInstant = newRecord.getInstant();
 
 			for (String teamId : teamIds) {
 				firstTeamPlayers = updatedClone.mFirstPlayerTeams.get(teamId);
@@ -447,9 +446,6 @@ public class AdvancementRecord {
 				if (newLaterTeamPlayers == null) {
 					newLaterTeamPlayers = new HashSet<String>();
 				}
-
-				// Update the instant...
-				updatedClone.mInstant = newRecord.getInstant();
 
 				// ...copy current first and new later to later...
 				laterTeamPlayers.addAll(firstTeamPlayers);
@@ -495,7 +491,7 @@ public class AdvancementRecord {
 			for (String player : entry.getValue()) {
 				teamPlayers.add(player);
 			}
-			firstPlayerTeams.add(teamId, teamPlayers);
+			laterPlayerTeams.add(teamId, teamPlayers);
 		}
 
 		JsonObject record = new JsonObject();
