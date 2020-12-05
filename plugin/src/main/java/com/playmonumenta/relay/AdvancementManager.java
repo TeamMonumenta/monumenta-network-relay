@@ -165,6 +165,7 @@ public class AdvancementManager implements Listener {
 			return;
 		}
 		mWatchedTeams.put(teamId, displayName);
+		saveState();
 	}
 
 	public void broadcastAllAdvancementRecords() {
@@ -189,7 +190,7 @@ public class AdvancementManager implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void playerAdvancementDoneEvent(PlayerAdvancementDoneEvent event) throws Exception {
 		Player player = event.getPlayer();
-		Team team = DataPackUtils.getTeam(player);
+		Team team = DataPackUtils.getPlayerTeam(player);
 		String teamId = "NoTeam";
 		if (team != null) {
 			teamId = team.getName();
@@ -376,10 +377,13 @@ public class AdvancementManager implements Listener {
 	private Map<String, String> getCommandReplacements(String advancementId, JsonObject advancementJson, String teamId) {
 		Team team = DataPackUtils.getTeam(teamId);
 		String teamColor = null;
-		String teamDisplayName = mWatchedTeams.get(teamId);
+		String teamDisplayName = null;
 		String teamPrefix = null;
 		String teamSuffix = null;
-		if (team != null) {
+		String rawJsonTeamDisplayName = mWatchedTeams.get(teamId);
+		if (team == null) {
+			mPlugin.getLogger().warning("No such team " + teamId);
+		} else {
 			if (team.getColor() != null) {
 				teamColor = team.getColor().name().toLowerCase();
 			}
@@ -394,6 +398,9 @@ public class AdvancementManager implements Listener {
 		}
 		if (teamDisplayName == null) {
 			teamDisplayName = teamId;
+		}
+		if (rawJsonTeamDisplayName == null) {
+			rawJsonTeamDisplayName = "\"" + teamId.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
 		}
 		if (teamPrefix == null) {
 			teamPrefix = "";
@@ -415,7 +422,8 @@ public class AdvancementManager implements Listener {
 		commandReplacements.put("\"__raw_json_advancement__\"", rawJsonAdvancement);
 		commandReplacements.put("__team_id__", teamId);
 		commandReplacements.put("__team_color__", teamColor);
-		commandReplacements.put("\"__team_display_name__\"", teamDisplayName);
+		commandReplacements.put("__team_display_name__", teamDisplayName);
+		commandReplacements.put("\"__raw_json_team_display_name__\"", rawJsonTeamDisplayName);
 		commandReplacements.put("__team_prefix__", teamPrefix);
 		commandReplacements.put("__team_suffix__", teamSuffix);
 

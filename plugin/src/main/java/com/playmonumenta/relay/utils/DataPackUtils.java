@@ -183,7 +183,7 @@ public class DataPackUtils {
 		String playerUuid = player.getUniqueId().toString();
 
 		// Team part
-		Team team = getTeam(player);
+		Team team = getPlayerTeam(player);
 		String teamColor = "reset";
 		String teamPrefix = "";
 		String teamSuffix = "";
@@ -331,19 +331,26 @@ public class DataPackUtils {
 		return instant;
 	}
 
-	public static Team getTeam(Player player) {
+	public static Team getPlayerTeam(Player player) {
 		if (player == null) {
 			return null;
 		}
 		String playerName = player.getName();
-		return getTeam(playerName);
+		return getPlayerTeam(playerName);
 	}
 
-	public static Team getTeam(String entry) {
+	public static Team getPlayerTeam(String entry) {
 		if (entry == null) {
 			return null;
 		}
 		return Bukkit.getScoreboardManager().getMainScoreboard().getEntryTeam(entry);
+	}
+
+	public static Team getTeam(String teamId) {
+		if (teamId == null) {
+			return null;
+		}
+		return Bukkit.getScoreboardManager().getMainScoreboard().getTeam(teamId);
 	}
 
 	public static boolean isTeamAnnouncedToChat(JsonObject advancementJson) {

@@ -73,8 +73,8 @@ public class AdvancementRecord {
 
 		String playerName = player.getName();
 		String playerTeam = "NoTeam";
-		if (DataPackUtils.getTeam(player) != null) {
-			playerTeam = DataPackUtils.getTeam(player).getName();
+		if (DataPackUtils.getPlayerTeam(player) != null) {
+			playerTeam = DataPackUtils.getPlayerTeam(player).getName();
 		}
 		Set<String> playerNames = mFirstPlayerTeams.get(playerTeam);
 		if (playerNames == null) {
