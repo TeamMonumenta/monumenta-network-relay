@@ -27,13 +27,6 @@ public class MonumentaRelay extends JavaPlugin {
 		GlobalChatCommand.register(this);
 		SetupTeamCommand.register(this);
 		RelayReloadCommand.register(this);
-
-		try {
-			mHttpManager = new HttpManager(this);
-		} catch (IOException err) {
-			getLogger().warning("HTTP manager failed to start");
-			err.printStackTrace();
-		}
 	}
 
 	@Override
@@ -45,7 +38,15 @@ public class MonumentaRelay extends JavaPlugin {
 		// Load info.
 		reloadMonumentaConfig(null);
 
-		mHttpManager.start();
+		if (mHttpManager == null) {
+			try {
+				mHttpManager = new HttpManager(this);
+				mHttpManager.start();
+			} catch (IOException err) {
+				getLogger().warning("HTTP manager failed to start");
+				err.printStackTrace();
+			}
+		}
 
 		try {
 			mSocketManager = new SocketManager(this);
