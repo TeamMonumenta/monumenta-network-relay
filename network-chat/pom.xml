@@ -44,7 +44,7 @@
         <dependency>
             <groupId>com.playmonumenta</groupId>
             <artifactId>network-relay</artifactId>
-            <version>c34977c-dirty</version>
+            <version>0.1-6-g1d8a05e</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
