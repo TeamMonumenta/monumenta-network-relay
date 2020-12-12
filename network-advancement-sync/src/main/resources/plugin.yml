@@ -1,7 +1,7 @@
-name: MonumentaRelay
-main: com.playmonumenta.relay.MonumentaRelay
+name: MonumentaAdvancementSync
+main: com.playmonumenta.advancementsync.AdvancementSyncPlugin
 version: 0.0.1
 api-version: 1.13
-depend: [CommandAPI]
+depend: [CommandAPI,MonumentaNetworkRelay]
 softdepend: []
 commands:

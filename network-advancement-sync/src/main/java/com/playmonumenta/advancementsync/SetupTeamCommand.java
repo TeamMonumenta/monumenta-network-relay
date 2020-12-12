@@ -1,28 +1,22 @@
-package com.playmonumenta.relay;
+package com.playmonumenta.advancementsync;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.playmonumenta.relay.AdvancementManager;
-import com.playmonumenta.relay.utils.DataPackUtils;
+import com.playmonumenta.advancementsync.utils.DataPackUtils;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ProxiedCommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Team;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.TeamArgument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import dev.jorel.commandapi.arguments.TeamArgument;
 
 public class SetupTeamCommand {
 	static final String COMMAND = "setupteam";
 
-	public static void register(Plugin plugin) {
+	public static void register() {
 		CommandPermission perms = CommandPermission.fromString("monumenta.command.setupteam");
 
 		new CommandAPICommand(COMMAND)
@@ -31,12 +25,12 @@ public class SetupTeamCommand {
                 Bukkit.getScoreboardManager().getMainScoreboard().getTeams().toArray(new Team[0])))
 			.withArguments(new GreedyStringArgument("new display name, raw json text"))
 			.executes((sender, args) -> {
-				run(plugin, sender, (String)args[0], (String)args[1]);
+				run((String)args[0], (String)args[1]);
 			})
 			.register();
 	}
 
-	private static void run(Plugin plugin, CommandSender sender, String teamId, String teamName) {
+	private static void run(String teamId, String teamName) {
 		Team team = DataPackUtils.getTeam(teamId);
 		String teamColor = null;
 		String teamDisplayName = null;

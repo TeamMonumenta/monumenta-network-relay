@@ -1,4 +1,4 @@
-package com.playmonumenta.relay.utils;
+package com.playmonumenta.advancementsync.utils;
 
 import java.io.File;
 import java.io.FileInputStream;

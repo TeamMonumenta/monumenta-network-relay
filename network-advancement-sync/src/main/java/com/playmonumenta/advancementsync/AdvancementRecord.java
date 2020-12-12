@@ -1,4 +1,4 @@
-package com.playmonumenta.relay;
+package com.playmonumenta.advancementsync;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.playmonumenta.relay.utils.DataPackUtils;
+import com.playmonumenta.advancementsync.utils.DataPackUtils;
 
 import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
@@ -91,7 +91,6 @@ public class AdvancementRecord {
 			throw new Exception("record was null");
 		}
 
-		JsonPrimitive advancementPrimitive = record.getAsJsonPrimitive("advancement");
 		JsonPrimitive instantPrimitive = record.getAsJsonPrimitive("instant");
 		JsonObject firstPlayerTeamsObject = record.getAsJsonObject("first_player_teams");
 		JsonObject laterPlayerTeamsObject = record.getAsJsonObject("later_player_teams");
@@ -102,8 +101,6 @@ public class AdvancementRecord {
 
 			String teamId;
 			Set<String> playerNames;
-			String playerName;
-			String team;
 
 			for (Map.Entry<String, JsonElement> entry : firstPlayerTeamsObject.entrySet()) {
 				teamId = entry.getKey();
