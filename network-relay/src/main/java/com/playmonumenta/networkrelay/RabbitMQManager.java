@@ -149,6 +149,10 @@ public class RabbitMQManager {
 		return INSTANCE;
 	}
 
+	protected String getShardName() {
+		return mShardName;
+	}
+
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data) throws Exception {
 		/* Used in case the specific packet type overrides properties like expiration / time to live */
 		// TODO: Hook this up?

@@ -19,7 +19,7 @@ import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 
 public class BroadcastCommand implements Listener {
-	public static boolean ENABLED = false;
+	private static boolean ENABLED = false;
 
 	private final Logger mLogger;
 
@@ -36,6 +36,10 @@ public class BroadcastCommand implements Listener {
 	}
 
 	private static void run(Plugin plugin, CommandSender sender, String command) {
+		if (!ENABLED) {
+			sender.sendMessage("This command is not enabled");
+		}
+
 		/* Get the player's name, if any */
 		String name = "";
 		if (sender instanceof Player) {
