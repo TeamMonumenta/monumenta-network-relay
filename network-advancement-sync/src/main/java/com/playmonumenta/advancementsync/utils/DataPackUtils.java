@@ -1,4 +1,4 @@
-package com.playmonumenta.relay.utils;
+package com.playmonumenta.advancementsync.utils;
 
 import java.io.File;
 import java.time.Instant;
@@ -6,24 +6,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import org.bukkit.advancement.Advancement;
-import org.bukkit.advancement.AdvancementProgress;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.NamespacedKey;
-import org.bukkit.scoreboard.Team;
-import org.bukkit.World;
-
-import dev.jorel.commandapi.wrappers.SimpleFunctionWrapper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+
+import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.advancement.Advancement;
+import org.bukkit.advancement.AdvancementProgress;
+import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Team;
+
+import dev.jorel.commandapi.wrappers.SimpleFunctionWrapper;
 
 public class DataPackUtils {
 	// Returns advancement json object for a datapack, or null.
@@ -198,7 +196,7 @@ public class DataPackUtils {
 				teamSuffix = "";
 			}
 		}
-		
+
 		JsonObject playerTeamPrefixComponent = new JsonObject();
 		playerTeamPrefixComponent.addProperty("text", teamPrefix);
 
@@ -254,10 +252,6 @@ public class DataPackUtils {
 		if (dataPackRoot.isDirectory()) {
 			// Attempt to read as a datapack folder
 			File advancementFile = new File(dataPackRoot, pathWithinDataPack.replace('/', File.separatorChar));
-			if (advancementFile == null) {
-				// Advancement not found, but it could be in another datapack.
-				return null;
-			}
 
 			try {
 				content = FileUtils.readFile(advancementFile.getPath());

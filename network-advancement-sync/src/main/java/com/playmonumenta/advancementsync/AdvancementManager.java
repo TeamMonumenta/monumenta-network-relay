@@ -1,18 +1,22 @@
-package com.playmonumenta.relay;
+package com.playmonumenta.advancementsync;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.logging.Level;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
-import com.playmonumenta.relay.network.SocketManager;
-import com.playmonumenta.relay.utils.DataPackUtils;
-import com.playmonumenta.relay.utils.FileUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
+import com.playmonumenta.advancementsync.utils.DataPackUtils;
+import com.playmonumenta.advancementsync.utils.FileUtils;
+import com.playmonumenta.networkrelay.NetworkRelayAPI;
+import com.playmonumenta.networkrelay.NetworkRelayMessageEvent;
 
-import org.bukkit.advancement.Advancement;
 import org.bukkit.Bukkit;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -22,11 +26,10 @@ import org.bukkit.event.world.WorldSaveEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Team;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 public class AdvancementManager implements Listener {
+	public static final String ADVANCEMENT_RECORD_CHANNEL = "Monumenta.Broadcast.AdvancementRecord";
+	public static final String ADVANCEMENT_REQUEST_RECORD_CHANNEL = "Monumenta.Broadcast.AdvancementRecordRequest";
+
 	private static AdvancementManager INSTANCE = null;
 	private static Plugin mPlugin = null;
 	private static File mConfigFile;
@@ -90,7 +93,7 @@ public class AdvancementManager implements Listener {
 		broadcastAllAdvancementRecords();
 
 		try {
-			SocketManager.broadcastAdvancementRecordRequest(mPlugin);
+			broadcastAdvancementRecordRequest();
 		} catch (Exception e) {
 			mPlugin.getLogger().log(Level.SEVERE, "Failed to request remote records.");
 		}
@@ -168,18 +171,77 @@ public class AdvancementManager implements Listener {
 		saveState();
 	}
 
-	public void broadcastAllAdvancementRecords() {
+
+	@EventHandler(priority = EventPriority.LOW)
+	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
+		switch (event.getChannel()) {
+		case ADVANCEMENT_REQUEST_RECORD_CHANNEL:
+			broadcastAllAdvancementRecords();
+			break;
+		case ADVANCEMENT_RECORD_CHANNEL:
+			JsonObject data = event.getData();
+			if (data == null) {
+				mPlugin.getLogger().severe("Got " + ADVANCEMENT_RECORD_CHANNEL + " message with null data)");
+				return;
+			}
+
+			JsonPrimitive advancementIdJson = data.getAsJsonPrimitive("advancementId");
+			if (advancementIdJson == null ||
+				!advancementIdJson.isString()) {
+				mPlugin.getLogger().severe("AdvancementRecordPacket failed to parse required string field 'advancementId'");
+				return;
+			}
+			String advancementId = advancementIdJson.getAsString();
+			if (advancementId == null ||
+				advancementId.isEmpty()) {
+				mPlugin.getLogger().severe("AdvancementRecordPacket failed to parse required string field 'advancementId'");
+				return;
+			}
+			JsonObject recordJson = data.getAsJsonObject("record");
+			if (recordJson == null) {
+				mPlugin.getLogger().severe("AdvancementRecordPacket failed to parse required object field 'record'");
+				return;
+			}
+
+			try {
+				AdvancementRecord record = new AdvancementRecord(recordJson);
+				AdvancementManager.getInstance().addRemoteRecord(advancementId, record);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return;
+			}
+			break;
+		}
+	}
+
+	private void broadcastAllAdvancementRecords() {
 		// Broadcast local advancement records; remote servers will ignore non-changes
 		for (Map.Entry<String, AdvancementRecord> recordPair : mRecords.entrySet()) {
 			String advancementId = recordPair.getKey();
 			AdvancementRecord record = recordPair.getValue();
 
 			try {
-				SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, record);
+				broadcastAdvancementRecord(advancementId, record);
 			} catch (Exception e) {
 				mPlugin.getLogger().warning("Failed to broadcast record");
 			}
 		}
+	}
+
+	private void broadcastAdvancementRecordRequest() throws Exception {
+		NetworkRelayAPI.sendBroadcastMessage(ADVANCEMENT_REQUEST_RECORD_CHANNEL, null);
+
+		mPlugin.getLogger().fine("Requested remote advancement records");
+	}
+
+	private void broadcastAdvancementRecord(String advancementId, AdvancementRecord record) throws Exception {
+		JsonObject data = new JsonObject();
+		data.addProperty("advancementId", advancementId);
+		data.add("record", record.toJson());
+
+		NetworkRelayAPI.sendBroadcastMessage(ADVANCEMENT_RECORD_CHANNEL, data);
+
+		mPlugin.getLogger().fine("Requested record of advancement '" + advancementId + "'");
 	}
 
 	@EventHandler(priority = EventPriority.LOW)
@@ -204,7 +266,6 @@ public class AdvancementManager implements Listener {
 		String advancementId = advancement.getKey().toString();
 
 		// Announce that the player earned the advancement to other shards
-		JsonObject advancementJson = null;
 		boolean announceByTeam = false;
 		String announcementCommand = null;
 		for (JsonObject testAdvancementJson : DataPackUtils.getAdvancementJsonObjects(advancement)) {
@@ -218,7 +279,6 @@ public class AdvancementManager implements Listener {
 
 			announcementCommand = DataPackUtils.getChatAnnouncement(player, testAdvancementJson);
 			if (announcementCommand != null) {
-				advancementJson = testAdvancementJson;
 				break;
 			}
 		}
@@ -229,10 +289,10 @@ public class AdvancementManager implements Listener {
 		// Process the advancement records
 		if (!announceByTeam) {
 			String announceElsewhereCommand = "execute unless entity " + player.getName() + " run " + announcementCommand;
-			SocketManager.broadcastCommand(mPlugin, announceElsewhereCommand);
+			NetworkRelayAPI.sendBroadcastCommand(announceElsewhereCommand);
 		}
 		AdvancementRecord newRecord = new AdvancementRecord(player, advancement);
-		SocketManager.broadcastAdvancementRecord(mPlugin, advancementId, newRecord);
+		broadcastAdvancementRecord(advancementId, newRecord);
 	}
 
 	public void addRemoteRecord(String advancementId, AdvancementRecord remoteRecord) {
@@ -241,7 +301,7 @@ public class AdvancementManager implements Listener {
 		}
 
 		JsonObject advancementJson = null;
-		Advancement advancement = Bukkit.getAdvancement​(DataPackUtils.getNamespacedKey(advancementId));
+		Advancement advancement = Bukkit.getAdvancement(DataPackUtils.getNamespacedKey(advancementId));
 		for (JsonObject testAdvancementJson : DataPackUtils.getAdvancementJsonObjects(advancement)) {
 			if (!DataPackUtils.isTeamAnnouncedToChat(testAdvancementJson) && !DataPackUtils.isAnnouncedToChat(testAdvancementJson)) {
 				continue;
