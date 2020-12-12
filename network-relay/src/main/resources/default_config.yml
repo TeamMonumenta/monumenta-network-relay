@@ -1,0 +1,18 @@
+# If this is true, this server will be able to send /broadcastcommand messages
+broadcast_command_sending_enabled = true
+
+# If this is true, this server will be able to recieve /broadcastcommand messages
+broadcast_command_receiving_enabled = true
+
+# This is the name for this server shard, which defines what name this server will listen for messages on.
+# Messages sent to this name will arrive here
+# This name must be globally unique for messages to route correctly - use a different one on each server!
+shard_name = "default_shard"
+
+# This describes how to connect to your rabbitmq server
+# Default arguments here are:
+#   user = guest (this is the default username if authentication is disabled)
+#   pass = guest (this is the default password if authentication is disabled)
+#   hostname = 127.0.0.1 (change this if rabbitmq is running on a different server)
+#   port = 5672 (the default port, you probably don't need to change this)
+rabbitmq_uri = "amqp://guest:guest@127.0.0.1:5672/"
