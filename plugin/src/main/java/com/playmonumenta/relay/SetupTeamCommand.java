@@ -69,7 +69,7 @@ public class SetupTeamCommand {
 		commandReplacements.put("__team_display_name__", teamDisplayName);
 		commandReplacements.put("__team_prefix__", teamPrefix);
 		commandReplacements.put("__team_suffix__", teamSuffix);
-		commandReplacements.put("__new_display_name__", teamName);
+		commandReplacements.put("\"__new_display_name__\"", teamName);
 
 		DataPackUtils.runFunctionWithReplacements("rivals",
 		                                          "setup_team",
