@@ -7,16 +7,38 @@ channels or sockets, which both have significant limitations.
 It was originally developed for [Monumenta](https://www.playmonumenta.com/), a
 free community developed Complete-The-Monument MMORPG Minecraft server.
 
+## Maven dependency
+```xml
+    <repositories>
+        <repository>
+            <id>monumenta-network-relay</id>
+			<url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.playmonumenta</groupId>
+            <artifactId>network-relay</artifactId>
+            <version>0.2</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+```
+
+## API
+
+
 ## Licensing
-For the main plugin here (MonumentaNetworkRelay), you are free to use this as a
-dependency in your plugins without restriction or obligation. If you modify or
-create derivative work based on the code in this plugin (i.e. if you do
-anything other than just depend on this plugin and use its API), you must
+The main plugin here (MonumentaNetworkRelay, in the src directory), is free to
+use as a dependency in your plugins without restriction or obligation. If you
+modify or create derivative work based on the code in this plugin (i.e. if you
+do anything other than just depend on this plugin and use its API), you must
 release that code also with an AGPL-3 compatible license.
 
 You may also distribute this plugin in binary/compiled format (i.e. .jar) so
 long as it retains the MonumentaNetworkRelay name.
 
-For the example plugin under the network-chat-example folder, this code is
-released without restriction under the [WTFPL](http://www.wtfpl.net/) license.
-You may do whatever you want with this example code.
+The example plugin under the network-chat-example folder is released without
+restriction under the [WTFPL](http://www.wtfpl.net/) license.  You may do
+whatever you want with this example code.
