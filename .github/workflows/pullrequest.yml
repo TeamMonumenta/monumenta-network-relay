@@ -48,3 +48,12 @@ jobs:
 
         ./mvn_version_wrapper.sh pmd:pmd --batch-mode --no-snapshot-updates
         cat target/pmd.txt | reviewdog -efm="%f:%l:	%m" -name="pmd" -reporter=github-pr-check
+
+    - name: Build and report warnings for example plugin
+      env:
+        REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        ./compile.sh --batch-mode --no-snapshot-updates | tee compile.log
+        set +o pipefail
+        cat compile.log | grep '^\[WARNING\].*\.java' | reviewdog -efm="[WARNING] %f:[%l,%c] %m" -name="compiler-warnings (example plugin)" -reporter=github-pr-check
+        set -o pipefail
