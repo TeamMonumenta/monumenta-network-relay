@@ -21,7 +21,7 @@ You can download the latest version of this plugin from [GitHub Packages](https:
     <dependencies>
         <dependency>
             <groupId>com.playmonumenta</groupId>
-            <artifactId>network-relay</artifactId>
+            <artifactId>monumenta-network-relay</artifactId>
             <version>0.2</version>
             <scope>provided</scope>
         </dependency>
@@ -40,7 +40,7 @@ do anything other than just depend on this plugin and use its API), you must
 release that code also with an AGPL-3 compatible license.
 
 You may also distribute this plugin in binary/compiled format (i.e. .jar) so
-long as it retains the MonumentaNetworkRelay name.
+long as it retains the monumenta-network-relay name.
 
 The example plugin under the network-chat-example folder is released without
 restriction under the [WTFPL](http://www.wtfpl.net/) license.  You may do
