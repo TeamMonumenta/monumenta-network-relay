@@ -1,5 +1,4 @@
 # Monumenta Network Relay
-
 This is a library plugin for Minecraft/Bukkit/Spigot/Paper that relays messages
 between servers using RabbitMQ. This is a replacement for plugin messaging
 channels or sockets, which both have significant limitations.
@@ -7,12 +6,15 @@ channels or sockets, which both have significant limitations.
 It was originally developed for [Monumenta](https://www.playmonumenta.com/), a
 free community developed Complete-The-Monument MMORPG Minecraft server.
 
+## Download
+You can download the latest version of this plugin from [GitHub Packages](https://github.com/TeamMonumenta/monumenta-network-relay/packages).
+
 ## Maven dependency
 ```xml
     <repositories>
         <repository>
             <id>monumenta-network-relay</id>
-			<url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
+            <url>https://raw.githubusercontent.com/TeamMonumenta/monumenta-network-relay/master/mvn-repo/</url>
         </repository>
     </repositories>
 
@@ -27,7 +29,8 @@ free community developed Complete-The-Monument MMORPG Minecraft server.
 ```
 
 ## API
-
+See the main API file here:
+[src/main/java/com/playmonumenta/networkrelay/NetworkRelayAPI.java](src/main/java/com/playmonumenta/networkrelay/NetworkRelayAPI.java)
 
 ## Licensing
 The main plugin here (MonumentaNetworkRelay, in the src directory), is free to
