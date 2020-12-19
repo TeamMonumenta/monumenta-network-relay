@@ -1,4 +1,4 @@
-package com.playmonumenta.networkchat;
+package com.playmonumenta.networkchatexample;
 
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
 
