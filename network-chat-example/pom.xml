@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.playmonumenta</groupId>
-    <artifactId>networkchat</artifactId>
+    <artifactId>networkchatexample</artifactId>
     <version>dev</version>
 
     <properties>
@@ -50,7 +50,7 @@
     </dependencies>
 
     <build>
-        <finalName>MonumentaNetworkChat_${project.version}_${maven.build.timestamp}</finalName>
+        <finalName>NetworkChatExample_${project.version}_${maven.build.timestamp}</finalName>
         <pluginManagement>
             <plugins>
                 <plugin>
