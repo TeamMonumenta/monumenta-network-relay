@@ -10,6 +10,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NetworkChat extends JavaPlugin {
+	public ChatManager mChatManager = null;
+
 	@Override
 	public void onLoad() {
 		GlobalChatCommand.register(this);
@@ -43,6 +45,8 @@ public class NetworkChat extends JavaPlugin {
 
 		/* Echo config */
 		getLogger().info("join_messages_enabled=" + joinMessagesEnabled);
+
+		mChatManager = ChatManager.getInstance(this);
 
 		getServer().getPluginManager().registerEvents(new ChatListener(joinMessagesEnabled), this);
 	}
