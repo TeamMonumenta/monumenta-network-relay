@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,38 +37,25 @@ public class NetworkRelay extends JavaPlugin {
 		}
 
 		/* Load the config file & parse it */
-		boolean broadcastCommandSendingEnabled = true;
-		boolean broadcastCommandReceivingEnabled = true;
-		String shardName = "default_shard";
-		String rabbitURI = "amqp://guest:guest@127.0.0.1:5672/";
-
 		YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
-		if (!config.isBoolean("broadcast_command_sending_enabled")) {
-			broadcastCommandSendingEnabled = config.getBoolean("broadcast_command_sending_enabled");
-		}
-		if (!config.isBoolean("broadcast_command_receiving_enabled")) {
-			broadcastCommandReceivingEnabled = config.getBoolean("broadcast_command_receiving_enabled");
-		}
-		if (!config.isString("shard_name")) {
-			shardName = config.getString("shard_name");
-		}
-		if (!config.isString("rabbitmq_uri")) {
-			rabbitURI = config.getString("rabbitmq_uri");
-		}
+		boolean broadcastCommandSendingEnabled = config.getBoolean("broadcast-command-sending-enabled", true);
+		boolean broadcastCommandReceivingEnabled = config.getBoolean("broadcast-command-receiving-enabled", true);
+		String shardName = config.getString("shard-name", "default-shard");
+		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 
 		/* Echo config */
-		getLogger().info("broadcast_command_sending_enabled=" + broadcastCommandSendingEnabled);
-		getLogger().info("broadcast_command_receiving_enabled=" + broadcastCommandReceivingEnabled);
-		if (rabbitURI == "amqp://guest:guest@127.0.0.1:5672/") {
-			getLogger().info("rabbitmq_uri=<set>");
+		getLogger().info("broadcast-command-sending-enabled=" + broadcastCommandSendingEnabled);
+		getLogger().info("broadcast-command-receiving-enabled=" + broadcastCommandReceivingEnabled);
+		if (rabbitURI == "amqp://guest:guest@127.0.0.1:5672") {
+			getLogger().info("rabbitmq-uri=<default>");
 		} else {
-			getLogger().info("rabbitmq_uri=<default>");
+			getLogger().info("rabbitmq-uri=<set>");
 		}
-		if (shardName == "default_shard") {
-			getLogger().info("shard_name=" + shardName);
+		if (shardName == "default-shard") {
+			getLogger().warning("shard-name is default value 'default-shard' which should be changed!");
 		} else {
-			getLogger().warning("shard_name is default value 'default_shard' which should be changed!");
+			getLogger().info("shard-name=" + shardName);
 		}
 
 		/* Start relay components */
