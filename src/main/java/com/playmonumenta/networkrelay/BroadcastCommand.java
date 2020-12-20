@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import java.util.LinkedHashMap;
 import java.util.logging.Logger;
 
 import com.google.gson.JsonObject;
@@ -16,6 +17,7 @@ import org.bukkit.plugin.Plugin;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 
 public class BroadcastCommand implements Listener {
@@ -26,9 +28,11 @@ public class BroadcastCommand implements Listener {
 	protected BroadcastCommand(Plugin plugin) {
 		mLogger = plugin.getLogger();
 
+		LinkedHashMap<String, Argument> arguments = new LinkedHashMap<>();
+		arguments.put("command", new GreedyStringArgument());
 		new CommandAPICommand("broadcastcommand")
 			.withPermission(CommandPermission.fromString("monumenta.command.broadcastcommand"))
-			.withArguments(new GreedyStringArgument("command"))
+			.withArguments(arguments)
 			.executes((sender, args) -> {
 				run(plugin, sender, (String)args[0]);
 			})
