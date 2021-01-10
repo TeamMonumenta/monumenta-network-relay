@@ -24,6 +24,7 @@ public class RabbitMQManager {
 	private final Gson mGson = new Gson();
 	private final Logger mLogger;
 	private final Channel mChannel;
+	private final Connection mConnection;
 	private final String mShardName;
 
 	/*
@@ -45,8 +46,8 @@ public class RabbitMQManager {
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setUri(rabbitURI);
 
-		Connection connection = factory.newConnection();
-		mChannel = connection.createChannel();
+		mConnection = factory.newConnection();
+		mChannel = mConnection.createChannel();
 
 		/* Declare a broadcast exchange which routes messages to all attached queues */
 		mChannel.exchangeDeclare(BROADCAST_EXCHANGE_NAME, "fanout");
@@ -140,7 +141,12 @@ public class RabbitMQManager {
 			try {
 				mChannel.basicCancel(CONSUMER_TAG);
 			} catch (Exception ex) {
-				mLogger.info("Failed to cancel rabbit consumer");
+				mLogger.warning("Failed to cancel rabbit consumer: " + ex.getMessage());
+			}
+			try {
+				mConnection.close();
+			} catch (Exception ex) {
+				mLogger.warning("Failed to close rabbit channel: " + ex.getMessage());
 			}
 		}
 	}
