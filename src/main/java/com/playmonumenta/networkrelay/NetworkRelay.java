@@ -13,10 +13,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class NetworkRelay extends JavaPlugin {
 	private RabbitMQManager mRabbitMQManager = null;
 	private BroadcastCommand mBroadcastCommand = null;
+	private ListShardsCommand mListShardsCommand = null;
 
 	@Override
 	public void onLoad() {
 		mBroadcastCommand = new BroadcastCommand(this);
+		mListShardsCommand = new ListShardsCommand();
 	}
 
 	@Override
@@ -43,6 +45,8 @@ public class NetworkRelay extends JavaPlugin {
 		boolean broadcastCommandReceivingEnabled = config.getBoolean("broadcast-command-receiving-enabled", true);
 		String shardName = config.getString("shard-name", "default-shard");
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
+		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
+		int destinationTimeout = config.getInt("destination-timeout", 5);
 
 		/* Echo config */
 		getLogger().info("broadcast-command-sending-enabled=" + broadcastCommandSendingEnabled);
@@ -57,6 +61,18 @@ public class NetworkRelay extends JavaPlugin {
 		} else {
 			getLogger().info("shard-name=" + shardName);
 		}
+		if (heartbeatInterval <= 0) {
+			getLogger().warning("heartbeat-interval is <= 0 which is invalid! Using default of 1.");
+			heartbeatInterval = 1;
+		} else {
+			getLogger().info("heartbeat-interval=" + heartbeatInterval);
+		}
+		if (destinationTimeout <= 1) {
+			getLogger().warning("destination-timeout is <= 1 which is invalid! Using default of 5.");
+			destinationTimeout = 5;
+		} else {
+			getLogger().info("destination-timeout=" + destinationTimeout);
+		}
 
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
@@ -65,7 +81,7 @@ public class NetworkRelay extends JavaPlugin {
 		}
 
 		try {
-			mRabbitMQManager = new RabbitMQManager(this, shardName, rabbitURI);
+			mRabbitMQManager = new RabbitMQManager(this, shardName, rabbitURI, heartbeatInterval, destinationTimeout);
 		} catch (Exception e) {
 			getLogger().severe("RabbitMQ manager failed to initialize. This plugin will not function");
 			e.printStackTrace();

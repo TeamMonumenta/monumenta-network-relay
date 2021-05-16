@@ -2,6 +2,12 @@ package com.playmonumenta.networkrelay;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
@@ -14,6 +20,7 @@ import com.rabbitmq.client.DeliverCallback;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class RabbitMQManager {
 	private static final String CONSUMER_TAG = "consumerTag";
@@ -25,7 +32,10 @@ public class RabbitMQManager {
 	private final Logger mLogger;
 	private final Channel mChannel;
 	private final Connection mConnection;
+	private final BukkitRunnable mHeartbeatRunnable;
 	private final String mShardName;
+	private final int mHeartbeatInterval;
+	private final int mDestinationTimeout;
 
 	/*
 	 * If mShutdown = false, this is expected to run normally
@@ -39,9 +49,50 @@ public class RabbitMQManager {
 	 */
 	private boolean mConsumerAlive = false;
 
-	protected RabbitMQManager(Plugin plugin, String shardName, String rabbitURI) throws Exception {
+	/*
+	 * Last time a message was sent.
+	 * If this was more than mHeartbeatInterval seconds ago,
+	 * send another heartbeat message.
+	 */
+	private Instant mLastHeartbeat = Instant.MIN;
+
+	/*
+	 * Last time a message was received from a destination.
+	 * If this was more than mDestinationTimeout seconds ago,
+	 * consider that destination offline.
+	 * Offline destinations are removed from the map.
+	 */
+	private Map<String, Instant> mDestinationLastHeartbeat = new HashMap<>();
+
+	protected RabbitMQManager(Plugin plugin, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout) throws Exception {
 		mLogger = plugin.getLogger();
 		mShardName = shardName;
+		mHeartbeatInterval = heartbeatInterval;
+		mDestinationTimeout = destinationTimeout;
+
+		mHeartbeatRunnable = new BukkitRunnable() {
+			@Override
+			public void run() {
+				Instant now = Instant.now();
+				if (now.minusSeconds(mHeartbeatInterval).compareTo(mLastHeartbeat) >= 0) {
+					sendHeartbeat();
+				}
+
+				Instant timeoutThreshhold = now.minusSeconds(mDestinationTimeout);
+				Iterator<Map.Entry<String, Instant>> iter = mDestinationLastHeartbeat.entrySet().iterator();
+				while (iter.hasNext()) {
+					Map.Entry<String, Instant> entry = iter.next();
+					String dest = entry.getKey();
+					Instant lastHeartbeat = entry.getValue();
+
+					if (timeoutThreshhold.compareTo(lastHeartbeat) >= 0) {
+						sendDestOfflineEvent(dest);
+						iter.remove();
+					}
+				}
+			}
+		};
+		mHeartbeatRunnable.runTaskTimer(plugin, 0, 20);
 
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setUri(rabbitURI);
@@ -93,6 +144,19 @@ public class RabbitMQManager {
 				mLogger.fine("Processing message from=" + source + " channel=" + channel);
 				mLogger.finer("data=" + mGson.toJson(data));
 
+				boolean isDestShutdown = false;
+				if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
+					if (data.getAsJsonPrimitive("online").isBoolean()
+					    && data.getAsJsonPrimitive("online").getAsBoolean() == false) {
+						isDestShutdown = true;
+						sendDestOfflineEvent(source);
+						mDestinationLastHeartbeat.remove(source);
+					}
+				}
+				if (!isDestShutdown) {
+					sendDestOnlineEvent(source);
+				}
+
 				try {
 					NetworkRelayMessageEvent event = new NetworkRelayMessageEvent(channel, source, data);
 					Bukkit.getPluginManager().callEvent(event);
@@ -139,9 +203,21 @@ public class RabbitMQManager {
 		mShutdown = true;
 		if (mConsumerAlive) {
 			try {
+				mHeartbeatRunnable.cancel();
+			} catch (Exception ex) {
+				mLogger.warning("Failed to cancel heartbeat runnable: " + ex.getMessage());
+			}
+			try {
 				mChannel.basicCancel(CONSUMER_TAG);
 			} catch (Exception ex) {
 				mLogger.warning("Failed to cancel rabbit consumer: " + ex.getMessage());
+			}
+			try {
+				JsonObject data = new JsonObject();
+				data.addProperty("online", false);
+				sendNetworkMessage("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, data);
+			} catch (Exception ex) {
+				mLogger.warning("Failed to send shutdown heartbeat: " + ex.getMessage());
 			}
 			try {
 				mConnection.close();
@@ -176,6 +252,7 @@ public class RabbitMQManager {
 			if (destination.equals("*")) {
 				/* Broadcast message - send to the broadcast exchange to route to all queues */
 				mChannel.basicPublish(BROADCAST_EXCHANGE_NAME, "", properties, msg);
+				mLastHeartbeat = Instant.now();
 			} else {
 				/* Non-broadcast message - send to the default exchange, routing to the appropriate queue */
 				mChannel.basicPublish("", destination, properties, msg);
@@ -185,6 +262,43 @@ public class RabbitMQManager {
 			mLogger.finer("data=" + mGson.toJson(data));
 		} catch (Exception e) {
 			throw new Exception(String.format("Error sending message destination=" + destination + " channel=" + channel), e);
+		}
+	}
+
+	protected Set<String> getOnlineShardNames() {
+		return new HashSet<String>(mDestinationLastHeartbeat.keySet());
+	}
+
+	private void sendHeartbeat() {
+		try {
+			JsonObject data = new JsonObject();
+			data.addProperty("online", true);
+			sendNetworkMessage("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, data);
+		} catch (Exception ex) {
+			mLogger.warning("Failed to send heartbeat: " + ex.getMessage());
+		}
+	}
+
+	private void sendDestOnlineEvent(String dest) {
+		if (!mDestinationLastHeartbeat.containsKey(dest)) {
+			try {
+				DestOnlineEvent event = new DestOnlineEvent(dest);
+				Bukkit.getPluginManager().callEvent(event);
+			} catch (Exception ex) {
+				mLogger.warning("Failed to send destination online event");
+				ex.printStackTrace();
+			}
+		}
+		mDestinationLastHeartbeat.put(dest, Instant.now());
+	}
+
+	private void sendDestOfflineEvent(String dest) {
+		try {
+			DestOfflineEvent event = new DestOfflineEvent(dest);
+			Bukkit.getPluginManager().callEvent(event);
+		} catch (Exception ex) {
+			mLogger.warning("Failed to send destination offline event");
+			ex.printStackTrace();
 		}
 	}
 }
