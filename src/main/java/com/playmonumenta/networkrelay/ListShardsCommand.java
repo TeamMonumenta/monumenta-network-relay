@@ -1,18 +1,14 @@
 package com.playmonumenta.networkrelay;
 
 import java.util.TreeSet;
-import java.util.logging.Logger;
-
-import com.google.gson.JsonObject;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 
 public class ListShardsCommand {
-	protected ListShardsCommand() {
+	protected static void register() {
 		new CommandAPICommand("listshards")
 			.withPermission(CommandPermission.fromString("monumenta.command.listshards"))
 			.executes((sender, args) -> {

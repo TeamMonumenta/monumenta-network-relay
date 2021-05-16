@@ -13,12 +13,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class NetworkRelay extends JavaPlugin {
 	private RabbitMQManager mRabbitMQManager = null;
 	private BroadcastCommand mBroadcastCommand = null;
-	private ListShardsCommand mListShardsCommand = null;
 
 	@Override
 	public void onLoad() {
 		mBroadcastCommand = new BroadcastCommand(this);
-		mListShardsCommand = new ListShardsCommand();
+		ListShardsCommand.register();
 	}
 
 	@Override
