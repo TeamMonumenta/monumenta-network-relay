@@ -16,3 +16,11 @@ shard-name: "default-shard"
 #   hostname = 127.0.0.1 (change this if rabbitmq is running on a different server)
 #   port = 5672 (the default port, you probably don't need to change this)
 rabbitmq-uri: "amqp://guest:guest@127.0.0.1:5672"
+
+# Time in seconds between broadcasting heartbeat messages
+# Used to show this destination is online
+# To reduce network usage, heartbeat messages are skipped if other messages are sent
+heartbeat-interval: 1
+
+# Time in seconds before destinations are considerd offline
+destination-timeout: 5
