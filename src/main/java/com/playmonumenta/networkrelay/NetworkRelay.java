@@ -5,18 +5,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class NetworkRelay extends JavaPlugin {
 	private RabbitMQManager mRabbitMQManager = null;
 	private BroadcastCommand mBroadcastCommand = null;
+	private CustomLogger mLogger = null;
 
 	@Override
 	public void onLoad() {
 		mBroadcastCommand = new BroadcastCommand(this);
+		ChangeLogLevelCommand.register(this);
 		ListShardsCommand.register();
 	}
 
@@ -92,5 +94,18 @@ public class NetworkRelay extends JavaPlugin {
 		if (mRabbitMQManager != null) {
 			mRabbitMQManager.stop();
 		}
+	}
+
+	@Override
+	public Logger getLogger() {
+		if (mLogger == null) {
+			mLogger = new CustomLogger(super.getLogger(), Level.INFO);
+		}
+		return mLogger;
+	}
+
+	protected void setLogLevel(Level level) {
+		super.getLogger().info("Changing log level to: " + level.toString());
+		getLogger().setLevel(level);
 	}
 }

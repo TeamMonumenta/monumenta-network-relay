@@ -26,13 +26,21 @@ public class BroadcastCommand implements Listener {
 	protected BroadcastCommand(Plugin plugin) {
 		mLogger = plugin.getLogger();
 
-		new CommandAPICommand("broadcastcommand")
-			.withPermission(CommandPermission.fromString("monumenta.command.broadcastcommand"))
+		CommandAPICommand innerCommand = new CommandAPICommand("broadcastcommand")
+			.withPermission(CommandPermission.fromString("monumenta.networkrelay.broadcastcommand"))
 			.withArguments(new GreedyStringArgument("command"))
 			.executes((sender, args) -> {
 				run(plugin, sender, (String)args[0]);
-			})
-			.register();
+			});
+
+		// Register first under the monumenta -> networkRelay namespace
+		new CommandAPICommand("monumenta")
+			.withSubcommand(new CommandAPICommand("networkRelay")
+				.withSubcommand(innerCommand)
+			).register();
+
+		// Then directly, for convenience
+		innerCommand.register();
 	}
 
 	private static void run(Plugin plugin, CommandSender sender, String command) {
