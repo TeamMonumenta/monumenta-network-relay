@@ -9,8 +9,8 @@ import dev.jorel.commandapi.CommandPermission;
 
 public class ListShardsCommand {
 	protected static void register() {
-		new CommandAPICommand("listshards")
-			.withPermission(CommandPermission.fromString("monumenta.command.listshards"))
+		CommandAPICommand innerCommand = new CommandAPICommand("listShards")
+			.withPermission(CommandPermission.fromString("monumenta.networkrelay.listshards"))
 			.executes((sender, args) -> {
 				try {
 					TreeSet<String> shardNames = new TreeSet<>(NetworkRelayAPI.getOnlineShardNames());
@@ -18,7 +18,15 @@ public class ListShardsCommand {
 				} catch (Exception e) {
 					sender.sendMessage(ChatColor.RED + "An error occured, cannot check online shards.");
 				}
-			})
-			.register();
+			});
+
+		// Register first under the monumenta -> networkRelay namespace
+		new CommandAPICommand("monumenta")
+			.withSubcommand(new CommandAPICommand("networkRelay")
+				.withSubcommand(innerCommand)
+			).register();
+
+		// Then directly, for convenience
+		innerCommand.register();
 	}
 }
