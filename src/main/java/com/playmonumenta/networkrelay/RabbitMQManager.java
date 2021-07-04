@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -60,6 +61,13 @@ public class RabbitMQManager {
 	 */
 	private Map<String, Instant> mDestinationLastHeartbeat = new HashMap<>();
 
+	/*
+	 * Most recently received plugin data from a shard
+	 * Updated each heartbeat, removed when shard is considered offline
+	 * based on mDestinationLastHeartbeat
+	 */
+	private Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
+
 	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout) throws Exception {
 		mAbstraction = abstraction;
 		mLogger = logger;
@@ -81,6 +89,7 @@ public class RabbitMQManager {
 				Instant lastHeartbeat = entry.getValue();
 
 				if (timeoutThreshhold.compareTo(lastHeartbeat) >= 0) {
+					mDestinationHeartbeatData.remove(dest);
 					sendDestOfflineEvent(dest);
 					iter.remove();
 				}
@@ -131,24 +140,32 @@ public class RabbitMQManager {
 			String channel = obj.get("channel").getAsString();
 			String source = obj.get("source").getAsString();
 			JsonObject data = obj.get("data").getAsJsonObject();
+			JsonObject pluginData = null;
+			if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
+				JsonElement pluginDataElement = obj.get("pluginData");
+				if (pluginDataElement != null && pluginDataElement.isJsonObject()) {
+					pluginData = pluginDataElement.getAsJsonObject();
+				}
+			}
+			final JsonObject pluginDataFinal = pluginData;
 
 			/* Process the packet on the main thread */
 			mAbstraction.scheduleProcessPacket(() -> {
-
-				mLogger.fine("Processing message from=" + source + " channel=" + channel);
-				mLogger.finer("data=" + mGson.toJson(data));
+				mLogger.finer("Processing message from=" + source + " channel=" + channel);
+				mLogger.finest("data=" + mGson.toJson(data));
 
 				boolean isDestShutdown = false;
 				if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
 					if (data.getAsJsonPrimitive("online").isBoolean()
 					    && data.getAsJsonPrimitive("online").getAsBoolean() == false) {
 						isDestShutdown = true;
-						sendDestOfflineEvent(source);
 						mDestinationLastHeartbeat.remove(source);
+						mDestinationHeartbeatData.remove(source);
+						sendDestOfflineEvent(source);
 					}
 				}
 				if (!isDestShutdown) {
-					sendDestOnlineEvent(source);
+					updateShardOnline(source, pluginDataFinal);
 				}
 
 				mAbstraction.sendMessageEvent(channel, source, data);
@@ -247,8 +264,8 @@ public class RabbitMQManager {
 				mChannel.basicPublish("", destination, properties, msg);
 			}
 
-			mLogger.fine("Sent message destination=" + destination + " channel=" + channel);
-			mLogger.finer("data=" + mGson.toJson(data));
+			mLogger.finer("Sent message destination=" + destination + " channel=" + channel);
+			mLogger.finest("data=" + mGson.toJson(data));
 		} catch (Exception e) {
 			throw new Exception(String.format("Error sending message destination=" + destination + " channel=" + channel), e);
 		}
@@ -258,9 +275,21 @@ public class RabbitMQManager {
 		return new HashSet<String>(mDestinationLastHeartbeat.keySet());
 	}
 
+	protected Map<String, JsonObject> getOnlineShardHeartbeatData() {
+		return mDestinationHeartbeatData;
+	}
+
 	private void sendHeartbeat() {
 		try {
 			JsonObject data = new JsonObject();
+			Map<String, JsonObject> eventPluginData = mAbstraction.gatherHeartbeatData();
+			if (eventPluginData != null) {
+				JsonObject pluginData = new JsonObject();
+				for (Map.Entry<String, JsonObject> entry : eventPluginData.entrySet()) {
+					pluginData.add(entry.getKey(), entry.getValue());
+				}
+				data.add("pluginData", pluginData);
+			}
 			data.addProperty("online", true);
 			sendNetworkMessage("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, data);
 		} catch (Exception ex) {
@@ -268,14 +297,19 @@ public class RabbitMQManager {
 		}
 	}
 
-	private void sendDestOnlineEvent(String dest) {
+	private void updateShardOnline(String dest, JsonObject pluginData) {
 		if (!mDestinationLastHeartbeat.containsKey(dest)) {
+			mLogger.fine("Shard " + dest + " is online");
 			mAbstraction.sendDestOnlineEvent(dest);
 		}
 		mDestinationLastHeartbeat.put(dest, Instant.now());
+		if (pluginData != null) {
+			mDestinationHeartbeatData.put(dest, pluginData);
+		}
 	}
 
 	private void sendDestOfflineEvent(String dest) {
+		mLogger.fine("Shard " + dest + " is offline");
 		mAbstraction.sendDestOfflineEvent(dest);
 	}
 }

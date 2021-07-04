@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import java.util.Set;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class NetworkRelayAPI {
@@ -32,6 +33,27 @@ public class NetworkRelayAPI {
 
 	public static Set<String> getOnlineShardNames() throws Exception {
 		return getInstance().getOnlineShardNames();
+	}
+
+	/**
+	 * Gets the most recent plugin data provided via heartbeat
+	 *
+	 * Throws an exception only if the plugin isn't loaded or connected to the network relay
+	 *
+	 * @param shardName Name of the shard to retrieve data for
+	 * @param pluginIdentifier Plugin identifier passed to ShardGatherHeartbeatDataEvent
+	 *
+	 * @return JsonObject stored in the most recent heartbeat, or null if either shardName or pluginIdentifier not found
+	 */
+	public static JsonObject getHeartbeatPluginData(String shardName, String pluginIdentifier) throws Exception {
+		JsonObject allShardData = getInstance().getOnlineShardHeartbeatData().get(shardName);
+		if (allShardData != null) {
+			JsonElement element = allShardData.get(pluginIdentifier);
+			if (element != null && element.isJsonObject()) {
+				return element.getAsJsonObject();
+			}
+		}
+		return null;
 	}
 
 	private static RabbitMQManager getInstance() throws Exception {

@@ -1,5 +1,7 @@
 package com.playmonumenta.networkrelay;
 
+import java.util.Map;
+
 import com.google.gson.JsonObject;
 
 public interface RabbitMQManagerAbstractionInterface {
@@ -12,6 +14,8 @@ public interface RabbitMQManagerAbstractionInterface {
 	void stopServer();
 
 	void sendMessageEvent(String channel, String source, JsonObject data);
+
+	Map<String, JsonObject> gatherHeartbeatData();
 
 	void sendDestOnlineEvent(String dest);
 
