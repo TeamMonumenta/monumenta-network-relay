@@ -18,10 +18,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-
 public class RabbitMQManager {
 	private static final String CONSUMER_TAG = "consumerTag";
 	private static final String BROADCAST_EXCHANGE_NAME = "broadcast";
@@ -32,7 +28,7 @@ public class RabbitMQManager {
 	private final Logger mLogger;
 	private final Channel mChannel;
 	private final Connection mConnection;
-	private final BukkitRunnable mHeartbeatRunnable;
+	private final RabbitMQManagerAbstractionInterface mAbstraction;
 	private final String mShardName;
 	private final int mHeartbeatInterval;
 	private final int mDestinationTimeout;
@@ -64,35 +60,32 @@ public class RabbitMQManager {
 	 */
 	private Map<String, Instant> mDestinationLastHeartbeat = new HashMap<>();
 
-	protected RabbitMQManager(Plugin plugin, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout) throws Exception {
-		mLogger = plugin.getLogger();
+	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout) throws Exception {
+		mAbstraction = abstraction;
+		mLogger = logger;
 		mShardName = shardName;
 		mHeartbeatInterval = heartbeatInterval;
 		mDestinationTimeout = destinationTimeout;
 
-		mHeartbeatRunnable = new BukkitRunnable() {
-			@Override
-			public void run() {
-				Instant now = Instant.now();
-				if (now.minusSeconds(mHeartbeatInterval).compareTo(mLastHeartbeat) >= 0) {
-					sendHeartbeat();
-				}
+		mAbstraction.startHeartbeatRunnable(() -> {
+			Instant now = Instant.now();
+			if (now.minusSeconds(mHeartbeatInterval).compareTo(mLastHeartbeat) >= 0) {
+				sendHeartbeat();
+			}
 
-				Instant timeoutThreshhold = now.minusSeconds(mDestinationTimeout);
-				Iterator<Map.Entry<String, Instant>> iter = mDestinationLastHeartbeat.entrySet().iterator();
-				while (iter.hasNext()) {
-					Map.Entry<String, Instant> entry = iter.next();
-					String dest = entry.getKey();
-					Instant lastHeartbeat = entry.getValue();
+			Instant timeoutThreshhold = now.minusSeconds(mDestinationTimeout);
+			Iterator<Map.Entry<String, Instant>> iter = mDestinationLastHeartbeat.entrySet().iterator();
+			while (iter.hasNext()) {
+				Map.Entry<String, Instant> entry = iter.next();
+				String dest = entry.getKey();
+				Instant lastHeartbeat = entry.getValue();
 
-					if (timeoutThreshhold.compareTo(lastHeartbeat) >= 0) {
-						sendDestOfflineEvent(dest);
-						iter.remove();
-					}
+				if (timeoutThreshhold.compareTo(lastHeartbeat) >= 0) {
+					sendDestOfflineEvent(dest);
+					iter.remove();
 				}
 			}
-		};
-		mHeartbeatRunnable.runTaskTimer(plugin, 0, 20);
+		}, 0, 1);
 
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setUri(rabbitURI);
@@ -140,7 +133,8 @@ public class RabbitMQManager {
 			JsonObject data = obj.get("data").getAsJsonObject();
 
 			/* Process the packet on the main thread */
-			Bukkit.getScheduler().runTask(plugin, () -> {
+			mAbstraction.scheduleProcessPacket(() -> {
+
 				mLogger.fine("Processing message from=" + source + " channel=" + channel);
 				mLogger.finer("data=" + mGson.toJson(data));
 
@@ -157,13 +151,7 @@ public class RabbitMQManager {
 					sendDestOnlineEvent(source);
 				}
 
-				try {
-					NetworkRelayMessageEvent event = new NetworkRelayMessageEvent(channel, source, data);
-					Bukkit.getPluginManager().callEvent(event);
-				} catch (Exception ex) {
-					mLogger.warning("Failed to handle rabbit message '" + message + "'");
-					ex.printStackTrace();
-				}
+				mAbstraction.sendMessageEvent(channel, source, data);
 
 				/*
 				 * Always acknowledge messages after attempting to handle them, even if there's an error
@@ -187,14 +175,14 @@ public class RabbitMQManager {
 		                      consumerTag -> {
 			mConsumerAlive = false;
 			if (mShutdown) {
-				plugin.getLogger().info("RabbitMQ consumer has terminated");
+				mLogger.info("RabbitMQ consumer has terminated");
 			} else {
-				plugin.getLogger().severe("RabbitMQ consumer has terminated unexpectedly - stopping the shard...");
-				Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), "stop");
+				mLogger.severe("RabbitMQ consumer has terminated unexpectedly - stopping the shard...");
+				mAbstraction.stopServer();
 			}
 		});
 
-		plugin.getLogger().info("Started RabbitMQ consumer");
+		mLogger.info("Started RabbitMQ consumer");
 
 		INSTANCE = this;
 	}
@@ -203,10 +191,11 @@ public class RabbitMQManager {
 		mShutdown = true;
 		if (mConsumerAlive) {
 			try {
-				mHeartbeatRunnable.cancel();
+				mAbstraction.stopHeartbeatRunnable();
 			} catch (Exception ex) {
 				mLogger.warning("Failed to cancel heartbeat runnable: " + ex.getMessage());
 			}
+
 			try {
 				mChannel.basicCancel(CONSUMER_TAG);
 			} catch (Exception ex) {
@@ -281,24 +270,12 @@ public class RabbitMQManager {
 
 	private void sendDestOnlineEvent(String dest) {
 		if (!mDestinationLastHeartbeat.containsKey(dest)) {
-			try {
-				DestOnlineEvent event = new DestOnlineEvent(dest);
-				Bukkit.getPluginManager().callEvent(event);
-			} catch (Exception ex) {
-				mLogger.warning("Failed to send destination online event");
-				ex.printStackTrace();
-			}
+			mAbstraction.sendDestOnlineEvent(dest);
 		}
 		mDestinationLastHeartbeat.put(dest, Instant.now());
 	}
 
 	private void sendDestOfflineEvent(String dest) {
-		try {
-			DestOfflineEvent event = new DestOfflineEvent(dest);
-			Bukkit.getPluginManager().callEvent(event);
-		} catch (Exception ex) {
-			mLogger.warning("Failed to send destination offline event");
-			ex.printStackTrace();
-		}
+		mAbstraction.sendDestOfflineEvent(dest);
 	}
 }
