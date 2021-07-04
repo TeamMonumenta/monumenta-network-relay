@@ -7,20 +7,14 @@ import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
+import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
-public class NetworkRelay extends JavaPlugin {
+public class NetworkRelayBungee extends Plugin {
 	private RabbitMQManager mRabbitMQManager = null;
-	private BroadcastCommand mBroadcastCommand = null;
 	private CustomLogger mLogger = null;
-
-	@Override
-	public void onLoad() {
-		mBroadcastCommand = new BroadcastCommand(this);
-		ChangeLogLevelCommand.register(this);
-		ListShardsCommand.register();
-	}
 
 	@Override
 	public void onEnable() {
@@ -33,18 +27,23 @@ public class NetworkRelay extends JavaPlugin {
 				configFile.getParentFile().mkdirs();
 
 				// Copy the default config file
-				Files.copy(getClass().getResourceAsStream("/default_config.yml"), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				Files.copy(getClass().getResourceAsStream("/default_config_bungee.yml"), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException ex) {
 				getLogger().log(Level.SEVERE, "Failed to create configuration file");
 			}
 		}
 
 		/* Load the config file & parse it */
-		YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+		Configuration config;
+		try {
+			config = ConfigurationProvider.getProvider(YamlConfiguration.class).load(configFile);
+		} catch (IOException ex) {
+			getLogger().warning("Failed to load config file, using defaults: " + ex.getMessage());
+			config = new Configuration();
+		}
 
 		String logLevel = config.getString("log-level", "INFO");
-		boolean broadcastCommandSendingEnabled = config.getBoolean("broadcast-command-sending-enabled", true);
-		boolean broadcastCommandReceivingEnabled = config.getBoolean("broadcast-command-receiving-enabled", true);
+		boolean runReceivedCommands = config.getBoolean("run-received-commands", true);
 		String shardName = config.getString("shard-name", "default-shard");
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
@@ -57,8 +56,7 @@ public class NetworkRelay extends JavaPlugin {
 		} catch (Exception ex) {
 			getLogger().warning("log-level=" + logLevel + " is invalid - defaulting to INFO");
 		}
-		getLogger().info("broadcast-command-sending-enabled=" + broadcastCommandSendingEnabled);
-		getLogger().info("broadcast-command-receiving-enabled=" + broadcastCommandReceivingEnabled);
+		getLogger().info("run-received-commands=" + runReceivedCommands);
 		if (rabbitURI == "amqp://guest:guest@127.0.0.1:5672") {
 			getLogger().info("rabbitmq-uri=<default>");
 		} else {
@@ -82,14 +80,13 @@ public class NetworkRelay extends JavaPlugin {
 			getLogger().info("destination-timeout=" + destinationTimeout);
 		}
 
-		/* Start relay components */
-		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
-		if (broadcastCommandReceivingEnabled && mBroadcastCommand != null) {
-			getServer().getPluginManager().registerEvents(mBroadcastCommand, this);
+		if (runReceivedCommands) {
+			/* Register a listener to handle commands sent to this shard, including /broadcastcommand's */
+			getProxy().getPluginManager().registerListener(this, new BungeeNetworkMessageListener(getLogger()));
 		}
 
 		try {
-			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBukkit(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout);
+			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBungee(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout);
 		} catch (Exception e) {
 			getLogger().severe("RabbitMQ manager failed to initialize. This plugin will not function");
 			e.printStackTrace();

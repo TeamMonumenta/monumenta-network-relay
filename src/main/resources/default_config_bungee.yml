@@ -2,16 +2,14 @@
 # Should be one of: ALL FINEST FINER FINE INFO WARNING SEVERE OFF
 log-level: INFO
 
-# If this is true, this server will be able to send /broadcastcommand messages
-broadcast-command-sending-enabled: true
-
-# If this is true, this server will be able to recieve /broadcastcommand messages
-broadcast-command-receiving-enabled: true
+# If this is true, this server will run commands it receives over the relay, including those sent via /broadcastcommand on servers
+# Among other things, this provides a way to run commands on bungeecord via command block from servers
+run-received-commands: true
 
 # This is the name for this server shard, which defines what name this server will listen for messages on.
 # Messages sent to this name will arrive here
 # This name must be globally unique for messages to route correctly - use a different one on each server!
-shard-name: "default-shard"
+shard-name: "default-bungee"
 
 # This describes how to connect to your rabbitmq server
 # Default arguments here are:
