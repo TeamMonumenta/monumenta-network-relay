@@ -94,7 +94,7 @@ public class RabbitMQManager {
 					iter.remove();
 				}
 			}
-		}, 0, 1);
+		}, 2, 1);
 
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setUri(rabbitURI);
