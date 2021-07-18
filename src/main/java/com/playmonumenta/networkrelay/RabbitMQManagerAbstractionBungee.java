@@ -1,6 +1,5 @@
 package com.playmonumenta.networkrelay;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
@@ -43,7 +42,7 @@ public class RabbitMQManagerAbstractionBungee implements RabbitMQManagerAbstract
 	}
 
 	@Override
-	public Map<String, JsonObject> gatherHeartbeatData() {
+	public JsonObject gatherHeartbeatData() {
 		GatherHeartbeatDataEventBungee event = new GatherHeartbeatDataEventBungee();
 		mPlugin.getProxy().getPluginManager().callEvent(event);
 		return event.getPluginData();

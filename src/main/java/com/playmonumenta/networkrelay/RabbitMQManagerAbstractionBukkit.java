@@ -1,7 +1,5 @@
 package com.playmonumenta.networkrelay;
 
-import java.util.Map;
-
 import com.google.gson.JsonObject;
 
 import org.bukkit.Bukkit;
@@ -43,7 +41,7 @@ public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstract
 	}
 
 	@Override
-	public Map<String, JsonObject> gatherHeartbeatData() {
+	public JsonObject gatherHeartbeatData() {
 		GatherHeartbeatDataEvent event = new GatherHeartbeatDataEvent();
 		Bukkit.getPluginManager().callEvent(event);
 		return event.getPluginData();

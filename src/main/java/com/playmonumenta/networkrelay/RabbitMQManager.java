@@ -142,7 +142,7 @@ public class RabbitMQManager {
 			JsonObject data = obj.get("data").getAsJsonObject();
 			JsonObject pluginData = null;
 			if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
-				JsonElement pluginDataElement = obj.get("pluginData");
+				JsonElement pluginDataElement = data.get("pluginData");
 				if (pluginDataElement != null && pluginDataElement.isJsonObject()) {
 					pluginData = pluginDataElement.getAsJsonObject();
 				}
@@ -152,7 +152,7 @@ public class RabbitMQManager {
 			/* Process the packet on the main thread */
 			mAbstraction.scheduleProcessPacket(() -> {
 				mLogger.finer("Processing message from=" + source + " channel=" + channel);
-				mLogger.finest("data=" + mGson.toJson(data));
+				mLogger.finest(() -> "data=" + mGson.toJson(data));
 
 				boolean isDestShutdown = false;
 				if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
@@ -265,7 +265,7 @@ public class RabbitMQManager {
 			}
 
 			mLogger.finer("Sent message destination=" + destination + " channel=" + channel);
-			mLogger.finest("data=" + mGson.toJson(data));
+			mLogger.finest(() -> "data=" + mGson.toJson(data));
 		} catch (Exception e) {
 			throw new Exception(String.format("Error sending message destination=" + destination + " channel=" + channel), e);
 		}
@@ -282,13 +282,9 @@ public class RabbitMQManager {
 	private void sendHeartbeat() {
 		try {
 			JsonObject data = new JsonObject();
-			Map<String, JsonObject> eventPluginData = mAbstraction.gatherHeartbeatData();
+			JsonObject eventPluginData = mAbstraction.gatherHeartbeatData();
 			if (eventPluginData != null) {
-				JsonObject pluginData = new JsonObject();
-				for (Map.Entry<String, JsonObject> entry : eventPluginData.entrySet()) {
-					pluginData.add(entry.getKey(), entry.getValue());
-				}
-				data.add("pluginData", pluginData);
+				data.add("pluginData", eventPluginData);
 			}
 			data.addProperty("online", true);
 			sendNetworkMessage("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, data);
