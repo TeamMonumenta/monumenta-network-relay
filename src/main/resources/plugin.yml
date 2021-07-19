@@ -3,4 +3,4 @@ main: com.playmonumenta.networkrelay.NetworkRelay
 version: 0.0.1
 api-version: 1.13
 depend: [CommandAPI]
-softdepend: []
+softdepend: [PlaceholderAPI]

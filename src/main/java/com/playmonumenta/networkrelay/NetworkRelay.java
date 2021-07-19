@@ -7,6 +7,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -93,6 +94,11 @@ public class NetworkRelay extends JavaPlugin {
 		} catch (Exception e) {
 			getLogger().severe("RabbitMQ manager failed to initialize. This plugin will not function");
 			e.printStackTrace();
+		}
+
+		// Provide placeholder API replacements if it is present
+		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+			new PlaceholderAPIIntegration(this).register();
 		}
 	}
 
