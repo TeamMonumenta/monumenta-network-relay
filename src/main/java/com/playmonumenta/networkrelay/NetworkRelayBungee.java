@@ -44,7 +44,12 @@ public class NetworkRelayBungee extends Plugin {
 
 		String logLevel = config.getString("log-level", "INFO");
 		boolean runReceivedCommands = config.getBoolean("run-received-commands", true);
-		String shardName = config.getString("shard-name", "default-shard");
+		/* Shard name defaults to environment variable NETWORK_RELAY_NAME if present */
+		String shardName = System.getenv("NETWORK_RELAY_NAME");
+		if (shardName == null || shardName.isEmpty()) {
+			shardName = "default-shard";
+		}
+		shardName = config.getString("shard-name", shardName); // Config file overrides env var
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
 		int destinationTimeout = config.getInt("destination-timeout", 5);

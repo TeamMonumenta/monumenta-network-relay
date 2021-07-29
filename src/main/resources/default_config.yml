@@ -11,6 +11,8 @@ broadcast-command-receiving-enabled: true
 # This is the name for this server shard, which defines what name this server will listen for messages on.
 # Messages sent to this name will arrive here
 # This name must be globally unique for messages to route correctly - use a different one on each server!
+# Will use the default value from the environment variable NETWORK_RELAY_NAME if that variable is set.
+# Config file still overrides environment variable, so if you want to use the variable comment out shard-name
 shard-name: "default-shard"
 
 # This describes how to connect to your rabbitmq server
