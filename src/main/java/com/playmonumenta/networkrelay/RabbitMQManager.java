@@ -245,12 +245,12 @@ public class RabbitMQManager {
 		sendNetworkMessage(destination, channel, data, (AMQP.BasicProperties) null);
 	}
 
-	protected void sendExpiringNetworkMessage(String destination, String channel, JsonObject data, long ttlMilliseconds) throws Exception {
-		if (ttlMilliseconds <= 0) {
-			throw new Exception("ttlMilliseconds must be a positive integer");
+	protected void sendExpiringNetworkMessage(String destination, String channel, JsonObject data, long ttlSeconds) throws Exception {
+		if (ttlSeconds <= 0) {
+			throw new Exception("ttlSeconds must be a positive integer");
 		}
 		AMQP.BasicProperties properties = (new AMQP.BasicProperties.Builder())
-			.expiration(Long.toString(ttlMilliseconds))
+			.expiration(Long.toString(ttlSeconds * 1000))
 			.build();
 		sendNetworkMessage(destination, channel, data, properties);
 	}

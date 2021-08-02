@@ -27,22 +27,22 @@ public class NetworkRelayAPI {
 		sendCommand("*", command);
 	}
 
-	public static void sendExpiringMessage(String destination, String channel, JsonObject data, long ttlMilliseconds) throws Exception {
-		getInstance().sendExpiringNetworkMessage(destination, channel, data, ttlMilliseconds);
+	public static void sendExpiringMessage(String destination, String channel, JsonObject data, long ttlSeconds) throws Exception {
+		getInstance().sendExpiringNetworkMessage(destination, channel, data, ttlSeconds);
 	}
 
-	public static void sendBroadcastMessage(String channel, JsonObject data, long ttlMilliseconds) throws Exception {
-		sendExpiringMessage("*", channel, data, ttlMilliseconds);
+	public static void sendBroadcastMessage(String channel, JsonObject data, long ttlSeconds) throws Exception {
+		sendExpiringMessage("*", channel, data, ttlSeconds);
 	}
 
-	public static void sendExpiringCommand(String destination, String command, long ttlMilliseconds) throws Exception {
+	public static void sendExpiringCommand(String destination, String command, long ttlSeconds) throws Exception {
 		JsonObject data = new JsonObject();
 		data.addProperty("command", command);
-		sendExpiringMessage(destination, COMMAND_CHANNEL, data, ttlMilliseconds);
+		sendExpiringMessage(destination, COMMAND_CHANNEL, data, ttlSeconds);
 	}
 
-	public static void sendExpiringBroadcastCommand(String command, long ttlMilliseconds) throws Exception {
-		sendExpiringCommand("*", command, ttlMilliseconds);
+	public static void sendExpiringBroadcastCommand(String command, long ttlSeconds) throws Exception {
+		sendExpiringCommand("*", command, ttlSeconds);
 	}
 
 	public static String getShardName() throws Exception {
