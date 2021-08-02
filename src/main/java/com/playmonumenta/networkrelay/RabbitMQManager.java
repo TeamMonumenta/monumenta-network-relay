@@ -245,16 +245,6 @@ public class RabbitMQManager {
 		sendNetworkMessage(destination, channel, data, (AMQP.BasicProperties) null);
 	}
 
-	protected void sendExpiringNetworkMessage(String destination, String channel, JsonObject data, long ttlSeconds) throws Exception {
-		if (ttlSeconds <= 0) {
-			throw new Exception("ttlSeconds must be a positive integer");
-		}
-		AMQP.BasicProperties properties = (new AMQP.BasicProperties.Builder())
-			.expiration(Long.toString(ttlSeconds * 1000))
-			.build();
-		sendNetworkMessage(destination, channel, data, properties);
-	}
-
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data, AMQP.BasicProperties properties) throws Exception {
 		JsonObject json = new JsonObject();
 		json.addProperty("source", mShardName);
@@ -279,6 +269,16 @@ public class RabbitMQManager {
 		} catch (Exception e) {
 			throw new Exception(String.format("Error sending message destination=" + destination + " channel=" + channel), e);
 		}
+	}
+
+	protected void sendExpiringNetworkMessage(String destination, String channel, JsonObject data, long ttlSeconds) throws Exception {
+		if (ttlSeconds <= 0) {
+			throw new Exception("ttlSeconds must be a positive integer");
+		}
+		AMQP.BasicProperties properties = (new AMQP.BasicProperties.Builder())
+			.expiration(Long.toString(ttlSeconds * 1000))
+			.build();
+		sendNetworkMessage(destination, channel, data, properties);
 	}
 
 	protected Set<String> getOnlineShardNames() {

@@ -31,7 +31,7 @@ public class NetworkRelayAPI {
 		getInstance().sendExpiringNetworkMessage(destination, channel, data, ttlSeconds);
 	}
 
-	public static void sendBroadcastMessage(String channel, JsonObject data, long ttlSeconds) throws Exception {
+	public static void sendExpiringBroadcastMessage(String channel, JsonObject data, long ttlSeconds) throws Exception {
 		sendExpiringMessage("*", channel, data, ttlSeconds);
 	}
 
