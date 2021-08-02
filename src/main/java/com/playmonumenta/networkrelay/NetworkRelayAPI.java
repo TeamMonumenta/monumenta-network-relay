@@ -27,6 +27,24 @@ public class NetworkRelayAPI {
 		sendCommand("*", command);
 	}
 
+	public static void sendExpiringMessage(String destination, String channel, JsonObject data, long ttlMilliseconds) throws Exception {
+		getInstance().sendExpiringNetworkMessage(destination, channel, data, ttlMilliseconds);
+	}
+
+	public static void sendBroadcastMessage(String channel, JsonObject data, long ttlMilliseconds) throws Exception {
+		sendExpiringMessage("*", channel, data, ttlMilliseconds);
+	}
+
+	public static void sendExpiringCommand(String destination, String command, long ttlMilliseconds) throws Exception {
+		JsonObject data = new JsonObject();
+		data.addProperty("command", command);
+		sendExpiringMessage(destination, COMMAND_CHANNEL, data, ttlMilliseconds);
+	}
+
+	public static void sendExpiringBroadcastCommand(String command, long ttlMilliseconds) throws Exception {
+		sendExpiringCommand("*", command, ttlMilliseconds);
+	}
+
 	public static String getShardName() throws Exception {
 		return getInstance().getShardName();
 	}

@@ -242,10 +242,20 @@ public class RabbitMQManager {
 	}
 
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data) throws Exception {
-		/* Used in case the specific packet type overrides properties like expiration / time to live */
-		// TODO: Hook this up?
-		AMQP.BasicProperties properties = null;
+		sendNetworkMessage(destination, channel, data, (AMQP.BasicProperties) null);
+	}
 
+	protected void sendExpiringNetworkMessage(String destination, String channel, JsonObject data, long ttlMilliseconds) throws Exception {
+		if (ttlMilliseconds <= 0) {
+			throw new Exception("ttlMilliseconds must be a positive integer");
+		}
+		AMQP.BasicProperties properties = (new AMQP.BasicProperties.Builder())
+			.expiration(Long.toString(ttlMilliseconds))
+			.build();
+		sendNetworkMessage(destination, channel, data, properties);
+	}
+
+	protected void sendNetworkMessage(String destination, String channel, JsonObject data, AMQP.BasicProperties properties) throws Exception {
 		JsonObject json = new JsonObject();
 		json.addProperty("source", mShardName);
 		json.addProperty("dest", destination);
