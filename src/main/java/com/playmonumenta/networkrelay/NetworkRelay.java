@@ -55,6 +55,7 @@ public class NetworkRelay extends JavaPlugin {
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
 		int destinationTimeout = config.getInt("destination-timeout", 5);
+		long defaultTTL = config.getLong("default-time-to-live", 604800);
 
 		/* Echo config */
 		try {
@@ -87,6 +88,12 @@ public class NetworkRelay extends JavaPlugin {
 		} else {
 			getLogger().info("destination-timeout=" + destinationTimeout);
 		}
+		if (defaultTTL < 0) {
+			getLogger().warning("default-time-to-live is < 0 which is invalid! Using default of 604800.");
+			defaultTTL = 604800;
+		} else {
+			getLogger().info("default-time-to-live=" + defaultTTL);
+		}
 
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
@@ -95,7 +102,7 @@ public class NetworkRelay extends JavaPlugin {
 		}
 
 		try {
-			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBukkit(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout);
+			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBukkit(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout, defaultTTL);
 		} catch (Exception e) {
 			getLogger().severe("RabbitMQ manager failed to initialize. This plugin will not function");
 			e.printStackTrace();

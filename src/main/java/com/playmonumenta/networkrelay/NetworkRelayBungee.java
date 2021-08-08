@@ -53,6 +53,7 @@ public class NetworkRelayBungee extends Plugin {
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
 		int destinationTimeout = config.getInt("destination-timeout", 5);
+		long defaultTTL = config.getLong("default-time-to-live", 604800);
 
 		/* Echo config */
 		try {
@@ -84,6 +85,12 @@ public class NetworkRelayBungee extends Plugin {
 		} else {
 			getLogger().info("destination-timeout=" + destinationTimeout);
 		}
+		if (defaultTTL < 0) {
+			getLogger().warning("default-time-to-live is < 0 which is invalid! Using default of 604800.");
+			defaultTTL = 604800;
+		} else {
+			getLogger().info("default-time-to-live=" + defaultTTL);
+		}
 
 		if (runReceivedCommands) {
 			/* Register a listener to handle commands sent to this shard, including /broadcastcommand's */
@@ -91,7 +98,7 @@ public class NetworkRelayBungee extends Plugin {
 		}
 
 		try {
-			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBungee(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout);
+			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBungee(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout, defaultTTL);
 		} catch (Exception e) {
 			getLogger().severe("RabbitMQ manager failed to initialize. This plugin will not function");
 			e.printStackTrace();
