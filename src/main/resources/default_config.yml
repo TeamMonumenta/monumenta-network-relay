@@ -30,3 +30,9 @@ heartbeat-interval: 1
 
 # Time in seconds before destinations are considerd offline
 destination-timeout: 5
+
+# Time-to-live in seconds for default network messages (those without an explicit time set by the caller)
+# This prevents messages from building up for servers that are offline
+# Default is 7 days
+# 0 to disable
+default-time-to-live: 604800

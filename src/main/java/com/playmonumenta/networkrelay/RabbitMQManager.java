@@ -33,6 +33,7 @@ public class RabbitMQManager {
 	private final String mShardName;
 	private final int mHeartbeatInterval;
 	private final int mDestinationTimeout;
+	private final long mDefaultTTL;
 
 	/*
 	 * If mShutdown = false, this is expected to run normally
@@ -68,12 +69,13 @@ public class RabbitMQManager {
 	 */
 	private Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
 
-	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout) throws Exception {
+	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout, long defaultTTL) throws Exception {
 		mAbstraction = abstraction;
 		mLogger = logger;
 		mShardName = shardName;
 		mHeartbeatInterval = heartbeatInterval;
 		mDestinationTimeout = destinationTimeout;
+		mDefaultTTL = defaultTTL;
 
 		mAbstraction.startHeartbeatRunnable(() -> {
 			Instant now = Instant.now();
@@ -242,7 +244,8 @@ public class RabbitMQManager {
 	}
 
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data) throws Exception {
-		sendNetworkMessage(destination, channel, data, (AMQP.BasicProperties) null);
+		/* If no expiration set by caller, use the default */
+		sendExpiringNetworkMessage(destination, channel, data, mDefaultTTL);
 	}
 
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data, AMQP.BasicProperties properties) throws Exception {
