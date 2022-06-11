@@ -1,11 +1,36 @@
 package com.playmonumenta.networkrelay;
 
-import java.util.Set;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.Set;
+import javax.annotation.Nullable;
 
 public class NetworkRelayAPI {
+	public enum ServerType {
+		BUNGEE("bungee"),
+		MINECRAFT("minecraft");
+
+		final String mId;
+
+		ServerType(String id) {
+			mId = id;
+		}
+
+		@Override
+		public String toString() {
+			return mId;
+		}
+
+		public static @Nullable ServerType fromString(String id) {
+			for (ServerType serverType : ServerType.values()) {
+				if (serverType.toString().equals(id)) {
+					return serverType;
+				}
+			}
+			return null;
+		}
+	}
+
 	public static final String COMMAND_CHANNEL = "monumentanetworkrelay.command";
 	public static final String HEARTBEAT_CHANNEL = "monumentanetworkrelay.heartbeat";
 
@@ -18,13 +43,24 @@ public class NetworkRelayAPI {
 	}
 
 	public static void sendCommand(String destination, String command) throws Exception {
+		sendCommand(destination, command, null);
+	}
+
+	public static void sendCommand(String destination, String command, ServerType serverType) throws Exception {
 		JsonObject data = new JsonObject();
+		if (serverType != null) {
+			data.addProperty("server_type", serverType.toString());
+		}
 		data.addProperty("command", command);
 		sendMessage(destination, COMMAND_CHANNEL, data);
 	}
 
 	public static void sendBroadcastCommand(String command) throws Exception {
-		sendCommand("*", command);
+		sendCommand("*", command, null);
+	}
+
+	public static void sendBroadcastCommand(String command, ServerType serverType) throws Exception {
+		sendCommand("*", command, serverType);
 	}
 
 	public static void sendExpiringMessage(String destination, String channel, JsonObject data, long ttlSeconds) throws Exception {
@@ -36,13 +72,24 @@ public class NetworkRelayAPI {
 	}
 
 	public static void sendExpiringCommand(String destination, String command, long ttlSeconds) throws Exception {
+		sendExpiringCommand(destination, command, ttlSeconds, null);
+	}
+
+	public static void sendExpiringCommand(String destination, String command, long ttlSeconds, @Nullable ServerType serverType) throws Exception {
 		JsonObject data = new JsonObject();
+		if (serverType != null) {
+			data.addProperty("server_type", serverType.toString());
+		}
 		data.addProperty("command", command);
 		sendExpiringMessage(destination, COMMAND_CHANNEL, data, ttlSeconds);
 	}
 
 	public static void sendExpiringBroadcastCommand(String command, long ttlSeconds) throws Exception {
-		sendExpiringCommand("*", command, ttlSeconds);
+		sendExpiringCommand("*", command, ttlSeconds, null);
+	}
+
+	public static void sendExpiringBroadcastCommand(String command, long ttlSeconds, ServerType serverType) throws Exception {
+		sendExpiringCommand("*", command, ttlSeconds, serverType);
 	}
 
 	public static String getShardName() throws Exception {
