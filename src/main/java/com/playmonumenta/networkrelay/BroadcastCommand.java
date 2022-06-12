@@ -5,10 +5,9 @@ import com.google.gson.JsonPrimitive;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -20,14 +19,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 public class BroadcastCommand implements Listener {
-	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES;
-
-	static {
-		List<NetworkRelayAPI.ServerType> acceptedServerTypes = new ArrayList<>();
-		acceptedServerTypes.add(NetworkRelayAPI.ServerType.ALL);
-		acceptedServerTypes.add(NetworkRelayAPI.ServerType.BUNGEE);
-		ACCEPTED_SERVER_TYPES = acceptedServerTypes;
-	}
+	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES = Arrays.asList(
+		NetworkRelayAPI.ServerType.ALL,
+		NetworkRelayAPI.ServerType.MINECRAFT
+	);
 
 	private static boolean ENABLED = false;
 
@@ -40,7 +35,7 @@ public class BroadcastCommand implements Listener {
 			.withPermission(CommandPermission.fromString("monumenta.networkrelay.broadcastcommand"))
 			.withArguments(new GreedyStringArgument("command"))
 			.executes((sender, args) -> {
-				run(plugin, sender, (String)args[0], null);
+				run(plugin, sender, (String)args[0], NetworkRelayAPI.ServerType.ALL);
 			});
 
 		CommandAPICommand broadcastBungeeCommand = new CommandAPICommand("broadcastbungeecommand")
@@ -98,6 +93,7 @@ public class BroadcastCommand implements Listener {
 			case MINECRAFT:
 				typeStr = "all minecraft";
 				break;
+			case ALL:
 			default:
 				typeStr = "all";
 		}
@@ -131,9 +127,9 @@ public class BroadcastCommand implements Listener {
 			return;
 		}
 
-		@Nullable JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
+		JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
 		if (serverTypeJson != null) {
-			@Nullable String serverTypeString = serverTypeJson.getAsString();
+			String serverTypeString = serverTypeJson.getAsString();
 			if (serverTypeString != null) {
 				NetworkRelayAPI.ServerType commandType;
 				commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);

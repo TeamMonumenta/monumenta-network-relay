@@ -2,24 +2,19 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
 public class BungeeNetworkMessageListener implements Listener {
-	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES;
-
-	static {
-		List<NetworkRelayAPI.ServerType> acceptedServerTypes = new ArrayList<>();
-		acceptedServerTypes.add(NetworkRelayAPI.ServerType.ALL);
-		acceptedServerTypes.add(NetworkRelayAPI.ServerType.BUNGEE);
-		ACCEPTED_SERVER_TYPES = acceptedServerTypes;
-	}
+	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES = Arrays.asList(
+		NetworkRelayAPI.ServerType.ALL,
+		NetworkRelayAPI.ServerType.BUNGEE
+	);
 
 	private final Logger mLogger;
 
@@ -41,9 +36,9 @@ public class BungeeNetworkMessageListener implements Listener {
 			return;
 		}
 
-		@Nullable JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
+		JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
 		if (serverTypeJson != null) {
-			@Nullable String serverTypeString = serverTypeJson.getAsString();
+			String serverTypeString = serverTypeJson.getAsString();
 			if (serverTypeString != null) {
 				NetworkRelayAPI.ServerType commandType;
 				commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);
