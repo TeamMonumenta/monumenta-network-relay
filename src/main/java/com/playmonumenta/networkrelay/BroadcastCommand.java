@@ -71,7 +71,7 @@ public class BroadcastCommand implements Listener {
 		broadcastMinecraftCommand.register();
 	}
 
-	private static void run(Plugin plugin, CommandSender sender, String command, @Nullable NetworkRelayAPI.ServerType serverType) {
+	private static void run(Plugin plugin, CommandSender sender, String command, NetworkRelayAPI.ServerType serverType) {
 		if (!ENABLED) {
 			sender.sendMessage("This command is not enabled");
 		}
@@ -90,19 +90,19 @@ public class BroadcastCommand implements Listener {
 		/* Replace all instances of @S with the player's name */
 		command = command.replaceAll("@S", name);
 
-		String typeStr = "";
-		if (serverType != null) {
-			switch (serverType) {
-				case BUNGEE:
-					typeStr = "bungee ";
-					break;
-				case MINECRAFT:
-					typeStr = "minecraft ";
-					break;
-			}
+		String typeStr;
+		switch (serverType) {
+			case BUNGEE:
+				typeStr = "all bungee";
+				break;
+			case MINECRAFT:
+				typeStr = "all minecraft";
+				break;
+			default:
+				typeStr = "all";
 		}
 		if (!(sender instanceof Player) || sender.isOp()) {
-			sender.sendMessage(ChatColor.GOLD + "Broadcasting command '" + command + "' to all " + typeStr + "servers");
+			sender.sendMessage(ChatColor.GOLD + "Broadcasting command '" + command + "' to " + typeStr + " servers");
 		}
 		plugin.getLogger().fine("Broadcasting command '" + command + "' to all " + typeStr + "servers");
 
