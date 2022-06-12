@@ -5,6 +5,8 @@ import com.google.gson.JsonPrimitive;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import org.bukkit.Bukkit;
@@ -18,6 +20,15 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 public class BroadcastCommand implements Listener {
+	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES;
+
+	static {
+		List<NetworkRelayAPI.ServerType> acceptedServerTypes = new ArrayList<>();
+		acceptedServerTypes.add(NetworkRelayAPI.ServerType.ALL);
+		acceptedServerTypes.add(NetworkRelayAPI.ServerType.BUNGEE);
+		ACCEPTED_SERVER_TYPES = acceptedServerTypes;
+	}
+
 	private static boolean ENABLED = false;
 
 	private final Logger mLogger;
@@ -124,9 +135,9 @@ public class BroadcastCommand implements Listener {
 		if (serverTypeJson != null) {
 			@Nullable String serverTypeString = serverTypeJson.getAsString();
 			if (serverTypeString != null) {
-				@Nullable NetworkRelayAPI.ServerType commandType;
+				NetworkRelayAPI.ServerType commandType;
 				commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);
-				if (!NetworkRelayAPI.ServerType.MINECRAFT.equals(commandType)) {
+				if (!ACCEPTED_SERVER_TYPES.contains(commandType)) {
 					return;
 				}
 			}

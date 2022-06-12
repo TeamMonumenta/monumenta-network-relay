@@ -8,7 +8,8 @@ import javax.annotation.Nullable;
 public class NetworkRelayAPI {
 	public enum ServerType {
 		BUNGEE("bungee"),
-		MINECRAFT("minecraft");
+		MINECRAFT("minecraft"),
+		ALL("all");
 
 		final String mId;
 
@@ -21,13 +22,13 @@ public class NetworkRelayAPI {
 			return mId;
 		}
 
-		public static @Nullable ServerType fromString(String id) {
+		public static ServerType fromString(@Nullable String id) {
 			for (ServerType serverType : ServerType.values()) {
 				if (serverType.toString().equals(id)) {
 					return serverType;
 				}
 			}
-			return null;
+			return ALL;
 		}
 	}
 
@@ -43,20 +44,18 @@ public class NetworkRelayAPI {
 	}
 
 	public static void sendCommand(String destination, String command) throws Exception {
-		sendCommand(destination, command, null);
+		sendCommand(destination, command, ServerType.ALL);
 	}
 
 	public static void sendCommand(String destination, String command, ServerType serverType) throws Exception {
 		JsonObject data = new JsonObject();
-		if (serverType != null) {
-			data.addProperty("server_type", serverType.toString());
-		}
+		data.addProperty("server_type", serverType.toString());
 		data.addProperty("command", command);
 		sendMessage(destination, COMMAND_CHANNEL, data);
 	}
 
 	public static void sendBroadcastCommand(String command) throws Exception {
-		sendCommand("*", command, null);
+		sendCommand("*", command, ServerType.ALL);
 	}
 
 	public static void sendBroadcastCommand(String command, ServerType serverType) throws Exception {
@@ -72,20 +71,18 @@ public class NetworkRelayAPI {
 	}
 
 	public static void sendExpiringCommand(String destination, String command, long ttlSeconds) throws Exception {
-		sendExpiringCommand(destination, command, ttlSeconds, null);
+		sendExpiringCommand(destination, command, ttlSeconds, ServerType.ALL);
 	}
 
-	public static void sendExpiringCommand(String destination, String command, long ttlSeconds, @Nullable ServerType serverType) throws Exception {
+	public static void sendExpiringCommand(String destination, String command, long ttlSeconds, ServerType serverType) throws Exception {
 		JsonObject data = new JsonObject();
-		if (serverType != null) {
-			data.addProperty("server_type", serverType.toString());
-		}
+		data.addProperty("server_type", serverType.toString());
 		data.addProperty("command", command);
 		sendExpiringMessage(destination, COMMAND_CHANNEL, data, ttlSeconds);
 	}
 
 	public static void sendExpiringBroadcastCommand(String command, long ttlSeconds) throws Exception {
-		sendExpiringCommand("*", command, ttlSeconds, null);
+		sendExpiringCommand("*", command, ttlSeconds, ServerType.ALL);
 	}
 
 	public static void sendExpiringBroadcastCommand(String command, long ttlSeconds, ServerType serverType) throws Exception {
@@ -110,8 +107,8 @@ public class NetworkRelayAPI {
 	 *
 	 * @return JsonObject stored in the most recent heartbeat, or null if either shardName or pluginIdentifier not found
 	 */
-	public static JsonObject getHeartbeatPluginData(String shardName, String pluginIdentifier) throws Exception {
-		JsonObject allShardData = getInstance().getOnlineShardHeartbeatData().get(shardName);
+	public static @Nullable JsonObject getHeartbeatPluginData(String shardName, String pluginIdentifier) throws Exception {
+		@Nullable JsonObject allShardData = getInstance().getOnlineShardHeartbeatData().get(shardName);
 		if (allShardData != null) {
 			JsonElement element = allShardData.get(pluginIdentifier);
 			if (element != null && element.isJsonObject()) {
@@ -122,7 +119,7 @@ public class NetworkRelayAPI {
 	}
 
 	private static RabbitMQManager getInstance() throws Exception {
-		RabbitMQManager instance = RabbitMQManager.getInstance();
+		@Nullable RabbitMQManager instance = RabbitMQManager.getInstance();
 		if (instance == null) {
 			throw new Exception("NetworkRelay is not connected to rabbitmq");
 		}
