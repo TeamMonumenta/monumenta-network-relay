@@ -100,7 +100,7 @@ public class BroadcastCommand implements Listener {
 		if (!(sender instanceof Player) || sender.isOp()) {
 			sender.sendMessage(ChatColor.GOLD + "Broadcasting command '" + command + "' to " + typeStr + " servers");
 		}
-		plugin.getLogger().fine("Broadcasting command '" + command + "' to all " + typeStr + "servers");
+		plugin.getLogger().fine("Broadcasting command '" + command + "' to " + typeStr + "servers");
 
 		try {
 			NetworkRelayAPI.sendBroadcastCommand(command, serverType);
