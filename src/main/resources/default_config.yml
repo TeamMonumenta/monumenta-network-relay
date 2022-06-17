@@ -28,7 +28,7 @@ rabbitmq-uri: "amqp://guest:guest@127.0.0.1:5672"
 # To reduce network usage, heartbeat messages are skipped if other messages are sent
 heartbeat-interval: 1
 
-# Time in seconds before destinations are considerd offline
+# Time in seconds before destinations are considered offline
 destination-timeout: 5
 
 # Time-to-live in seconds for default network messages (those without an explicit time set by the caller)
