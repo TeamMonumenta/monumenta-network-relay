@@ -69,6 +69,7 @@ public class BroadcastCommand implements Listener {
 	private static void run(Plugin plugin, CommandSender sender, String command, NetworkRelayAPI.ServerType serverType) {
 		if (!ENABLED) {
 			sender.sendMessage("This command is not enabled");
+			return;
 		}
 
 		/* Get the player's name, if any */
