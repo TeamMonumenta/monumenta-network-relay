@@ -22,7 +22,7 @@ You can download the latest version of this plugin from [GitHub Packages](https:
         <dependency>
             <groupId>com.playmonumenta</groupId>
             <artifactId>monumenta-network-relay</artifactId>
-            <version>0.3</version>
+            <version>1.3</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
