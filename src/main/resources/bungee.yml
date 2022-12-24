@@ -1,6 +1,0 @@
-name: MonumentaNetworkRelay
-main: com.playmonumenta.networkrelay.NetworkRelayBungee
-version: 0.0.1
-author: Combustible
-depend: []
-softdepend: []
