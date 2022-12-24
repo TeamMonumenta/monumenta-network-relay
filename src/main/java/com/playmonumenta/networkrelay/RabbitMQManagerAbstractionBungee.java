@@ -1,9 +1,7 @@
 package com.playmonumenta.networkrelay;
 
-import java.util.concurrent.TimeUnit;
-
 import com.google.gson.JsonObject;
-
+import java.util.concurrent.TimeUnit;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 

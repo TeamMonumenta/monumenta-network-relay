@@ -1,9 +1,8 @@
 package com.playmonumenta.networkrelay;
 
-import java.util.logging.Level;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import java.util.logging.Level;
 
 public class ChangeLogLevelCommand {
 	public static void register(NetworkRelay relayPlugin) {

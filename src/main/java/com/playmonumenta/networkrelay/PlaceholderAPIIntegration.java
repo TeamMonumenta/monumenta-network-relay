@@ -1,8 +1,7 @@
 package com.playmonumenta.networkrelay;
 
-import org.bukkit.entity.Player;
-
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import org.bukkit.entity.Player;
 
 public class PlaceholderAPIIntegration extends PlaceholderExpansion {
 	NetworkRelay mPlugin;

@@ -1,15 +1,13 @@
 package com.playmonumenta.networkchatexample;
 
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
-
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-
-import dev.jorel.commandapi.CommandAPICommand;
-import dev.jorel.commandapi.arguments.GreedyStringArgument;
 
 public class GlobalChatCommand {
 	static final String COMMAND = "g";

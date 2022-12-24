@@ -1,7 +1,6 @@
 package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
-
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;

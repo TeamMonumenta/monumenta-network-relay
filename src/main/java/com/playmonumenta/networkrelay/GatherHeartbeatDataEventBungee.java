@@ -1,7 +1,6 @@
 package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
-
 import net.md_5.bungee.api.plugin.Event;
 
 public class GatherHeartbeatDataEventBungee extends Event {

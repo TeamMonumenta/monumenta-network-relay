@@ -1,11 +1,9 @@
 package com.playmonumenta.networkrelay;
 
-import java.util.TreeSet;
-
-import org.bukkit.ChatColor;
-
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
+import java.util.TreeSet;
+import org.bukkit.ChatColor;
 
 public class ListShardsCommand {
 	protected static void register() {

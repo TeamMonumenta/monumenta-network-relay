@@ -1,7 +1,6 @@
 package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
-
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
