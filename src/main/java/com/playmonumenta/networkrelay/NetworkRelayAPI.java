@@ -3,7 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Set;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelayAPI {
 	public enum ServerType {
@@ -89,11 +89,11 @@ public class NetworkRelayAPI {
 		sendExpiringCommand("*", command, ttlSeconds, serverType);
 	}
 
-	public static String getShardName() throws Exception {
+	public static String getShardName() {
 		return getInstance().getShardName();
 	}
 
-	public static Set<String> getOnlineShardNames() throws Exception {
+	public static Set<String> getOnlineShardNames() {
 		return getInstance().getOnlineShardNames();
 	}
 
@@ -118,11 +118,8 @@ public class NetworkRelayAPI {
 		return null;
 	}
 
-	private static RabbitMQManager getInstance() throws Exception {
-		@Nullable RabbitMQManager instance = RabbitMQManager.getInstance();
-		if (instance == null) {
-			throw new Exception("NetworkRelay is not connected to rabbitmq");
-		}
+	private static RabbitMQManager getInstance() {
+		RabbitMQManager instance = RabbitMQManager.getInstance();
 		return instance;
 	}
 }

@@ -2,9 +2,10 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import net.md_5.bungee.api.plugin.Event;
+import org.jetbrains.annotations.Nullable;
 
 public class GatherHeartbeatDataEventBungee extends Event {
-	private JsonObject mPluginData = null;
+	private @Nullable JsonObject mPluginData = null;
 
 	/**
 	 * Sets the plugin data that should be retrievable for this shard
@@ -22,7 +23,7 @@ public class GatherHeartbeatDataEventBungee extends Event {
 	/**
 	 * Gets the plugin data that has been set by other plugins
 	 */
-	public JsonObject getPluginData() {
+	public @Nullable JsonObject getPluginData() {
 		return mPluginData;
 	}
 }

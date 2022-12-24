@@ -9,11 +9,12 @@ import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelay extends JavaPlugin {
-	private RabbitMQManager mRabbitMQManager = null;
-	private BroadcastCommand mBroadcastCommand = null;
-	private CustomLogger mLogger = null;
+	private @Nullable RabbitMQManager mRabbitMQManager = null;
+	private @Nullable BroadcastCommand mBroadcastCommand = null;
+	private @Nullable CustomLogger mLogger = null;
 
 	@Override
 	public void onLoad() {
@@ -65,12 +66,12 @@ public class NetworkRelay extends JavaPlugin {
 		}
 		getLogger().info("broadcast-command-sending-enabled=" + broadcastCommandSendingEnabled);
 		getLogger().info("broadcast-command-receiving-enabled=" + broadcastCommandReceivingEnabled);
-		if (rabbitURI == "amqp://guest:guest@127.0.0.1:5672") {
+		if (rabbitURI.equals("amqp://guest:guest@127.0.0.1:5672")) {
 			getLogger().info("rabbitmq-uri=<default>");
 		} else {
 			getLogger().info("rabbitmq-uri=<set>");
 		}
-		if (shardName == "default-shard") {
+		if (shardName.equals("default-shard")) {
 			getLogger().warning("shard-name is default value 'default-shard' which should be changed!");
 		} else {
 			getLogger().info("shard-name=" + shardName);

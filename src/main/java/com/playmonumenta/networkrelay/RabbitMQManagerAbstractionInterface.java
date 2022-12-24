@@ -1,6 +1,7 @@
 package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
+import org.jetbrains.annotations.Nullable;
 
 public interface RabbitMQManagerAbstractionInterface {
 	void startHeartbeatRunnable(Runnable runnable, int delaySeconds, int periodSeconds);
@@ -13,7 +14,7 @@ public interface RabbitMQManagerAbstractionInterface {
 
 	void sendMessageEvent(String channel, String source, JsonObject data);
 
-	JsonObject gatherHeartbeatData();
+	@Nullable JsonObject gatherHeartbeatData();
 
 	void sendDestOnlineEvent(String dest);
 

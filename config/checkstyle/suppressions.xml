@@ -5,19 +5,8 @@
 	"https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
-	<!-- suppress the @EventHandler ignoreCancelled check for bungee, as that EvenHandler does not have this attribute -->
-	<suppress files=".*[\\/]bungeecord[\\/].*"
+	<!-- suppress the @EventHandler ignoreCancelled check for bungee, as that EventHandler does not have this attribute -->
+	<suppress files=".*[\\/]BungeeNetworkMessageListener\.java"
 			  checks="RegexpSinglelineJava"
 			  message="Event handlers must specify ignoreCancelled"/>
-	<suppress files=".*[\\/]VersionAdapter_.*java"
-			  checks="TypeName"
-			  message=".*Type name.*must match pattern.*"/>
-	<suppress files=".*[\\/]ClientModHandler.java"
-			  checks="MemberName"
-			  message=".*Member name.*must match pattern.*"/>
-
-	<!-- suppress the spawnParticle check for PartialParticle classes themselves -->
-	<suppress files=".*com[\\/]playmonumenta[\\/]plugins[\\/]particle[\\/].*\.java"
-			  checks="RegexpSinglelineJava"
-			  message=".*spawnParticle.*"/>
 </suppressions>

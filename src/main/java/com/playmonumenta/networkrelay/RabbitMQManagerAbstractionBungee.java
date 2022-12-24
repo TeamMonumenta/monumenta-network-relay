@@ -4,9 +4,10 @@ import com.google.gson.JsonObject;
 import java.util.concurrent.TimeUnit;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
+import org.jetbrains.annotations.Nullable;
 
 public class RabbitMQManagerAbstractionBungee implements RabbitMQManagerAbstractionInterface {
-	private ScheduledTask mHeartbeatRunnable;
+	private @Nullable ScheduledTask mHeartbeatRunnable = null;
 	private final Plugin mPlugin;
 
 	protected RabbitMQManagerAbstractionBungee(Plugin plugin) {
@@ -25,7 +26,9 @@ public class RabbitMQManagerAbstractionBungee implements RabbitMQManagerAbstract
 
 	@Override
 	public void stopHeartbeatRunnable() {
-		mHeartbeatRunnable.cancel();
+		if (mHeartbeatRunnable != null) {
+			mHeartbeatRunnable.cancel();
+		}
 	}
 
 	@Override
@@ -40,7 +43,7 @@ public class RabbitMQManagerAbstractionBungee implements RabbitMQManagerAbstract
 	}
 
 	@Override
-	public JsonObject gatherHeartbeatData() {
+	public @Nullable JsonObject gatherHeartbeatData() {
 		GatherHeartbeatDataEventBungee event = new GatherHeartbeatDataEventBungee();
 		mPlugin.getProxy().getPluginManager().callEvent(event);
 		return event.getPluginData();

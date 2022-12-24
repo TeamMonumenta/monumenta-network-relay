@@ -114,7 +114,7 @@ public class BroadcastCommand implements Listener {
 		ENABLED = enabled;
 	}
 
-	@EventHandler(priority = EventPriority.LOWEST)
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		if (!event.getChannel().equals(NetworkRelayAPI.COMMAND_CHANNEL)) {
 			return;

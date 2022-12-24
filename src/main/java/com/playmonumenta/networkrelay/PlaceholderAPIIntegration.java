@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Nullable;
 
 public class PlaceholderAPIIntegration extends PlaceholderExpansion {
 	NetworkRelay mPlugin;
@@ -28,7 +29,7 @@ public class PlaceholderAPIIntegration extends PlaceholderExpansion {
 	}
 
 	@Override
-	public String onPlaceholderRequest(Player player, String identifier) {
+	public @Nullable String onPlaceholderRequest(Player player, String identifier) {
 		// %network-relay_shard%
 		if (identifier.equalsIgnoreCase("shard")) {
 			RabbitMQManager instance = RabbitMQManager.getInstance();

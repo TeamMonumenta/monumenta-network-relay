@@ -3,11 +3,12 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.Nullable;
 
 public class GatherHeartbeatDataEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
 
-	private JsonObject mPluginData = null;
+	private @Nullable JsonObject mPluginData = null;
 
 	/**
 	 * Sets the plugin data that should be retrievable for this shard
@@ -25,7 +26,7 @@ public class GatherHeartbeatDataEvent extends Event {
 	/**
 	 * Gets the plugin data that has been set by other plugins
 	 */
-	public JsonObject getPluginData() {
+	public @Nullable JsonObject getPluginData() {
 		return mPluginData;
 	}
 

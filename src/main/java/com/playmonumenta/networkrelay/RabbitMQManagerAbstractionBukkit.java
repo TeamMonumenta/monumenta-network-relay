@@ -4,9 +4,10 @@ import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.Nullable;
 
 public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstractionInterface {
-	private BukkitTask mHeartbeatRunnable;
+	private @Nullable BukkitTask mHeartbeatRunnable = null;
 	private final Plugin mPlugin;
 
 	protected RabbitMQManagerAbstractionBukkit(Plugin plugin) {
@@ -25,7 +26,9 @@ public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstract
 
 	@Override
 	public void stopHeartbeatRunnable() {
-		mHeartbeatRunnable.cancel();
+		if (mHeartbeatRunnable != null) {
+			mHeartbeatRunnable.cancel();
+		}
 	}
 
 	@Override
@@ -40,7 +43,7 @@ public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstract
 	}
 
 	@Override
-	public JsonObject gatherHeartbeatData() {
+	public @Nullable JsonObject gatherHeartbeatData() {
 		GatherHeartbeatDataEvent event = new GatherHeartbeatDataEvent();
 		Bukkit.getPluginManager().callEvent(event);
 		return event.getPluginData();

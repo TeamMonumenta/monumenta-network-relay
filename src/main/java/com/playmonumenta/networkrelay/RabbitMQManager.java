@@ -17,12 +17,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.Nullable;
 
 public class RabbitMQManager {
 	private static final String CONSUMER_TAG = "consumerTag";
 	private static final String BROADCAST_EXCHANGE_NAME = "broadcast";
 
-	private static RabbitMQManager INSTANCE = null;
+	private static @Nullable RabbitMQManager INSTANCE = null;
 
 	private final Gson mGson = new Gson();
 	private final Logger mLogger;
@@ -235,6 +236,9 @@ public class RabbitMQManager {
 	}
 
 	protected static RabbitMQManager getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("RabbitMQManager is not loaded");
+		}
 		return INSTANCE;
 	}
 
@@ -277,7 +281,7 @@ public class RabbitMQManager {
 		if (ttlSeconds <= 0) {
 			throw new Exception("ttlSeconds must be a positive integer");
 		}
-		AMQP.BasicProperties properties = (new AMQP.BasicProperties.Builder())
+		AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
 			.expiration(Long.toString(ttlSeconds * 1000))
 			.build();
 		sendNetworkMessage(destination, channel, data, properties);
@@ -305,7 +309,7 @@ public class RabbitMQManager {
 		}
 	}
 
-	private void updateShardOnline(String dest, JsonObject pluginData) {
+	private void updateShardOnline(String dest, @Nullable JsonObject pluginData) {
 		if (!mDestinationLastHeartbeat.containsKey(dest)) {
 			mLogger.fine("Shard " + dest + " is online");
 			mAbstraction.sendDestOnlineEvent(dest);

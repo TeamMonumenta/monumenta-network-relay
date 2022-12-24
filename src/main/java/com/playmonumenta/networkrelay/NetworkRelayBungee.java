@@ -10,10 +10,11 @@ import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
 import net.md_5.bungee.config.YamlConfiguration;
+import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelayBungee extends Plugin {
-	private RabbitMQManager mRabbitMQManager = null;
-	private CustomLogger mLogger = null;
+	private @Nullable RabbitMQManager mRabbitMQManager = null;
+	private @Nullable CustomLogger mLogger = null;
 
 	@Override
 	public void onEnable() {
@@ -62,12 +63,12 @@ public class NetworkRelayBungee extends Plugin {
 			getLogger().warning("log-level=" + logLevel + " is invalid - defaulting to INFO");
 		}
 		getLogger().info("run-received-commands=" + runReceivedCommands);
-		if (rabbitURI == "amqp://guest:guest@127.0.0.1:5672") {
+		if (rabbitURI.equals("amqp://guest:guest@127.0.0.1:5672")) {
 			getLogger().info("rabbitmq-uri=<default>");
 		} else {
 			getLogger().info("rabbitmq-uri=<set>");
 		}
-		if (shardName == "default-shard") {
+		if (shardName.equals("default-shard")) {
 			getLogger().warning("shard-name is default value 'default-shard' which should be changed!");
 		} else {
 			getLogger().info("shard-name=" + shardName);
