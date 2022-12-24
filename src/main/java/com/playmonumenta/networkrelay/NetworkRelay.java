@@ -1,5 +1,7 @@
 package com.playmonumenta.networkrelay;
 
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIConfig;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,6 +20,14 @@ public class NetworkRelay extends JavaPlugin {
 
 	@Override
 	public void onLoad() {
+		// Load the CommandAPI. We enable verbose logging and allow the CommandAPI
+		// to generate a file command_registration.json for debugging purposes
+		CommandAPI.onLoad(
+			new CommandAPIConfig()
+				.verboseOutput(true)
+				.dispatcherFile(new File(getDataFolder(), "networkrelay_command_registration.json"))
+		);
+
 		mBroadcastCommand = new BroadcastCommand(this);
 		ChangeLogLevelCommand.register(this);
 		ListShardsCommand.register();
@@ -25,6 +35,9 @@ public class NetworkRelay extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		// Enable the CommandAPI
+		CommandAPI.onEnable(this);
+
 		File configFile = new File(getDataFolder(), "config.yml");
 
 		/* Create the config file & directories if it does not exist */
