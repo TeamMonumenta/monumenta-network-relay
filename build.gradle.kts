@@ -181,7 +181,6 @@ tasks.create("build-deploy") {
             session(adminssh) {
                 put(shadowJar.archiveFile.get().getAsFile(), "/home/epic/project_epic/server_config/plugins")
                 execute("cd /home/epic/project_epic/server_config/plugins && rm -f MonumentaNetworkRelay.jar && ln -s " + shadowJar.archiveFileName.get() + " MonumentaNetworkRelay.jar")
-                execute("cd /home/epic/project_epic/mobs/plugins && rm -f MonumentaNetworkRelay.jar && ln -s ../../server_config/plugins/MonumentaNetworkRelay.jar")
             }
         }
     }
