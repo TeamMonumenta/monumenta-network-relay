@@ -310,13 +310,19 @@ public class RabbitMQManager {
 	}
 
 	private void updateShardOnline(String dest, @Nullable JsonObject pluginData) {
+		boolean sendOnlineEvent = false;
 		if (!mDestinationLastHeartbeat.containsKey(dest)) {
-			mLogger.fine("Shard " + dest + " is online");
-			mAbstraction.sendDestOnlineEvent(dest);
+			sendOnlineEvent = true;
 		}
 		mDestinationLastHeartbeat.put(dest, Instant.now());
 		if (pluginData != null) {
 			mDestinationHeartbeatData.put(dest, pluginData);
+		}
+
+		// Send the event after recording the heartbeat data in case an event handler wants to get that data in the online event
+		if (sendOnlineEvent) {
+			mLogger.fine("Shard " + dest + " is online");
+			mAbstraction.sendDestOnlineEvent(dest);
 		}
 	}
 

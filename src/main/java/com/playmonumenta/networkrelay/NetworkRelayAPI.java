@@ -34,6 +34,7 @@ public class NetworkRelayAPI {
 
 	public static final String COMMAND_CHANNEL = "monumentanetworkrelay.command";
 	public static final String HEARTBEAT_CHANNEL = "monumentanetworkrelay.heartbeat";
+	protected static final String NETWORK_RELAY_HEARTBEAT_IDENTIFIER = "monumentanetworkrelay";
 
 	public static void sendMessage(String destination, String channel, JsonObject data) throws Exception {
 		getInstance().sendNetworkMessage(destination, channel, data);
@@ -107,7 +108,7 @@ public class NetworkRelayAPI {
 	 *
 	 * @return JsonObject stored in the most recent heartbeat, or null if either shardName or pluginIdentifier not found
 	 */
-	public static @Nullable JsonObject getHeartbeatPluginData(String shardName, String pluginIdentifier) throws Exception {
+	public static @Nullable JsonObject getHeartbeatPluginData(String shardName, String pluginIdentifier) {
 		@Nullable JsonObject allShardData = getInstance().getOnlineShardHeartbeatData().get(shardName);
 		if (allShardData != null) {
 			JsonElement element = allShardData.get(pluginIdentifier);
