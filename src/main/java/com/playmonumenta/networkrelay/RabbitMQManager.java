@@ -327,6 +327,12 @@ public class RabbitMQManager {
 
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data, AMQP.BasicProperties properties) throws Exception {
 		JsonObject json = new JsonObject();
+		json.add("data", data);
+		sendNetworkMessageInternal(destination, channel, json, properties);
+	}
+
+	/* Called after adding the data and (optionally) pluginData to a root json object */
+	private void sendNetworkMessageInternal(String destination, String channel, JsonObject json, AMQP.BasicProperties properties) throws Exception {
 		json.addProperty("source", mShardName);
 		json.addProperty("dest", destination);
 		json.addProperty("channel", channel);
@@ -338,12 +344,10 @@ public class RabbitMQManager {
 			// * 500 because of converting seconds to milliseconds (*1000) divided by 2 (half the heartbeat interval as threshold to send early)
 			if (now.minusMillis(mHeartbeatInterval * 500).compareTo(mLastHeartbeat) >= 0) {
 				mLogger.finer("Adding heartbeat data to broadcast message instead of sending heartbeat");
-				addHeartbeatDataToMessage(data);
+				addHeartbeatDataToMessage(json);
 				mLastHeartbeat = now;
 			}
 		}
-
-		json.add("data", data);
 
 		try {
 			byte[] msg = mGson.toJson(json).getBytes(StandardCharsets.UTF_8);
@@ -357,7 +361,7 @@ public class RabbitMQManager {
 			}
 
 			mLogger.finer("Sent message destination=" + destination + " channel=" + channel);
-			mLogger.finest(() -> "data=" + mGson.toJson(data));
+			mLogger.finest(() -> "content=" + mGson.toJson(json));
 		} catch (Exception e) {
 			throw new Exception(String.format("Error sending message destination=" + destination + " channel=" + channel), e);
 		}
@@ -383,20 +387,27 @@ public class RabbitMQManager {
 
 	private void sendHeartbeat() {
 		try {
-			JsonObject data = new JsonObject();
-			addHeartbeatDataToMessage(data);
-			sendNetworkMessage("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, data);
+			JsonObject json = new JsonObject();
+			addHeartbeatDataToMessage(json);
+			json.add("data", new JsonObject()); /* A heartbeat message contains no data but this field is required */
+
+			/* Heartbeat messages are only allowed to be retained by the exchange for 5x their interval */
+			AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
+				.expiration(Long.toString(mHeartbeatInterval * 1000 * 5))
+				.build();
+
+			sendNetworkMessageInternal("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, json, properties);
 		} catch (Exception ex) {
 			mLogger.warning("Failed to send heartbeat: " + ex.getMessage());
 		}
 	}
 
-	private void addHeartbeatDataToMessage(JsonObject data) {
+	private void addHeartbeatDataToMessage(JsonObject json) {
 		JsonObject eventPluginData = mAbstraction.gatherHeartbeatData();
 		if (eventPluginData != null) {
-			data.add("pluginData", eventPluginData);
+			json.add("pluginData", eventPluginData);
 		}
-		data.addProperty("online", true);
+		json.addProperty("online", true);
 	}
 
 	private void sendDestOfflineEvent(String dest) {
