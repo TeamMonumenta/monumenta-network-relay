@@ -11,6 +11,7 @@ import com.rabbitmq.client.DeliverCallback;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -69,6 +70,26 @@ public class RabbitMQManager {
 	 */
 	private Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
 
+	private static class QueuedMessage {
+		final String mChannel;
+		final JsonObject mData;
+
+		private QueuedMessage(String channel, JsonObject data) {
+			mChannel = channel;
+			mData = data;
+		}
+
+		private String getChannel() {
+			return mChannel;
+		}
+
+		private JsonObject getData() {
+			return mData;
+		}
+	}
+
+	private Map<String, ArrayDeque<QueuedMessage>> mDestinationQueuedMessages = new HashMap<>();
+
 	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout, long defaultTTL) throws Exception {
 		mAbstraction = abstraction;
 		mLogger = logger;
@@ -80,6 +101,7 @@ public class RabbitMQManager {
 		mAbstraction.startHeartbeatRunnable(() -> {
 			Instant now = Instant.now();
 			if (now.minusSeconds(mHeartbeatInterval).compareTo(mLastHeartbeat) >= 0) {
+				mLastHeartbeat = now;
 				sendHeartbeat();
 			}
 
@@ -143,7 +165,9 @@ public class RabbitMQManager {
 			String source = obj.get("source").getAsString();
 			JsonObject data = obj.get("data").getAsJsonObject();
 			JsonObject pluginData = null;
-			if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
+
+			/* Check for heartbeat data - pluginData */
+			if (data.has("pluginData")) {
 				JsonElement pluginDataElement = data.get("pluginData");
 				if (pluginDataElement != null && pluginDataElement.isJsonObject()) {
 					pluginData = pluginDataElement.getAsJsonObject();
@@ -156,21 +180,71 @@ public class RabbitMQManager {
 				mLogger.finer("Processing message from=" + source + " channel=" + channel);
 				mLogger.finest(() -> "data=" + mGson.toJson(data));
 
+				/* Check for heartbeat data - online status */
 				boolean isDestShutdown = false;
-				if (NetworkRelayAPI.HEARTBEAT_CHANNEL.equals(channel)) {
-					if (data.getAsJsonPrimitive("online").isBoolean()
-					    && data.getAsJsonPrimitive("online").getAsBoolean() == false) {
+				if (data.has("online")) {
+					if (data.getAsJsonPrimitive("online").isBoolean() && data.getAsJsonPrimitive("online").getAsBoolean() == false) {
 						isDestShutdown = true;
 						mDestinationLastHeartbeat.remove(source);
 						mDestinationHeartbeatData.remove(source);
 						sendDestOfflineEvent(source);
 					}
 				}
-				if (!isDestShutdown) {
-					updateShardOnline(source, pluginDataFinal);
-				}
 
-				mAbstraction.sendMessageEvent(channel, source, data);
+				if (!isDestShutdown) {
+					boolean heartbeatDataPresent = mDestinationLastHeartbeat.containsKey(source);
+
+					if (pluginDataFinal != null) {
+						/* This message contained heartbeat data - record it */
+						mDestinationLastHeartbeat.put(source, Instant.now());
+						mDestinationHeartbeatData.put(source, pluginDataFinal);
+					}
+
+					if (heartbeatDataPresent) {
+						/* This shard was already marked online - deliver normally */
+						mAbstraction.sendMessageEvent(channel, source, data);
+					} else {
+						/* This shard was not known to be online until this message */
+						if (pluginDataFinal == null) {
+							/*
+							 * Got a message from this shard but unfortunately it doesn't contain any plugin data
+							 * (i.e. it's not a heartbeat message)
+							 * This can happen randomly when other traffic is happening and this receiving shard just started
+							 * Can't send the online event yet - there's no heartbeat data which plugins might depend on while handling the online event
+							 * Also can't deliver the message to plugins, since they may be doing state tracking based on online status
+							 *
+							 * Instead, queue the packet for later delivery, once we do receive a heartbeat message containing plugin data
+							 */
+
+							/* Get existing queue or create and insert a new one */
+							ArrayDeque<QueuedMessage> queue = mDestinationQueuedMessages.computeIfAbsent(source, (unused) -> new ArrayDeque<>());
+							queue.addLast(new QueuedMessage(channel, data));
+
+							//TODO: change log level? Maybe warning if the queue is big or contains old entries?
+							mLogger.warning("Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size());
+						} else {
+							/*
+							 * Got a message from this shard and it has plugin data - great!
+							 * Have everything needed to send online event and deliver the message
+							 */
+
+							mLogger.fine("Shard " + source + " is online");
+							mAbstraction.sendDestOnlineEvent(source);
+
+							/* Deliver this current message */
+							mAbstraction.sendMessageEvent(channel, source, data);
+
+							/* Check if there were any queued messages from before heartbeat data was available and deliver them */
+							ArrayDeque<QueuedMessage> queue = mDestinationQueuedMessages.remove(source);
+							if (queue != null) {
+								for (QueuedMessage msg : queue) {
+									mLogger.fine("Delivering queued message from " + source + " now that it is marked as online");
+									mAbstraction.sendMessageEvent(msg.getChannel(), source, msg.getData());
+								}
+							}
+						}
+					}
+				}
 
 				/*
 				 * Always acknowledge messages after attempting to handle them, even if there's an error
@@ -256,6 +330,19 @@ public class RabbitMQManager {
 		json.addProperty("source", mShardName);
 		json.addProperty("dest", destination);
 		json.addProperty("channel", channel);
+
+		/* Broadcasting a non-heartbeat message - add heartbeat data to it if it's been more than half the normal heartbeat time since the last heartbeat */
+		/* Note that heartbeats also go through this same method, so need to not add the same data to them twice */
+		if (destination.equals("*") && !channel.equals(NetworkRelayAPI.HEARTBEAT_CHANNEL)) {
+			Instant now = Instant.now();
+			// * 500 because of converting seconds to milliseconds (*1000) divided by 2 (half the heartbeat interval as threshold to send early)
+			if (now.minusMillis(mHeartbeatInterval * 500).compareTo(mLastHeartbeat) >= 0) {
+				mLogger.finer("Adding heartbeat data to broadcast message instead of sending heartbeat");
+				addHeartbeatDataToMessage(data);
+				mLastHeartbeat = now;
+			}
+		}
+
 		json.add("data", data);
 
 		try {
@@ -264,7 +351,6 @@ public class RabbitMQManager {
 			if (destination.equals("*")) {
 				/* Broadcast message - send to the broadcast exchange to route to all queues */
 				mChannel.basicPublish(BROADCAST_EXCHANGE_NAME, "", properties, msg);
-				mLastHeartbeat = Instant.now();
 			} else {
 				/* Non-broadcast message - send to the default exchange, routing to the appropriate queue */
 				mChannel.basicPublish("", destination, properties, msg);
@@ -298,32 +384,19 @@ public class RabbitMQManager {
 	private void sendHeartbeat() {
 		try {
 			JsonObject data = new JsonObject();
-			JsonObject eventPluginData = mAbstraction.gatherHeartbeatData();
-			if (eventPluginData != null) {
-				data.add("pluginData", eventPluginData);
-			}
-			data.addProperty("online", true);
+			addHeartbeatDataToMessage(data);
 			sendNetworkMessage("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, data);
 		} catch (Exception ex) {
 			mLogger.warning("Failed to send heartbeat: " + ex.getMessage());
 		}
 	}
 
-	private void updateShardOnline(String dest, @Nullable JsonObject pluginData) {
-		boolean sendOnlineEvent = false;
-		if (!mDestinationLastHeartbeat.containsKey(dest)) {
-			sendOnlineEvent = true;
+	private void addHeartbeatDataToMessage(JsonObject data) {
+		JsonObject eventPluginData = mAbstraction.gatherHeartbeatData();
+		if (eventPluginData != null) {
+			data.add("pluginData", eventPluginData);
 		}
-		mDestinationLastHeartbeat.put(dest, Instant.now());
-		if (pluginData != null) {
-			mDestinationHeartbeatData.put(dest, pluginData);
-		}
-
-		// Send the event after recording the heartbeat data in case an event handler wants to get that data in the online event
-		if (sendOnlineEvent) {
-			mLogger.fine("Shard " + dest + " is online");
-			mAbstraction.sendDestOnlineEvent(dest);
-		}
+		data.addProperty("online", true);
 	}
 
 	private void sendDestOfflineEvent(String dest) {
