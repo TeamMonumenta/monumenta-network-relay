@@ -43,7 +43,7 @@ public class RabbitMQManagerAbstractionBungee implements RabbitMQManagerAbstract
 	}
 
 	@Override
-	public @Nullable JsonObject gatherHeartbeatData() {
+	public JsonObject gatherHeartbeatData() {
 		GatherHeartbeatDataEventBungee event = new GatherHeartbeatDataEventBungee();
 		mPlugin.getProxy().getPluginManager().callEvent(event);
 		return event.getPluginData();

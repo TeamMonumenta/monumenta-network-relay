@@ -410,10 +410,7 @@ public class RabbitMQManager {
 	}
 
 	private void addHeartbeatDataToMessage(JsonObject root) {
-		JsonObject eventPluginData = mAbstraction.gatherHeartbeatData();
-		if (eventPluginData != null) {
-			root.add("pluginData", eventPluginData);
-		}
+		root.add("pluginData", mAbstraction.gatherHeartbeatData());
 		root.addProperty("online", true);
 	}
 

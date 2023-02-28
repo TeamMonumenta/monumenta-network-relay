@@ -43,7 +43,7 @@ public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstract
 	}
 
 	@Override
-	public @Nullable JsonObject gatherHeartbeatData() {
+	public JsonObject gatherHeartbeatData() {
 		GatherHeartbeatDataEvent event = new GatherHeartbeatDataEvent();
 		Bukkit.getPluginManager().callEvent(event);
 		return event.getPluginData();
