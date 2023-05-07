@@ -8,6 +8,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
+import com.rabbitmq.client.ShutdownListener;
+import com.rabbitmq.client.ShutdownSignalException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -69,6 +71,18 @@ public class RabbitMQManager {
 	 */
 	private Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
 
+	private class RelayShutdownHandler implements ShutdownListener {
+		@Override
+		public void shutdownCompleted(ShutdownSignalException cause) {
+			String msg = "RabbitMQ connection shut down; cause='" + cause.getCause() + "' message='" + cause.getMessage() + "'";
+			if (mShutdown) {
+				mLogger.info(msg);
+			} else {
+				mLogger.warning(msg);
+			}
+		}
+	}
+
 	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout, long defaultTTL) throws Exception {
 		mAbstraction = abstraction;
 		mLogger = logger;
@@ -99,10 +113,13 @@ public class RabbitMQManager {
 		}, 2, 1);
 
 		ConnectionFactory factory = new ConnectionFactory();
+		factory.setAutomaticRecoveryEnabled(true);
 		factory.setUri(rabbitURI);
 
 		mConnection = factory.newConnection();
 		mChannel = mConnection.createChannel();
+		// Print out the reason for disconnection if it happens
+		mConnection.addShutdownListener(new RelayShutdownHandler());
 
 		/* Declare a broadcast exchange which routes messages to all attached queues */
 		mChannel.exchangeDeclare(BROADCAST_EXCHANGE_NAME, "fanout");
