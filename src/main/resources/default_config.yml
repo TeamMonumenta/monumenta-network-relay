@@ -15,6 +15,14 @@ broadcast-command-receiving-enabled: true
 # Config file still overrides environment variable, so if you want to use the variable comment out shard-name
 shard-name: "default-shard"
 
+# If bungeecord wants to connect a player to this server, what hostname:port to use. For example 127.0.0.1:25565
+# This is only used if the network relay is also loaded on bungeecord and auto-register-servers-to-bungee=true
+# Will use the default value from the environment variable NETWORK_RELAY_SERVER_ADDRESS if that variable is set.
+# Config file still overrides environment variable, so if you want to use the variable comment out server-address
+# The default is unset (commented) because no default value will be correct for your setup.
+# You need the address of your server as usable by the bungeecord server
+#server-address: ""
+
 # This describes how to connect to your rabbitmq server
 # Default arguments here are:
 #   user = guest (this is the default username if authentication is disabled)
@@ -33,6 +41,7 @@ destination-timeout: 5
 
 # Time-to-live in seconds for default network messages (those without an explicit time set by the caller)
 # This prevents messages from building up for servers that are offline
+# Note that heartbeat messages use a different (much shorter) time to live that is 5x their interval
 # Default is 7 days
 # 0 to disable
 default-time-to-live: 604800

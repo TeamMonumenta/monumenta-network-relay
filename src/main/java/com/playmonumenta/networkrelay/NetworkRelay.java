@@ -52,6 +52,12 @@ public class NetworkRelay extends JavaPlugin {
 			shardName = "default-shard";
 		}
 		shardName = config.getString("shard-name", shardName); // Config file overrides env var
+		/* Server address defaults to environment variable NETWORK_RELAY_SERVER_ADDRESS if present */
+		String serverAddress = System.getenv("NETWORK_RELAY_SERVER_ADDRESS");
+		serverAddress = config.getString("server-address", serverAddress); // Config file overrides env var
+		if (serverAddress == null || serverAddress.isEmpty()) {
+			serverAddress = null;
+		}
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
 		int destinationTimeout = config.getInt("destination-timeout", 5);
@@ -76,6 +82,11 @@ public class NetworkRelay extends JavaPlugin {
 		} else {
 			getLogger().info("shard-name=" + shardName);
 		}
+		if (serverAddress == null) {
+			getLogger().info("server-address=<unset>");
+		} else {
+			getLogger().info("server-address=" + serverAddress);
+		}
 		if (heartbeatInterval <= 0) {
 			getLogger().warning("heartbeat-interval is <= 0 which is invalid! Using default of 1.");
 			heartbeatInterval = 1;
@@ -94,6 +105,8 @@ public class NetworkRelay extends JavaPlugin {
 		} else {
 			getLogger().info("default-time-to-live=" + defaultTTL);
 		}
+
+		Bukkit.getServer().getPluginManager().registerEvents(new NetworkMessageListener(serverAddress), this);
 
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
