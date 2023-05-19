@@ -16,7 +16,7 @@ broadcast-command-receiving-enabled: true
 shard-name: "default-shard"
 
 # If bungeecord wants to connect a player to this server, what hostname:port to use. For example 127.0.0.1:25565
-# This is only used if the network relay is also loaded on bungeecord and auto-register-bungee-servers=true
+# This is only used if the network relay is also loaded on bungeecord and auto-register-servers-to-bungee=true
 # Will use the default value from the environment variable NETWORK_RELAY_SERVER_ADDRESS if that variable is set.
 # Config file still overrides environment variable, so if you want to use the variable comment out server-address
 # The default is unset (commented) because no default value will be correct for your setup.

@@ -110,7 +110,7 @@ public class BungeeNetworkMessageListener implements Listener {
 			}
 		}
 		if (serverAddress == null) {
-			mLogger.warning("auto-register-bungee-servers=true but shard '" + name + "' is misconfigured and didn't send a server address");
+			mLogger.warning("auto-register-servers-to-bungee=true but shard '" + name + "' is misconfigured and didn't send a server address");
 			return;
 		}
 

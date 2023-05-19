@@ -18,11 +18,11 @@ shard-name: "default-bungee"
 # plugin will add newly discovered shard names/ports to bungee's list of available servers so they don't have to be added to bungee/config.yml
 # Note that this will not add anything to bungee's config.yml. This means the server list will reset to that config file each restart, and
 # servers will be registered as they check in via heartbeat after a restart.
-auto-register-bungee-servers: false
+auto-register-servers-to-bungee: false
 
 # Un-register inactive bungeecord shards once they have exceeded the destination-timeout threshold below
 # By default (false) servers will only be registered automatically and only removed after a restart
-auto-unregister-inactive-bungee-servers: false
+auto-unregister-inactive-servers-from-bungee: false
 
 # This describes how to connect to your rabbitmq server
 # Default arguments here are:
