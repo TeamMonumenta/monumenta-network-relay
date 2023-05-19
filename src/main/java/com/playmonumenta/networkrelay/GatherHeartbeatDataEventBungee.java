@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import net.md_5.bungee.api.plugin.Event;
 
 public class GatherHeartbeatDataEventBungee extends Event {
-	private JsonObject mPluginData = new JsonObject();
+	private final JsonObject mPluginData = new JsonObject();
 
 	/**
 	 * Sets the plugin data that should be retrievable for this shard

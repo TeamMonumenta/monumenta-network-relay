@@ -25,14 +25,14 @@ public class BungeeNetworkMessageListener implements Listener {
 
 	private final Logger mLogger;
 	private final boolean mRunReceivedCommands;
-	private final boolean mAutoRegisterBungeeServers;
-	private final boolean mAutoUnregisterInactiveBungeeServers;
+	private final boolean mAutoRegisterServersToBungee;
+	private final boolean mAutoUnregisterInactiveServersFromBungee;
 
-	protected BungeeNetworkMessageListener(Logger logger, boolean runReceivedCommands, boolean autoRegisterBungeeServers, boolean autoUnregisterInactiveBungeeServers) {
+	protected BungeeNetworkMessageListener(Logger logger, boolean runReceivedCommands, boolean autoRegisterServersToBungee, boolean autoUnregisterInactiveServersFromBungee) {
 		mLogger = logger;
 		mRunReceivedCommands = runReceivedCommands;
-		mAutoRegisterBungeeServers = autoRegisterBungeeServers;
-		mAutoUnregisterInactiveBungeeServers = autoUnregisterInactiveBungeeServers;
+		mAutoRegisterServersToBungee = autoRegisterServersToBungee;
+		mAutoUnregisterInactiveServersFromBungee = autoUnregisterInactiveServersFromBungee;
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL)
@@ -80,7 +80,7 @@ public class BungeeNetworkMessageListener implements Listener {
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void destOnline(DestOnlineEventBungee event) {
-		if (!mAutoRegisterBungeeServers) {
+		if (!mAutoRegisterServersToBungee) {
 			return;
 		}
 
@@ -139,7 +139,7 @@ public class BungeeNetworkMessageListener implements Listener {
 
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void destOffline(DestOfflineEventBungee event) {
-		if (!mAutoUnregisterInactiveBungeeServers) {
+		if (!mAutoUnregisterInactiveServersFromBungee) {
 			return;
 		}
 

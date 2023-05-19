@@ -50,8 +50,8 @@ public class NetworkRelayBungee extends Plugin {
 			shardName = "default-shard";
 		}
 		shardName = config.getString("shard-name", shardName); // Config file overrides env var
-		boolean autoRegisterBungeeServers = config.getBoolean("auto-register-bungee-servers", false);
-		boolean autoUnregisterInactiveBungeeServers = config.getBoolean("auto-unregister-inactive-bungee-servers", false);
+		boolean autoRegisterServersToBungee = config.getBoolean("auto-register-servers-to-bungee", false);
+		boolean autoUnregisterInactiveServersFromBungee = config.getBoolean("auto-unregister-inactive-servers-from-bungee", false);
 		String rabbitURI = config.getString("rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
 		int heartbeatInterval = config.getInt("heartbeat-interval", 1);
 		int destinationTimeout = config.getInt("destination-timeout", 5);
@@ -75,13 +75,13 @@ public class NetworkRelayBungee extends Plugin {
 		} else {
 			getLogger().info("shard-name=" + shardName);
 		}
-		getLogger().info("auto-register-bungee-servers=" + autoRegisterBungeeServers);
-		if (autoUnregisterInactiveBungeeServers && !autoRegisterBungeeServers) {
-			getLogger().warning("Config mismatch - auto-unregister-bungee-servers=true but auto-register-bungee-servers=false");
-			getLogger().warning("Setting auto-unregister-bungee-servers to false");
-			autoUnregisterInactiveBungeeServers = false;
+		getLogger().info("auto-register-servers-to-bungee=" + autoRegisterServersToBungee);
+		if (autoUnregisterInactiveServersFromBungee && !autoRegisterServersToBungee) {
+			getLogger().warning("Config mismatch - auto-unregister-inactive-servers-from-bungee auto-register-servers-to-bungee=false");
+			getLogger().warning("Setting auto-unregister-inactive-servers-from-bungee");
+			autoUnregisterInactiveServersFromBungee = false;
 		}
-		getLogger().info("auto-unregister-inactive-bungee-servers=" + autoUnregisterInactiveBungeeServers);
+		getLogger().info("auto-unregister-inactive-servers-from-bungee=" + autoUnregisterInactiveServersFromBungee);
 
 		if (heartbeatInterval <= 0) {
 			getLogger().warning("heartbeat-interval is <= 0 which is invalid! Using default of 1.");
@@ -102,7 +102,7 @@ public class NetworkRelayBungee extends Plugin {
 			getLogger().info("default-time-to-live=" + defaultTTL);
 		}
 
-		getProxy().getPluginManager().registerListener(this, new BungeeNetworkMessageListener(getLogger(), runReceivedCommands, autoRegisterBungeeServers, autoUnregisterInactiveBungeeServers));
+		getProxy().getPluginManager().registerListener(this, new BungeeNetworkMessageListener(getLogger(), runReceivedCommands, autoRegisterServersToBungee, autoUnregisterInactiveServersFromBungee));
 
 		try {
 			mRabbitMQManager = new RabbitMQManager(new RabbitMQManagerAbstractionBungee(this), getLogger(), shardName, rabbitURI, heartbeatInterval, destinationTimeout, defaultTTL);

@@ -238,7 +238,7 @@ public class RabbitMQManager {
 							ArrayDeque<QueuedMessage> queue = mDestinationQueuedMessages.remove(source);
 							if (queue != null) {
 								for (QueuedMessage msg : queue) {
-									mLogger.fine("Delivering queued message from " + source + " now that it is marked as online");
+									mLogger.fine(() -> "Delivering queued message from " + source + " now that it is marked as online");
 									mAbstraction.sendMessageEvent(msg.getChannel(), source, msg.getData());
 								}
 							}

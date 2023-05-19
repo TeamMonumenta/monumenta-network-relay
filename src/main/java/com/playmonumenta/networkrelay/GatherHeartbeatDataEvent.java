@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 public class GatherHeartbeatDataEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
 
-	private JsonObject mPluginData = new JsonObject();
+	private final JsonObject mPluginData = new JsonObject();
 
 	/**
 	 * Sets the plugin data that should be retrievable for this shard
