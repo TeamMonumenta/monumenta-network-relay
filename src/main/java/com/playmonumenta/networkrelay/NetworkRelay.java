@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import com.playmonumenta.networkrelay.config.BukkitConfig;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,6 +27,10 @@ public class NetworkRelay extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		File configFile = new File(getDataFolder(), "config.yml");
+
+		getLogger().info("Testing new config loader:");
+		BukkitConfig bukkitConfig = new BukkitConfig(getLogger(), configFile, getClass(), "/default_config.yml");
+		getLogger().info("Done testing new config loader, old config:");
 
 		/* Create the config file & directories if it does not exist */
 		if (!configFile.exists()) {
