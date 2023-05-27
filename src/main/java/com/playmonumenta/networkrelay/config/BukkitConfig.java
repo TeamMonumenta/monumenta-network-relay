@@ -21,11 +21,12 @@ public class BukkitConfig extends CommonConfig {
 		mBroadcastCommandReceivingEnabled = getBoolean(config, "broadcast-command-receiving-enabled", true);
 		logger.info("broadcast-command-receiving-enabled=" + mBroadcastCommandReceivingEnabled);
 
+		/* Server address defaults to environment variable NETWORK_RELAY_SERVER_ADDRESS if present */
 		// TODO Verify this modified behavior is correct - originally the config had priority over the env var
-		String serverAddress = System.getenv("NETWORK_RELAY_SERVER_ADDRESS");
-		if (serverAddress == null || serverAddress.isEmpty()) {
-			serverAddress = getString(config, "server-address", "");
-			if (serverAddress.isEmpty()) {
+		String serverAddress = getString(config, "server-address", "");
+		if (serverAddress.isEmpty()) {
+			serverAddress = System.getenv("NETWORK_RELAY_SERVER_ADDRESS");
+			if (serverAddress != null && serverAddress.isEmpty()) {
 				serverAddress = null;
 			}
 		}
