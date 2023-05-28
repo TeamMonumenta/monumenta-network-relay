@@ -28,6 +28,7 @@ public class RabbitMQManager {
 
 	private static @Nullable RabbitMQManager INSTANCE = null;
 
+	private final long mPrimaryThreadId;
 	private final Gson mGson = new Gson();
 	private final Logger mLogger;
 	private final Channel mChannel;
@@ -63,14 +64,14 @@ public class RabbitMQManager {
 	 * consider that destination offline.
 	 * Offline destinations are removed from the map.
 	 */
-	private Map<String, Instant> mDestinationLastHeartbeat = new HashMap<>();
+	private final Map<String, Instant> mDestinationLastHeartbeat = new HashMap<>();
 
 	/*
 	 * Most recently received plugin data from a shard
 	 * Updated each heartbeat, removed when shard is considered offline
 	 * based on mDestinationLastHeartbeat
 	 */
-	private Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
+	private final Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
 
 	private static class QueuedMessage {
 		final String mChannel;
@@ -90,7 +91,7 @@ public class RabbitMQManager {
 		}
 	}
 
-	private Map<String, ArrayDeque<QueuedMessage>> mDestinationQueuedMessages = new HashMap<>();
+	private final Map<String, ArrayDeque<QueuedMessage>> mDestinationQueuedMessages = new HashMap<>();
 
 	private class RelayShutdownHandler implements ShutdownListener {
 		@Override
@@ -104,7 +105,12 @@ public class RabbitMQManager {
 		}
 	}
 
+	// Must be called on primary thread
 	protected RabbitMQManager(RabbitMQManagerAbstractionInterface abstraction, Logger logger, String shardName, String rabbitURI, int heartbeatInterval, int destinationTimeout, long defaultTTL) throws Exception {
+		// Once this project is running on Java 19 or higher, switch to Thread.threadId() instead
+		// (does not exist in this version)
+		//noinspection deprecation
+		mPrimaryThreadId = Thread.currentThread().getId();
 		mAbstraction = abstraction;
 		mLogger = logger;
 		mShardName = shardName;
@@ -119,14 +125,14 @@ public class RabbitMQManager {
 				sendHeartbeat();
 			}
 
-			Instant timeoutThreshhold = now.minusSeconds(mDestinationTimeout);
+			Instant timeoutThreshold = now.minusSeconds(mDestinationTimeout);
 			Iterator<Map.Entry<String, Instant>> iter = mDestinationLastHeartbeat.entrySet().iterator();
 			while (iter.hasNext()) {
 				Map.Entry<String, Instant> entry = iter.next();
 				String dest = entry.getKey();
 				Instant lastHeartbeat = entry.getValue();
 
-				if (timeoutThreshhold.compareTo(lastHeartbeat) >= 0) {
+				if (timeoutThreshold.compareTo(lastHeartbeat) >= 0) {
 					mDestinationHeartbeatData.remove(dest);
 					sendDestOfflineEvent(dest);
 					iter.remove();
@@ -156,7 +162,7 @@ public class RabbitMQManager {
 			final JsonObject root;
 
 			try {
-				message = new String(delivery.getBody(), "UTF-8");
+				message = new String(delivery.getBody(), StandardCharsets.UTF_8);
 
 				root = mGson.fromJson(message, JsonObject.class);
 				if (root == null) {
@@ -224,7 +230,7 @@ public class RabbitMQManager {
 						/* This shard was not known to be online until this message */
 						if (pluginDataFinal == null) {
 							/*
-							 * Got a message from this shard but unfortunately it doesn't contain any plugin data
+							 * Got a message from this shard, but unfortunately it doesn't contain any plugin data
 							 * (i.e. it's not a heartbeat message)
 							 * This can happen randomly when other traffic is happening and this receiving shard just started
 							 * Can't send the online event yet - there's no heartbeat data which plugins might depend on while handling the online event
@@ -241,7 +247,7 @@ public class RabbitMQManager {
 							mLogger.warning("Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size());
 						} else {
 							/*
-							 * Got a message from this shard and it has plugin data - great!
+							 * Got a message from this shard, and it has plugin data - great!
 							 * Have everything needed to send online event and deliver the message
 							 */
 
@@ -318,7 +324,7 @@ public class RabbitMQManager {
 
 				/* Heartbeat messages are only allowed to be retained by the exchange for 5x their interval */
 				AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
-					.expiration(Long.toString(mHeartbeatInterval * 1000 * 5))
+					.expiration(Long.toString(mHeartbeatInterval * 1000L * 5L))
 					.build();
 
 				sendNetworkMessageInternal("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, root, properties);
@@ -361,12 +367,15 @@ public class RabbitMQManager {
 		root.addProperty("dest", destination);
 		root.addProperty("channel", channel);
 
-		/* Broadcasting a non-heartbeat message - add heartbeat data to it if it's been more than half the normal heartbeat time since the last heartbeat */
-		/* Note that heartbeats also go through this same method, so need to not add the same data to them twice */
-		if (destination.equals("*") && !channel.equals(NetworkRelayAPI.HEARTBEAT_CHANNEL)) {
+		/* Broadcasting a non-heartbeat message - add heartbeat data to it if running on the primary thread,
+		 * and it's been more than half the normal heartbeat time since the last heartbeat
+		 * Note that heartbeats also go through this same method, so need to not add the same data to them twice */
+		if (isPrimaryThread() &&
+			destination.equals("*") &&
+			!channel.equals(NetworkRelayAPI.HEARTBEAT_CHANNEL)) {
 			Instant now = Instant.now();
 			// * 500 because of converting seconds to milliseconds (*1000) divided by 2 (half the heartbeat interval as threshold to send early)
-			if (now.minusMillis(mHeartbeatInterval * 500).compareTo(mLastHeartbeat) >= 0) {
+			if (now.minusMillis(mHeartbeatInterval * 500L).compareTo(mLastHeartbeat) >= 0) {
 				mLogger.finer("Adding heartbeat data to broadcast message instead of sending heartbeat");
 				addHeartbeatDataToMessage(root);
 				mLastHeartbeat = now;
@@ -402,7 +411,7 @@ public class RabbitMQManager {
 	}
 
 	protected Set<String> getOnlineShardNames() {
-		return new HashSet<String>(mDestinationLastHeartbeat.keySet());
+		return new HashSet<>(mDestinationLastHeartbeat.keySet());
 	}
 
 	protected Map<String, JsonObject> getOnlineShardHeartbeatData() {
@@ -413,11 +422,12 @@ public class RabbitMQManager {
 		try {
 			JsonObject root = new JsonObject();
 			addHeartbeatDataToMessage(root);
-			root.add("data", new JsonObject()); /* A heartbeat message contains no data but this field is required */
+			/* A heartbeat message contains no data but this field is required */
+			root.add("data", new JsonObject());
 
 			/* Heartbeat messages are only allowed to be retained by the exchange for 5x their interval */
 			AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
-				.expiration(Long.toString(mHeartbeatInterval * 1000 * 5))
+				.expiration(Long.toString(mHeartbeatInterval * 1000L * 5L))
 				.build();
 
 			sendNetworkMessageInternal("*", NetworkRelayAPI.HEARTBEAT_CHANNEL, root, properties);
@@ -434,5 +444,10 @@ public class RabbitMQManager {
 	private void sendDestOfflineEvent(String dest) {
 		mLogger.fine("Shard " + dest + " is offline");
 		mAbstraction.sendDestOfflineEvent(dest);
+	}
+
+	private boolean isPrimaryThread() {
+		//noinspection deprecation
+		return mPrimaryThreadId == Thread.currentThread().getId();
 	}
 }
