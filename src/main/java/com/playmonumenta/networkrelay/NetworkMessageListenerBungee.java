@@ -17,7 +17,7 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class BungeeNetworkMessageListener implements Listener {
+public class NetworkMessageListenerBungee implements Listener {
 	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES = Arrays.asList(
 		NetworkRelayAPI.ServerType.ALL,
 		NetworkRelayAPI.ServerType.BUNGEE
@@ -28,7 +28,7 @@ public class BungeeNetworkMessageListener implements Listener {
 	private final boolean mAutoRegisterServersToBungee;
 	private final boolean mAutoUnregisterInactiveServersFromBungee;
 
-	protected BungeeNetworkMessageListener(Logger logger, boolean runReceivedCommands, boolean autoRegisterServersToBungee, boolean autoUnregisterInactiveServersFromBungee) {
+	protected NetworkMessageListenerBungee(Logger logger, boolean runReceivedCommands, boolean autoRegisterServersToBungee, boolean autoUnregisterInactiveServersFromBungee) {
 		mLogger = logger;
 		mRunReceivedCommands = runReceivedCommands;
 		mAutoRegisterServersToBungee = autoRegisterServersToBungee;

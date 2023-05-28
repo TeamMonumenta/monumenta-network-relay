@@ -30,8 +30,9 @@ public abstract class CommonConfig {
 		/* Shard name defaults to environment variable NETWORK_RELAY_NAME if present */
 		String shardName = System.getenv("NETWORK_RELAY_NAME");
 		if (shardName == null || shardName.isEmpty()) {
-			shardName = getString(config, "shard-name", "default-shard");
+			shardName = "default-shard";
 		}
+		shardName = getString(config, "shard-name", shardName);
 		mShardName = shardName;
 		if (mShardName.equals("default-shard")) {
 			logger.warning("shard-name is default value 'default-shard' which should be changed!");
