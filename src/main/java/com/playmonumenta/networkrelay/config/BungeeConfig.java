@@ -4,7 +4,6 @@ import com.playmonumenta.networkrelay.util.YamlConfig;
 import java.io.File;
 import java.util.Map;
 import java.util.logging.Logger;
-import org.jetbrains.annotations.Nullable;
 
 public class BungeeConfig extends CommonConfig {
 	public boolean mRunReceivedCommands;
