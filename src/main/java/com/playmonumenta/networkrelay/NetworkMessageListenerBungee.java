@@ -38,7 +38,7 @@ public class NetworkMessageListenerBungee implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void gatherHeartbeatData(GatherHeartbeatDataEventBungee event) {
 		JsonObject data = new JsonObject();
-		data.addProperty("is-bungee", true);
+		data.addProperty("server-type", "bungee");
 		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
 	}
 
@@ -88,12 +88,12 @@ public class NetworkMessageListenerBungee implements Listener {
 
 		JsonObject data = NetworkRelayAPI.getHeartbeatPluginData(name, NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
 
-		if (data != null && data.has("is-bungee")) {
-			JsonElement element = data.get("is-bungee");
+		if (data != null && data.has("server-type")) {
+			JsonElement element = data.get("server-type");
 			if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
-				boolean isBungee = element.getAsBoolean();
-				if (isBungee) {
-					// Don't want to add bungee proxies themselves as servers
+				String serverType = element.getAsString();
+				if (!"minecraft".equals(serverType)) {
+					// Only add Minecraft servers as servers, not bungee or other shards
 					return;
 				}
 			}

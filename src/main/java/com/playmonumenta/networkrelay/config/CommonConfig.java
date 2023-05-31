@@ -6,8 +6,8 @@ import java.util.logging.Logger;
 
 public abstract class CommonConfig {
 	public Level mLogLevel = Level.INFO;
-	public String mShardName;
-	public String mRabbitUri;
+	public String mShardName = "default-shard";
+	public String mRabbitUri = "amqp://guest:guest@127.0.0.1:5672";
 	public int mHeartbeatInterval;
 	public int mDestinationTimeout;
 	public long mDefaultTtl;

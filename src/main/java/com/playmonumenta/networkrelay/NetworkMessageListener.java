@@ -19,7 +19,7 @@ public class NetworkMessageListener implements Listener {
 		if (mServerAddress != null && !mServerAddress.isEmpty()) {
 			data.addProperty("server-address", mServerAddress);
 		}
-		data.addProperty("is-bungee", false);
+		data.addProperty("server-type", "minecraft");
 		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
 	}
 }
