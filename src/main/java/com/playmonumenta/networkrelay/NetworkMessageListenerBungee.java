@@ -90,7 +90,7 @@ public class NetworkMessageListenerBungee implements Listener {
 
 		if (data != null && data.has("server-type")) {
 			JsonElement element = data.get("server-type");
-			if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
+			if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
 				String serverType = element.getAsString();
 				if (!"minecraft".equals(serverType)) {
 					// Only add Minecraft servers as servers, not bungee or other shards
