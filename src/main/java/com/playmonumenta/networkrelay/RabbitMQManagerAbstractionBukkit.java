@@ -16,7 +16,7 @@ public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstract
 
 	@Override
 	public void startHeartbeatRunnable(Runnable runnable, int delaySeconds, int periodSeconds) {
-		mHeartbeatRunnable = Bukkit.getScheduler().runTaskTimer(mPlugin, runnable, delaySeconds * 20, periodSeconds * 20);
+		mHeartbeatRunnable = Bukkit.getScheduler().runTaskTimer(mPlugin, runnable, delaySeconds * 20L, periodSeconds * 20L);
 	}
 
 	@Override

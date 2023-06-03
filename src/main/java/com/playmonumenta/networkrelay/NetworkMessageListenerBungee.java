@@ -119,7 +119,7 @@ public class NetworkMessageListenerBungee implements Listener {
 			return;
 		}
 
-		SocketAddress addr = null;
+		SocketAddress addr;
 		try {
 			addr = Util.getAddr(serverAddress);
 		} catch (Exception ex) {

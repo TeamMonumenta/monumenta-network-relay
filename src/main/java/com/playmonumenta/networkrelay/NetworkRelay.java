@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.playmonumenta.networkrelay.config.BukkitConfig;
 import java.io.File;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
@@ -40,7 +41,7 @@ public class NetworkRelay extends JavaPlugin {
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
 		if (broadcastCommandReceivingEnabled && mBroadcastCommand != null) {
-			getServer().getPluginManager().registerEvents(mBroadcastCommand, this);
+			getServer().getPluginManager().registerEvents(Objects.requireNonNull(mBroadcastCommand), this);
 		}
 
 		try {

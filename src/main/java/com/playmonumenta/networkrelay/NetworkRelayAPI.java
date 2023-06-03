@@ -120,7 +120,6 @@ public class NetworkRelayAPI {
 	}
 
 	private static RabbitMQManager getInstance() {
-		RabbitMQManager instance = RabbitMQManager.getInstance();
-		return instance;
+		return RabbitMQManager.getInstance();
 	}
 }
