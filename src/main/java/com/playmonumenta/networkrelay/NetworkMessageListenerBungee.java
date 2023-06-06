@@ -17,7 +17,7 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 
-public class BungeeNetworkMessageListener implements Listener {
+public class NetworkMessageListenerBungee implements Listener {
 	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES = Arrays.asList(
 		NetworkRelayAPI.ServerType.ALL,
 		NetworkRelayAPI.ServerType.BUNGEE
@@ -28,7 +28,7 @@ public class BungeeNetworkMessageListener implements Listener {
 	private final boolean mAutoRegisterServersToBungee;
 	private final boolean mAutoUnregisterInactiveServersFromBungee;
 
-	protected BungeeNetworkMessageListener(Logger logger, boolean runReceivedCommands, boolean autoRegisterServersToBungee, boolean autoUnregisterInactiveServersFromBungee) {
+	protected NetworkMessageListenerBungee(Logger logger, boolean runReceivedCommands, boolean autoRegisterServersToBungee, boolean autoUnregisterInactiveServersFromBungee) {
 		mLogger = logger;
 		mRunReceivedCommands = runReceivedCommands;
 		mAutoRegisterServersToBungee = autoRegisterServersToBungee;
@@ -38,7 +38,7 @@ public class BungeeNetworkMessageListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void gatherHeartbeatData(GatherHeartbeatDataEventBungee event) {
 		JsonObject data = new JsonObject();
-		data.addProperty("is-bungee", true);
+		data.addProperty("server-type", "bungee");
 		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
 	}
 
@@ -88,12 +88,12 @@ public class BungeeNetworkMessageListener implements Listener {
 
 		JsonObject data = NetworkRelayAPI.getHeartbeatPluginData(name, NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
 
-		if (data != null && data.has("is-bungee")) {
-			JsonElement element = data.get("is-bungee");
-			if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isBoolean()) {
-				boolean isBungee = element.getAsBoolean();
-				if (isBungee) {
-					// Don't want to add bungee proxies themselves as servers
+		if (data != null && data.has("server-type")) {
+			JsonElement element = data.get("server-type");
+			if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+				String serverType = element.getAsString();
+				if (!"minecraft".equals(serverType)) {
+					// Only add Minecraft servers as servers, not bungee or other shards
 					return;
 				}
 			}
@@ -119,7 +119,7 @@ public class BungeeNetworkMessageListener implements Listener {
 			return;
 		}
 
-		SocketAddress addr = null;
+		SocketAddress addr;
 		try {
 			addr = Util.getAddr(serverAddress);
 		} catch (Exception ex) {

@@ -100,7 +100,7 @@ public class NetworkRelayAPI {
 
 	/**
 	 * Gets the most recent plugin data provided via heartbeat
-	 *
+	 * <p>
 	 * Throws an exception only if the plugin isn't loaded or connected to the network relay
 	 *
 	 * @param shardName Name of the shard to retrieve data for
@@ -120,7 +120,6 @@ public class NetworkRelayAPI {
 	}
 
 	private static RabbitMQManager getInstance() {
-		RabbitMQManager instance = RabbitMQManager.getInstance();
-		return instance;
+		return RabbitMQManager.getInstance();
 	}
 }

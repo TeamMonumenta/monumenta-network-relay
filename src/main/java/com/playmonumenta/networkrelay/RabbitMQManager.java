@@ -49,7 +49,7 @@ public class RabbitMQManager {
 	 * If mConsumerAlive = true, the consumer is running
 	 * If mConsumerAlive = false, the consumer has terminated
 	 */
-	private boolean mConsumerAlive = false;
+	private boolean mConsumerAlive;
 
 	/*
 	 * Last time a message was sent.
@@ -206,7 +206,7 @@ public class RabbitMQManager {
 				/* Check for heartbeat data - online status */
 				boolean isDestShutdown = false;
 				if (root.has("online")) {
-					if (root.getAsJsonPrimitive("online").isBoolean() && root.getAsJsonPrimitive("online").getAsBoolean() == false) {
+					if (root.getAsJsonPrimitive("online").isBoolean() && !root.getAsJsonPrimitive("online").getAsBoolean()) {
 						isDestShutdown = true;
 						mDestinationLastHeartbeat.remove(source);
 						mDestinationHeartbeatData.remove(source);
