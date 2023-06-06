@@ -128,6 +128,11 @@
 			<message key="name.invalidPattern"
 					 value="Type name ''{0}'' must match pattern ''{1}''."/>
 		</module>
+		<module name="MemberName">
+			<property name="format" value="^([_A-Z]*|m[A-Z][a-zA-Z0-9]*)$"/>
+			<message key="name.invalidPattern"
+					 value="Member name ''{0}'' must match pattern ''{1}''."/>
+		</module>
 		<module name="ParameterName">
 			<property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
 			<message key="name.invalidPattern"
