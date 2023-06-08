@@ -130,7 +130,7 @@ public class NetworkMessageListenerBungee implements Listener {
 			return;
 		}
 
-		mLogger.fine("Adding newly detected server name=" + name + " address=" + serverAddress + " to bungee's list of servers");
+		mLogger.info("Adding newly detected server name=" + name + " address=" + serverAddress + " to bungee's list of servers");
 
 		ServerInfo serverInfo = ProxyServer.getInstance().constructServerInfo(name, addr, "", false);
 
