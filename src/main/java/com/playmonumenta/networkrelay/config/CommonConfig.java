@@ -4,13 +4,20 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class CommonConfig {
-	public Level mLogLevel = Level.INFO;
-	public String mShardName = "default-shard";
-	public String mRabbitUri = "amqp://guest:guest@127.0.0.1:5672";
-	public int mHeartbeatInterval;
-	public int mDestinationTimeout;
-	public long mDefaultTtl;
+public class CommonConfig {
+	public static final Level DEFAULT_LOG_LEVEL = Level.INFO;
+	public static final String DEFAULT_SHARD_NAME = "default-shard";
+	public static final String DEFAULT_RABBIT_URI = "amqp://guest:guest@127.0.0.1:5672";
+	public static final int DEFAULT_HEARTBEAT_INTERVAL = 1;
+	public static final int DEFAULT_DESTINATION_TIMEOUT = 5;
+	public static final long DEFAULT_DEFAULT_TTL = 604800L;
+
+	public Level mLogLevel = DEFAULT_LOG_LEVEL;
+	public String mShardName = DEFAULT_SHARD_NAME;
+	public String mRabbitUri = DEFAULT_RABBIT_URI;
+	public int mHeartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
+	public int mDestinationTimeout = DEFAULT_DESTINATION_TIMEOUT;
+	public long mDefaultTtl = DEFAULT_DEFAULT_TTL;
 
 	protected void loadCommon(Logger logger, Map<String, Object> config) {
 		Level logLevel = null;
@@ -23,60 +30,63 @@ public abstract class CommonConfig {
 			logger.warning("log-level=" + logLevelStr + " is invalid - defaulting to INFO");
 		}
 		if (logLevel == null) {
-			logLevel = Level.INFO;
+			logLevel = DEFAULT_LOG_LEVEL;
 		}
 		mLogLevel = logLevel;
 
 		/* Shard name defaults to environment variable NETWORK_RELAY_NAME if present */
 		String shardName = System.getenv("NETWORK_RELAY_NAME");
 		if (shardName == null || shardName.isEmpty()) {
-			shardName = "default-shard";
+			shardName = DEFAULT_SHARD_NAME;
 		}
 		shardName = getString(config, "shard-name", shardName);
 		mShardName = shardName;
-		if (mShardName.equals("default-shard")) {
+		if (DEFAULT_SHARD_NAME.equals(mShardName)) {
 			logger.warning("shard-name is default value 'default-shard' which should be changed!");
 		} else {
 			logger.info("shard-name=" + mShardName);
 		}
 
-		mRabbitUri = getString(config, "rabbitmq-uri", "amqp://guest:guest@127.0.0.1:5672");
-		if (mRabbitUri.equals("amqp://guest:guest@127.0.0.1:5672")) {
+		mRabbitUri = getString(config, "rabbitmq-uri", DEFAULT_RABBIT_URI);
+		if (DEFAULT_RABBIT_URI.equals(mRabbitUri)) {
 			logger.info("rabbitmq-uri=<default>");
 		} else {
 			logger.info("rabbitmq-uri=<set>");
 		}
 
-		mHeartbeatInterval = getInt(config, "heartbeat-interval", 1);
+		mHeartbeatInterval = getInt(config, "heartbeat-interval", DEFAULT_HEARTBEAT_INTERVAL);
 		if (mHeartbeatInterval <= 0) {
-			logger.warning("heartbeat-interval is <= 0 which is invalid! Using default of 1.");
-			mHeartbeatInterval = 1;
+			logger.warning("heartbeat-interval is <= 0 which is invalid! Using default of "
+				+ DEFAULT_HEARTBEAT_INTERVAL + ".");
+			mHeartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
 		} else {
 			logger.info("heartbeat-interval=" + mHeartbeatInterval);
 		}
 
-		mDestinationTimeout = getInt(config, "destination-timeout", 5);
+		mDestinationTimeout = getInt(config, "destination-timeout", DEFAULT_DESTINATION_TIMEOUT);
 		if (mDestinationTimeout <= 1) {
-			logger.warning("destination-timeout is <= 1 which is invalid! Using default of 5.");
-			mDestinationTimeout = 5;
+			logger.warning("destination-timeout is <= 1 which is invalid! Using default of "
+				+ DEFAULT_DESTINATION_TIMEOUT + ".");
+			mDestinationTimeout = DEFAULT_DESTINATION_TIMEOUT;
 		} else {
 			logger.info("destination-timeout=" + mDestinationTimeout);
 		}
 
-		mDefaultTtl = getLong(config, "default-time-to-live", 604800);
-		if (mDefaultTtl < 0) {
-			logger.warning("default-time-to-live is < 0 which is invalid! Using default of 604800.");
-			mDefaultTtl = 604800;
+		mDefaultTtl = getLong(config, "default-time-to-live", DEFAULT_DEFAULT_TTL);
+		if (mDefaultTtl < 0L) {
+			logger.warning("default-time-to-live is < 0 which is invalid! Using default of "
+				+ DEFAULT_DEFAULT_TTL + ".");
+			mDefaultTtl = DEFAULT_DEFAULT_TTL;
 		} else {
 			logger.info("default-time-to-live=" + mDefaultTtl);
 		}
 	}
 
-	public String getString(Map<String, Object> config, String key, String fallback) {
+	public static String getString(Map<String, Object> config, String key, String fallback) {
 		return getString(config, key, fallback, false);
 	}
 
-	public String getString(Map<String, Object> config, String key, String fallback, boolean allowEmpty) {
+	public static String getString(Map<String, Object> config, String key, String fallback, boolean allowEmpty) {
 		Object o = config.get(key);
 		if (!(o instanceof String)) {
 			return fallback;
@@ -88,27 +98,30 @@ public abstract class CommonConfig {
 		return result;
 	}
 
-	public boolean getBoolean(Map<String, Object> config, String key, boolean fallback) {
+	public static boolean getBoolean(Map<String, Object> config, String key, boolean fallback) {
 		Object o = config.get(key);
-		if (!(o instanceof Boolean)) {
-			return fallback;
+		if (o instanceof Boolean) {
+			return (boolean) o;
 		}
-		return (boolean) o;
+		return fallback;
 	}
 
-	public int getInt(Map<String, Object> config, String key, int fallback) {
+	public static int getInt(Map<String, Object> config, String key, int fallback) {
 		Object o = config.get(key);
-		if (!(o instanceof Integer)) {
-			return fallback;
+		if (o instanceof Integer) {
+			return (int) o;
 		}
-		return (int) o;
+		return fallback;
 	}
 
-	public long getLong(Map<String, Object> config, String key, long fallback) {
+	public static long getLong(Map<String, Object> config, String key, long fallback) {
 		Object o = config.get(key);
-		if (!(o instanceof Long)) {
-			return fallback;
+		if (o instanceof Long) {
+			return (long) o;
 		}
-		return (long) o;
+		if (o instanceof Integer) {
+			return (int) o;
+		}
+		return fallback;
 	}
 }
