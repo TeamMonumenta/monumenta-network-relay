@@ -1,0 +1,9 @@
+log-level: FINE
+broadcast-command-sending-enabled: false
+broadcast-command-receiving-enabled: false
+shard-name: "non-default-shard"
+server-address: "1.2.3.4"
+rabbitmq-uri: "amqp://user:pass@127.0.0.1:5673"
+heartbeat-interval: 2
+destination-timeout: 6
+default-time-to-live: 604801

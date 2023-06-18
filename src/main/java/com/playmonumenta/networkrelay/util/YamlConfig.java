@@ -1,6 +1,5 @@
 package com.playmonumenta.networkrelay.util;
 
-import com.google.common.base.Charsets;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,7 +56,7 @@ public class YamlConfig {
 
 		Map<?, ?> internalYaml;
 		try (FileInputStream stream = new FileInputStream(configFile)) {
-			try (BufferedReader input = new BufferedReader(new InputStreamReader(stream, Charsets.UTF_8))) {
+			try (BufferedReader input = new BufferedReader(new InputStreamReader(stream, "UTF-8"))) {
 				StringBuilder builder = new StringBuilder();
 				String line;
 				while ((line = input.readLine()) != null) {

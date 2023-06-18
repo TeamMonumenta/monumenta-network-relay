@@ -1,0 +1,9 @@
+log-level: FINE
+run-received-commands: false
+shard-name: "non-default-bungee"
+auto-register-servers-to-bungee: true
+auto-unregister-inactive-servers-from-bungee: true
+rabbitmq-uri: "amqp://user:pass@127.0.0.1:5673"
+heartbeat-interval: 2
+destination-timeout: 6
+default-time-to-live: 604801

@@ -56,6 +56,9 @@ repositories {
 }
 
 dependencies {
+	testImplementation(platform("org.junit:junit-bom:5.9.3"))
+	testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
+	testImplementation("org.yaml:snakeyaml:1.30")
     compileOnly("org.spigotmc:spigot-api:1.16.4-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:16.0.2")
     implementation("com.rabbitmq:amqp-client:5.8.0")
@@ -199,6 +202,13 @@ tasks.create("play-deploy") {
             }
         }
     }
+}
+
+tasks.test {
+	useJUnitPlatform()
+	testLogging {
+		events("passed", "skipped", "failed")
+	}
 }
 
 fun Service.runSessions(action: RunHandler.() -> Unit) =
