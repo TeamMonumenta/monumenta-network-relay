@@ -129,7 +129,7 @@ public class NetworkMessageListenerBungee implements Listener {
 		if (getServers().containsKey(name)) {
 			SocketAddress previousAddress = getServers().get(name).getSocketAddress();
 			// check if addresses are different
-			if (previousAddress != null && previousAddress != addr) {
+			if (previousAddress != null && !previousAddress.equals(addr)) {
 				// if addresses are different, remove the old address
 				mLogger.warning("Server: '" + name + "' has different address now (Old: '" + previousAddress + "') (New: '" + addr + "')");
 				mLogger.warning("Removing old server with different address...");
