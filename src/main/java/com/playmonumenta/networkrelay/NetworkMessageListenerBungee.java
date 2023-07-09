@@ -114,11 +114,6 @@ public class NetworkMessageListenerBungee implements Listener {
 			return;
 		}
 
-		if (getServers().containsKey(name)) {
-			mLogger.warning("Tried to add server '" + name + "' due to heartbeat auto-registration but it already exists");
-			return;
-		}
-
 		SocketAddress addr;
 		try {
 			addr = Util.getAddr(serverAddress);
@@ -128,6 +123,22 @@ public class NetworkMessageListenerBungee implements Listener {
 		if (addr == null) {
 			mLogger.warning("Tried to add server '" + name + "' but address '" + serverAddress + "' is invalid");
 			return;
+		}
+
+		// move duplicate server check after to ensure that addresses are the same
+		if (getServers().containsKey(name)) {
+			SocketAddress previousAddress = getServers().get(name).getSocketAddress();
+			// check if addresses are different
+			if (previousAddress != null && previousAddress != addr) {
+				// if addresses are different, remove the old address
+				mLogger.warning("Server: '" + name + "' has different address now (Old: '" + previousAddress + "') (New: '" + addr + "')");
+				mLogger.warning("Removing old server with different address...");
+				getServers().remove(name);
+			} else {
+				// otherwise complain and ignore
+				mLogger.warning("Tried to add server '" + name + "' due to heartbeat auto-registration but it already exists");
+				return;
+			}
 		}
 
 		mLogger.info("Adding newly detected server name=" + name + " address=" + serverAddress + " to bungee's list of servers");
