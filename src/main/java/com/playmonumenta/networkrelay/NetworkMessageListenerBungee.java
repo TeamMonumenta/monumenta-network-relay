@@ -136,7 +136,7 @@ public class NetworkMessageListenerBungee implements Listener {
 				getServers().remove(name);
 			} else {
 				// otherwise complain and ignore
-				mLogger.warning("Tried to add server '" + name + "' due to heartbeat auto-registration but it already exists");
+				mLogger.info("Tried to add server '" + name + "' due to heartbeat auto-registration but it already exists");
 				return;
 			}
 		}
