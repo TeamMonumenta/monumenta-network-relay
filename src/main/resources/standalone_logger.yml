@@ -1,0 +1,33 @@
+# Set the default log level of this plugin
+# Should be one of: ALL FINEST FINER FINE INFO WARNING SEVERE OFF
+log-level: INFO
+
+# This is the name for this server shard, which defines what name this server will listen for messages on.
+# Messages sent to this name will arrive here
+# This name must be globally unique for messages to route correctly - use a different one on each server!
+# Will use the default value from the environment variable NETWORK_RELAY_NAME if that variable is set.
+# Config file still overrides environment variable, so if you want to use the variable comment out shard-name
+shard-name: "default-rabbitmq-test-logger"
+
+# This describes how to connect to your rabbitmq server
+# Default arguments here are:
+#   user = guest (this is the default username if authentication is disabled)
+#   pass = guest (this is the default password if authentication is disabled)
+#   hostname = 127.0.0.1 (change this if rabbitmq is running on a different server)
+#   port = 5672 (the default port, you probably don't need to change this)
+rabbitmq-uri: "amqp://guest:guest@127.0.0.1:5672"
+
+# Time in seconds between broadcasting heartbeat messages
+# Used to show this destination is online
+# To reduce network usage, heartbeat messages are skipped if other messages are sent
+heartbeat-interval: 1
+
+# Time in seconds before destinations are considered offline
+destination-timeout: 5
+
+# Time-to-live in seconds for default network messages (those without an explicit time set by the caller)
+# This prevents messages from building up for servers that are offline
+# Note that heartbeat messages use a different (much shorter) time to live that is 5x their interval
+# Default is 7 days
+# 0 to disable
+default-time-to-live: 604800
