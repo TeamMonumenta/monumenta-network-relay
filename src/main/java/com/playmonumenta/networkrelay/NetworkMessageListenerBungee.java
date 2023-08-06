@@ -6,7 +6,6 @@ import com.google.gson.JsonPrimitive;
 import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.api.ProxyServer;
@@ -126,14 +125,15 @@ public class NetworkMessageListenerBungee implements Listener {
 		}
 
 		// move duplicate server check after to ensure that addresses are the same
-		if (getServers().containsKey(name)) {
-			SocketAddress previousAddress = getServers().get(name).getSocketAddress();
+		ServerInfo info = ProxyServer.getInstance().getServerInfo(name);
+		if (info != null) {
+			SocketAddress previousAddress = info.getSocketAddress();
 			// check if addresses are different
 			if (previousAddress != null && !previousAddress.equals(addr)) {
 				// if addresses are different, remove the old address
 				mLogger.warning("Server: '" + name + "' has different address now (Old: '" + previousAddress + "') (New: '" + addr + "')");
 				mLogger.warning("Removing old server with different address...");
-				getServers().remove(name);
+				ProxyServer.getInstance().getConfig().removeServerNamed(name); // Deprecation note: This whole class is deprecated to discourage use, but no other options exist
 			} else {
 				// otherwise complain and ignore
 				mLogger.info("Tried to add server '" + name + "' due to heartbeat auto-registration but it already exists");
@@ -145,7 +145,7 @@ public class NetworkMessageListenerBungee implements Listener {
 
 		ServerInfo serverInfo = ProxyServer.getInstance().constructServerInfo(name, addr, "", false);
 
-		getServers().put(name, serverInfo);
+		ProxyServer.getInstance().getConfig().addServer(serverInfo); // Deprecation note: This whole class is deprecated to discourage use, but no other options exist
 	}
 
 	@EventHandler(priority = EventPriority.NORMAL)
@@ -155,7 +155,7 @@ public class NetworkMessageListenerBungee implements Listener {
 		}
 
 		String name = event.getDest();
-		ServerInfo info = getServers().get(name);
+		ServerInfo info = ProxyServer.getInstance().getServerInfo(name);
 		if (info == null) {
 			return;
 		}
@@ -166,11 +166,7 @@ public class NetworkMessageListenerBungee implements Listener {
 			p.disconnect(new TextComponent("The server '" + name + "' you were connected to stopped or was otherwise disconnected from bungeecord"));
 		}
 
-		getServers().remove(name);
-	}
-
-	public static Map<String, ServerInfo> getServers() {
-		return ProxyServer.getInstance().getServers();
+		ProxyServer.getInstance().getConfig().removeServerNamed(name); // Deprecation note: This whole class is deprecated to discourage use, but no other options exist
 	}
 }
 

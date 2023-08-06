@@ -14,6 +14,7 @@ class BukkitConfigTest {
 	private static final String NON_DEFAULT_FILENAME = "non_default_config_bukkit.yml";
 
 	@Test
+	@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 	void loadConfigTest() {
 		Logger logger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 

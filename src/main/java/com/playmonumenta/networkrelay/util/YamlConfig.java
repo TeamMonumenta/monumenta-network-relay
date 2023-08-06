@@ -15,11 +15,9 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
-import org.yaml.snakeyaml.representer.Representer;
 
 public class YamlConfig {
 	public static Map<String, Object> loadWithFallback(Logger logger,
@@ -65,14 +63,7 @@ public class YamlConfig {
 				}
 				LoaderOptions loaderOptions = new LoaderOptions();
 				loaderOptions.setMaxAliasesForCollections(Integer.MAX_VALUE);
-
-				// CVE-2022-38752
-				// CVE-2022-41854
-				// Maliciously crafted yaml input may result in Denial of Service
-				// But, this can not occur without filesystem access,
-				// at which point a bad actor could add malicious code by easier means
-				//noinspection VulnerableCodeUsages
-				Yaml yaml = new Yaml(new SafeConstructor(), new Representer(), new DumperOptions(), loaderOptions);
+				Yaml yaml = new Yaml(new SafeConstructor(loaderOptions));
 
 				internalYaml = yaml.load(builder.toString());
 			}
