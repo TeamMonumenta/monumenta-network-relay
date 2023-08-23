@@ -40,6 +40,12 @@ public class RabbitMQManager {
 	private final long mDefaultTTL;
 
 	/*
+	 * All messages will be queued until the server finishes starting.
+	 * This avoids calling DestOnlineEvents before plugins have finished loading to handle them.
+	 */
+	private boolean mServerFinishedStarting = false;
+
+	/*
 	 * If mShutdown = false, this is expected to run normally
 	 * If mShutdown = true, the server is already shutting down
 	 */
@@ -228,7 +234,7 @@ public class RabbitMQManager {
 						mAbstraction.sendMessageEvent(channel, source, data);
 					} else {
 						/* This shard was not known to be online until this message */
-						if (pluginDataFinal == null) {
+						if (!mServerFinishedStarting || pluginDataFinal == null) {
 							/*
 							 * Got a message from this shard, but unfortunately it doesn't contain any plugin data
 							 * (i.e. it's not a heartbeat message)
@@ -237,14 +243,20 @@ public class RabbitMQManager {
 							 * Also can't deliver the message to plugins, since they may be doing state tracking based on online status
 							 *
 							 * Instead, queue the packet for later delivery, once we do receive a heartbeat message containing plugin data
+							 *
+							 * This same logic applies if the server has not finished starting yet - queue all messages
 							 */
 
 							/* Get existing queue or create and insert a new one */
 							ArrayDeque<QueuedMessage> queue = mDestinationQueuedMessages.computeIfAbsent(source, (unused) -> new ArrayDeque<>());
 							queue.addLast(new QueuedMessage(channel, data));
 
-							//TODO: change log level? Maybe warning if the queue is big or contains old entries?
-							mLogger.warning("Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size());
+							String msg = "Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size();
+							if (queue.size() > 100) {
+								mLogger.warning(msg);
+							} else {
+								mLogger.info(msg);
+							}
 						} else {
 							/*
 							 * Got a message from this shard, and it has plugin data - great!
@@ -449,5 +461,9 @@ public class RabbitMQManager {
 	private boolean isPrimaryThread() {
 		//noinspection deprecation
 		return mPrimaryThreadId == Thread.currentThread().getId();
+	}
+
+	public void setServerFinishedStarting() {
+		mServerFinishedStarting = true;
 	}
 }

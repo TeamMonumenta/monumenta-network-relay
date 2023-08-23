@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.playmonumenta.networkrelay.config.BungeeConfig;
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -36,6 +37,9 @@ public class NetworkRelayBungee extends Plugin {
 			getLogger().severe("RabbitMQ manager failed to initialize. This plugin will not function");
 			e.printStackTrace();
 		}
+
+		// After a short while confirm the server has finished starting so messages can start being processed
+		getProxy().getScheduler().schedule(this, () -> mRabbitMQManager.setServerFinishedStarting(), 5, TimeUnit.SECONDS);
 	}
 
 	@Override
