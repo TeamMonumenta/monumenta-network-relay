@@ -13,12 +13,13 @@ import com.rabbitmq.client.ShutdownSignalException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.Nullable;
 
@@ -70,14 +71,14 @@ public class RabbitMQManager {
 	 * consider that destination offline.
 	 * Offline destinations are removed from the map.
 	 */
-	private final Map<String, Instant> mDestinationLastHeartbeat = new HashMap<>();
+	private final Map<String, Instant> mDestinationLastHeartbeat = new ConcurrentSkipListMap<>();
 
 	/*
 	 * Most recently received plugin data from a shard
 	 * Updated each heartbeat, removed when shard is considered offline
 	 * based on mDestinationLastHeartbeat
 	 */
-	private final Map<String, JsonObject> mDestinationHeartbeatData = new HashMap<>();
+	private final Map<String, JsonObject> mDestinationHeartbeatData = new ConcurrentSkipListMap<>();
 
 	private static class QueuedMessage {
 		final String mChannel;
@@ -97,7 +98,7 @@ public class RabbitMQManager {
 		}
 	}
 
-	private final Map<String, ArrayDeque<QueuedMessage>> mDestinationQueuedMessages = new HashMap<>();
+	private final Map<String, Deque<QueuedMessage>> mDestinationQueuedMessages = new ConcurrentSkipListMap<>();
 
 	private class RelayShutdownHandler implements ShutdownListener {
 		@Override
@@ -248,7 +249,7 @@ public class RabbitMQManager {
 							 */
 
 							/* Get existing queue or create and insert a new one */
-							ArrayDeque<QueuedMessage> queue = mDestinationQueuedMessages.computeIfAbsent(source, (unused) -> new ArrayDeque<>());
+							Deque<QueuedMessage> queue = mDestinationQueuedMessages.computeIfAbsent(source, (unused) -> new ConcurrentLinkedDeque<>());
 							queue.addLast(new QueuedMessage(channel, data));
 
 							String msg = "Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size();
@@ -270,7 +271,7 @@ public class RabbitMQManager {
 							mAbstraction.sendMessageEvent(channel, source, data);
 
 							/* Check if there were any queued messages from before heartbeat data was available and deliver them */
-							ArrayDeque<QueuedMessage> queue = mDestinationQueuedMessages.remove(source);
+							Deque<QueuedMessage> queue = mDestinationQueuedMessages.remove(source);
 							if (queue != null) {
 								for (QueuedMessage msg : queue) {
 									mLogger.fine(() -> "Delivering queued message from " + source + " now that it is marked as online");
@@ -423,7 +424,9 @@ public class RabbitMQManager {
 	}
 
 	protected Set<String> getOnlineShardNames() {
-		return new HashSet<>(mDestinationLastHeartbeat.keySet());
+		Set<String> newSet = Collections.newSetFromMap(new ConcurrentSkipListMap<>());
+		newSet.addAll(mDestinationLastHeartbeat.keySet());
+		return newSet;
 	}
 
 	protected Map<String, JsonObject> getOnlineShardHeartbeatData() {
@@ -464,6 +467,7 @@ public class RabbitMQManager {
 	}
 
 	public void setServerFinishedStarting() {
+		mLogger.info("Server has finished starting, will start processing messages now");
 		mServerFinishedStarting = true;
 	}
 }

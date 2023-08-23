@@ -57,7 +57,11 @@ public class NetworkRelay extends JavaPlugin {
 		}
 
 		// After a few ticks confirm the server has finished starting so messages can start being processed
-		Bukkit.getScheduler().runTaskLater(this, () -> mRabbitMQManager.setServerFinishedStarting(), 5);
+		Bukkit.getScheduler().runTaskLater(this, () -> {
+			if (mRabbitMQManager!= null) {
+				mRabbitMQManager.setServerFinishedStarting();
+			}
+		}, 5);
 	}
 
 	@Override
