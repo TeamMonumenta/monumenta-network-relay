@@ -55,6 +55,9 @@ public class NetworkRelay extends JavaPlugin {
 		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
 			new PlaceholderAPIIntegration(this).register();
 		}
+
+		// After a few ticks confirm the server has finished starting so messages can start being processed
+		Bukkit.getScheduler().runTaskLater(this, () -> mRabbitMQManager.setServerFinishedStarting(), 5);
 	}
 
 	@Override
