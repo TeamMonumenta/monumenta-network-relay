@@ -39,7 +39,11 @@ public class NetworkRelayBungee extends Plugin {
 		}
 
 		// After a short while confirm the server has finished starting so messages can start being processed
-		getProxy().getScheduler().schedule(this, () -> mRabbitMQManager.setServerFinishedStarting(), 5, TimeUnit.SECONDS);
+		getProxy().getScheduler().schedule(this, () -> {
+			if (mRabbitMQManager!= null) {
+				mRabbitMQManager.setServerFinishedStarting();
+			}
+		}, 5, TimeUnit.SECONDS);
 	}
 
 	@Override
