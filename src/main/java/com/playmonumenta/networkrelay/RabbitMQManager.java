@@ -224,7 +224,7 @@ public class RabbitMQManager {
 				if (!isDestShutdown) {
 					boolean heartbeatDataPresent = mDestinationLastHeartbeat.containsKey(source);
 
-					if (pluginDataFinal != null) {
+					if (mServerFinishedStarting && pluginDataFinal != null) {
 						/* This message contained heartbeat data - record it */
 						mDestinationLastHeartbeat.put(source, Instant.now());
 						mDestinationHeartbeatData.put(source, pluginDataFinal);
