@@ -252,11 +252,20 @@ public class RabbitMQManager {
 							Deque<QueuedMessage> queue = mDestinationQueuedMessages.computeIfAbsent(source, (unused) -> new ConcurrentLinkedDeque<>());
 							queue.addLast(new QueuedMessage(channel, data));
 
-							String msg = "Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size();
-							if (queue.size() > 100) {
-								mLogger.warning(msg);
+							StringBuilder msg = new StringBuilder()
+								.append("Queued packet from ")
+								.append(source)
+								.append(" as this shard ");
+							if (!mServerFinishedStarting) {
+								msg.append("is not ready to receive heartbeat data yet");
 							} else {
-								mLogger.info(msg);
+								msg.append("has not received heartbeat data yet");
+							}
+							msg.append(". Current queue size is ").append(queue.size());
+							if (queue.size() > 100) {
+								mLogger.warning(msg.toString());
+							} else {
+								mLogger.info(msg.toString());
 							}
 						} else {
 							/*
