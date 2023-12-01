@@ -67,6 +67,12 @@ public class NetworkRelayGeneric {
 		return INSTANCE;
 	}
 
+	public void setServerFinishedStarting() {
+		if (mRabbitMQManager != null) {
+			mRabbitMQManager.setServerFinishedStarting();
+		}
+	}
+
 	public void onDisable() {
 		if (mRabbitMQManager != null) {
 			mRabbitMQManager.stop();
