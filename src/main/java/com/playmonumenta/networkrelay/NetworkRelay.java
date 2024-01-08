@@ -37,6 +37,7 @@ public class NetworkRelay extends JavaPlugin {
 		long defaultTTL = config.mDefaultTtl;
 
 		Bukkit.getServer().getPluginManager().registerEvents(new NetworkMessageListener(serverAddress), this);
+		Bukkit.getServer().getPluginManager().registerEvents(new RemotePlayerManager(this), this);
 
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
