@@ -2,6 +2,8 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
@@ -99,48 +101,60 @@ public class NetworkRelayAPI {
 		return getInstance().getOnlineShardNames();
 	}
 
-	public static String[] getOnlinePlayerNames() {
-			RemotePlayerManager manager = RemotePlayerManager.getInstance();
-			if (manager == null) {
-				return new String[]{};
-			}
-			return manager.getAllOnlinePlayersName();
-	}
-
-	@Nullable
-	public static String getPlayerShard(String playerName) {
+	public static Set<String> getOnlinePlayerNames(boolean visibleOnly) {
 		RemotePlayerManager manager = RemotePlayerManager.getInstance();
 		if (manager == null) {
-			return null;
+			return new HashSet<>();
 		}
-		return manager.getPlayerShard(playerName);
+		return manager.getAllOnlinePlayersName(visibleOnly);
 	}
 
-	@Nullable
-	public static String getPlayerShard(UUID playerUuid) {
+	public static Optional<String> getPlayerShard(String playerName) {
 		RemotePlayerManager manager = RemotePlayerManager.getInstance();
 		if (manager == null) {
-			return null;
+			return Optional.empty();
 		}
-		return manager.getPlayerShard(playerUuid);
+		return Optional.ofNullable(manager.getPlayerShard(playerName));
 	}
 
-	@Nullable
-	public static RemotePlayerManager.RemotePlayer getRemotePlayer(String playerName) {
+	public static Optional<String> getPlayerShard(UUID playerUuid) {
 		RemotePlayerManager manager = RemotePlayerManager.getInstance();
 		if (manager == null) {
-			return null;
+			return Optional.empty();
 		}
-		return manager.getRemotePlayer(playerName);
+		return Optional.ofNullable(manager.getPlayerShard(playerUuid));
 	}
 
-	@Nullable
-	public static RemotePlayerManager.RemotePlayer getRemotePlayer(UUID playerUuid) {
+	public static Optional<RemotePlayerManager.RemotePlayer> getRemotePlayer(String playerName) {
 		RemotePlayerManager manager = RemotePlayerManager.getInstance();
 		if (manager == null) {
-			return null;
+			return Optional.empty();
 		}
-		return manager.getRemotePlayer(playerUuid);
+		return Optional.ofNullable(manager.getRemotePlayer(playerName));
+	}
+
+	public static Optional<RemotePlayerManager.RemotePlayer> getRemotePlayer(UUID playerUuid) {
+		RemotePlayerManager manager = RemotePlayerManager.getInstance();
+		if (manager == null) {
+			return Optional.empty();
+		}
+		return Optional.ofNullable(manager.getRemotePlayer(playerUuid));
+	}
+
+	public static Optional<Boolean> isPlayerVanished(UUID playerUuid) {
+		RemotePlayerManager manager = RemotePlayerManager.getInstance();
+		if (manager == null) {
+			return Optional.empty();
+		}
+		return Optional.of(manager.isPlayerVisible(playerUuid));
+	}
+
+	public static Optional<Boolean> isPlayerVanished(String playerName) {
+		RemotePlayerManager manager = RemotePlayerManager.getInstance();
+		if (manager == null) {
+			return Optional.empty();
+		}
+		return Optional.of(manager.isPlayerVisible(playerName));
 	}
 
 	/**

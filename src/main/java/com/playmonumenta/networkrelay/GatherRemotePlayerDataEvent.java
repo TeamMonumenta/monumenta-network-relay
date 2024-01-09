@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
-import org.jetbrains.annotations.NotNull;
 
 public class GatherRemotePlayerDataEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
@@ -16,11 +15,11 @@ public class GatherRemotePlayerDataEvent extends Event {
 	 * Include data in the player's plugin data (that should be retrievable for this shard).
 	 *
 	 * @param pluginId A unique string key identifying this plugin.
-	 * @param key The key of this piece of data.
-	 * @param data The data to be included.
+	 * @param key      The key of this piece of data.
+	 * @param data     The data to be included.
 	 */
 	public void addPluginData(String pluginId, String key, JsonObject data) {
-		if  (mPluginData.containsKey(pluginId)) {
+		if (mPluginData.containsKey(pluginId)) {
 			JsonObject root = mPluginData.get(pluginId);
 			root.add(key, data);
 			return;
@@ -34,22 +33,22 @@ public class GatherRemotePlayerDataEvent extends Event {
 	 * Sets the plugin data that should be retrievable for this shard
 	 *
 	 * @param pluginId A unique string key identifying this plugin.
-	 * @param data The data to save.
+	 * @param data     The data to save.
 	 */
 	public void setPluginData(String pluginId, JsonObject data) {
-        mPluginData.remove(pluginId);
+		mPluginData.remove(pluginId);
 		mPluginData.put(pluginId, data);
 	}
 
 	/**
-	 * Gets the plugin data already registered
+	 * Gets the already registered plugin data
 	 */
 	public Map<String, JsonObject> getPluginData() {
 		return mPluginData;
 	}
 
 	@Override
-	public @NotNull HandlerList getHandlers() {
+	public HandlerList getHandlers() {
 		return handlers;
 	}
 
