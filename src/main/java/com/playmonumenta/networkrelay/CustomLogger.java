@@ -1,17 +1,27 @@
 package com.playmonumenta.networkrelay;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CustomLogger extends Logger {
+	private static @MonotonicNonNull CustomLogger INSTANCE = null;
+
 	private final Logger mLogger;
 	private Level mLevel;
 
 	public CustomLogger(Logger logger, Level level) {
 		super(logger.getName(), logger.getResourceBundleName());
+		INSTANCE = this;
 		mLogger = logger;
 		mLevel = level;
+	}
+
+	public static Optional<CustomLogger> getInstance() {
+		return Optional.ofNullable(INSTANCE);
 	}
 
 	@Override
