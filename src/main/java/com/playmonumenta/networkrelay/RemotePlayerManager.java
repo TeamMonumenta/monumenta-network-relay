@@ -33,9 +33,8 @@ public class RemotePlayerManager implements Listener {
 		public RemotePlayer(Player player, boolean isOnline) {
 			mUuid = player.getUniqueId();
 			mName = player.getName();
-			RemotePlayerManager manager = RemotePlayerManager.getInstance();
-			mShard = (manager != null && manager.getShardName() != null) ? manager.getShardName() : NetworkRelayAPI.getShardName();
-			mIsHidden = (manager != null && !manager.isLocalPlayerVisible(player));
+			mShard = getShardName() != null ? getShardName() : NetworkRelayAPI.getShardName();
+			mIsHidden = !isLocalPlayerVisible(player);
 			mIsOnline = isOnline;
 			mPluginData = new ConcurrentHashMap<>();
 		}
@@ -109,7 +108,7 @@ public class RemotePlayerManager implements Listener {
 	private static final Map<String, RemotePlayer> mRemotePlayersByName = new ConcurrentSkipListMap<>();
 	private static final Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
-	protected RemotePlayerManager(NetworkRelay plugin) {
+	protected RemotePlayerManager() {
 		INSTANCE = this;
 		String lShard = getShardName();
 		try {
