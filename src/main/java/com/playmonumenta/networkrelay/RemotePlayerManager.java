@@ -399,7 +399,7 @@ public class RemotePlayerManager implements Listener {
 		Player player = event.getPlayer();
 		RemotePlayer oldRemotePlayer = mRemotePlayersByUuid.get(player.getUniqueId());
 		if (oldRemotePlayer != null && !oldRemotePlayer.mShard.equals(getShardName())) {
-			MMLog.fine("Refusing to unregister player: they are on another shard");
+			MMLog.fine("Refusing to unregister player " + player.getName() + ": they are on another shard");
 			return;
 		}
 		RemotePlayer remotePlayer = new RemotePlayer(player, false);
