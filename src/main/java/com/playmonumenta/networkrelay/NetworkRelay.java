@@ -10,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelay extends JavaPlugin {
+	private static @Nullable NetworkRelay INSTANCE = null;
 	private @Nullable RabbitMQManager mRabbitMQManager = null;
 	private @Nullable BroadcastCommand mBroadcastCommand = null;
 	private @Nullable CustomLogger mLogger = null;
@@ -23,6 +24,8 @@ public class NetworkRelay extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		INSTANCE = this;
+
 		File configFile = new File(getDataFolder(), "config.yml");
 
 		BukkitConfig config = new BukkitConfig(getLogger(), configFile, getClass(), "/default_config.yml");
@@ -37,7 +40,7 @@ public class NetworkRelay extends JavaPlugin {
 		long defaultTTL = config.mDefaultTtl;
 
 		Bukkit.getServer().getPluginManager().registerEvents(new NetworkMessageListener(serverAddress), this);
-		Bukkit.getServer().getPluginManager().registerEvents(new RemotePlayerManager(), this);
+		Bukkit.getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
@@ -70,6 +73,15 @@ public class NetworkRelay extends JavaPlugin {
 		if (mRabbitMQManager != null) {
 			mRabbitMQManager.stop();
 		}
+		INSTANCE = null;
+		getServer().getScheduler().cancelTasks(this);
+	}
+
+	public static NetworkRelay getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("NetworkRelay has not been initialized yet.");
+		}
+		return INSTANCE;
 	}
 
 	@Override
