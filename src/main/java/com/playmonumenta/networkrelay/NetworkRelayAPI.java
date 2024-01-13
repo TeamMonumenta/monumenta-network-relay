@@ -111,18 +111,22 @@ public class NetworkRelayAPI {
 		return RemotePlayerManager.isPlayerOnline(playerUuid);
 	}
 
+	@Nullable
 	public static String getPlayerShard(String playerName) {
 		return RemotePlayerManager.getPlayerShard(playerName);
 	}
 
+	@Nullable
 	public static String getPlayerShard(UUID playerUuid) {
 		return RemotePlayerManager.getPlayerShard(playerUuid);
 	}
 
+	@Nullable
 	public static RemotePlayerManager.RemotePlayer getRemotePlayer(String playerName) {
 		return RemotePlayerManager.getRemotePlayer(playerName);
 	}
 
+	@Nullable
 	public static RemotePlayerManager.RemotePlayer getRemotePlayer(UUID playerUuid) {
 		return RemotePlayerManager.getRemotePlayer(playerUuid);
 	}
