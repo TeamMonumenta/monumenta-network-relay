@@ -2,8 +2,6 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;

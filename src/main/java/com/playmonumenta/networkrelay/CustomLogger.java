@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jetbrains.annotations.Nullable;
 
 public class CustomLogger extends Logger {
 	private static @MonotonicNonNull CustomLogger INSTANCE = null;
