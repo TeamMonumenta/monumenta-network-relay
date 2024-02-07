@@ -56,6 +56,7 @@ public class RemotePlayerAPI {
 		innerCheckManagerLoaded();
 		return mManager.isPlayerVisible(playerName);
 	}
+
 	public static boolean isPlayerVanished(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.isPlayerVisible(playerUuid);

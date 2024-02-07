@@ -5,21 +5,21 @@ import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
-	public abstract static class RemotePlayerAbstraction {
+	public static class RemotePlayerAbstraction {
 		public final UUID mUuid;
 		public final String mName;
 		public final boolean mIsHidden;
 		public final boolean mIsOnline;
 		public final String mShard;
 
-        protected RemotePlayerAbstraction(UUID mUuid, String mName, boolean mIsHidden, boolean mIsOnline, String mShard) {
-            this.mUuid = mUuid;
-            this.mName = mName;
-            this.mIsHidden = mIsHidden;
-            this.mIsOnline = mIsOnline;
-            this.mShard = mShard;
-        }
-    }
+		protected RemotePlayerAbstraction(UUID mUuid, String mName, boolean mIsHidden, boolean mIsOnline, String mShard) {
+			this.mUuid = mUuid;
+			this.mName = mName;
+			this.mIsHidden = mIsHidden;
+			this.mIsOnline = mIsOnline;
+			this.mShard = mShard;
+		}
+	}
 
 	protected abstract Set<String> getAllOnlinePlayersName(boolean visibleOnly);
 
@@ -28,7 +28,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	protected abstract boolean isPlayerOnline(UUID playerUuid);
 
 	@Nullable
-	protected abstract  String getPlayerShard(String playerName);
+	protected abstract String getPlayerShard(String playerName);
 
 	@Nullable
 	protected abstract String getPlayerShard(UUID playerUuid);
