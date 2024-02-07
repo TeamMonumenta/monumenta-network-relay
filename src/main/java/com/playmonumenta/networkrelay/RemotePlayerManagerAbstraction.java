@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import java.util.Set;
 import java.util.UUID;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
 	public abstract static class RemotePlayerAbstraction {
@@ -25,11 +26,11 @@ public abstract class RemotePlayerManagerAbstraction {
 	protected abstract boolean isPlayerOnline(String playerName);
 	protected abstract boolean isPlayerOnline(UUID playerUuid);
 
-	protected abstract String getPlayerShard(String playerName);
-	protected abstract String getPlayerShard(UUID playerUuid);
+	protected abstract @Nullable String getPlayerShard(String playerName);
+	protected abstract @Nullable String getPlayerShard(UUID playerUuid);
 
-	protected abstract RemotePlayerAbstraction getRemotePlayer(String playerName);
-	protected abstract RemotePlayerAbstraction getRemotePlayer(UUID playerUuid);
+	protected abstract @Nullable RemotePlayerAbstraction getRemotePlayer(String playerName);
+	protected abstract @Nullable RemotePlayerAbstraction getRemotePlayer(UUID playerUuid);
 
 	protected abstract boolean isPlayerVisible(String playerName);
 	protected abstract boolean isPlayerVisible(UUID playerUuid);
