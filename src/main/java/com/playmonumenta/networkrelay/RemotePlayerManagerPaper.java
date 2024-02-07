@@ -154,6 +154,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		return shardName;
 	}
 
+	@Override
 	protected Set<String> getAllOnlinePlayersName(boolean visibleOnly) {
 		if (visibleOnly) {
 			return getVisiblePlayerNames();
@@ -161,10 +162,12 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		return new HashSet<>(mRemotePlayersByName.keySet());
 	}
 
+	@Override
 	protected boolean isPlayerOnline(UUID playerUuid) {
 		return mRemotePlayersByUuid.containsKey(playerUuid);
 	}
 
+	@Override
 	protected boolean isPlayerOnline(String playerName) {
 		return mRemotePlayersByName.containsKey(playerName);
 	}
@@ -195,10 +198,12 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		return currentResult;
 	}
 
+	@Override
 	protected boolean isPlayerVisible(UUID playerUuid) {
 		return mVisiblePlayers.contains(playerUuid);
 	}
 
+	@Override
 	protected boolean isPlayerVisible(String playerName) {
 		@Nullable UUID playerUuid = getPlayerUuid(playerName);
 		if (playerUuid == null) {
@@ -232,6 +237,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	@Nullable
+	@Override
 	protected String getPlayerShard(@NotNull String username) {
 		@Nullable RemotePlayer remotePlayer = getRemotePlayer(username);
 		if (remotePlayer == null) {
@@ -241,6 +247,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	@Nullable
+	@Override
 	protected String getPlayerShard(@NotNull UUID playerUuid) {
 		@Nullable RemotePlayer remotePlayer = getRemotePlayer(playerUuid);
 		if (remotePlayer == null) {
@@ -250,11 +257,13 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	@Nullable
+	@Override
 	protected RemotePlayer getRemotePlayer(@NotNull String username) {
 		return mRemotePlayersByName.get(username);
 	}
 
 	@Nullable
+	@Override
 	protected RemotePlayer getRemotePlayer(@Nullable UUID playerUuid) {
 		if (playerUuid == null) {
 			return null;
