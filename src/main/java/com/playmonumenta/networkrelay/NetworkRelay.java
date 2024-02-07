@@ -40,7 +40,6 @@ public class NetworkRelay extends JavaPlugin {
 		long defaultTTL = config.mDefaultTtl;
 
 		Bukkit.getServer().getPluginManager().registerEvents(new NetworkMessageListener(serverAddress), this);
-		Bukkit.getServer().getPluginManager().registerEvents(RemotePlayerManager.getInstance(), this);
 
 		/* Start relay components */
 		BroadcastCommand.setEnabled(broadcastCommandSendingEnabled);
@@ -66,6 +65,10 @@ public class NetworkRelay extends JavaPlugin {
 				mRabbitMQManager.setServerFinishedStarting();
 			}
 		}, 5);
+
+		//Loaded last to avoid issues where it not being able to load the shard would cause it to fail.
+		Bukkit.getServer().getPluginManager().registerEvents(RemotePlayerManagerPaper.getInstance(), this);
+		RemotePlayerAPI.init(RemotePlayerManagerPaper.getInstance());
 	}
 
 	@Override

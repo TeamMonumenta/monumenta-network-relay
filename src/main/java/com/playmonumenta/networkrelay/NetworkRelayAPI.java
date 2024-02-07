@@ -100,43 +100,43 @@ public class NetworkRelayAPI {
 	}
 
 	public static Set<String> getOnlinePlayerNames(boolean visibleOnly) {
-		return RemotePlayerManager.getAllOnlinePlayersName(visibleOnly);
+		return RemotePlayerAPI.getOnlinePlayerNames(visibleOnly);
 	}
 
 	public static boolean isPlayerOnline(String playerName) {
-		return RemotePlayerManager.isPlayerOnline(playerName);
+		return RemotePlayerAPI.isPlayerOnline(playerName);
 	}
 
 	public static boolean isPlayerOnline(UUID playerUuid) {
-		return RemotePlayerManager.isPlayerOnline(playerUuid);
+		return RemotePlayerAPI.isPlayerOnline(playerUuid);
 	}
 
 	@Nullable
 	public static String getPlayerShard(String playerName) {
-		return RemotePlayerManager.getPlayerShard(playerName);
+		return RemotePlayerAPI.getPlayerShard(playerName);
 	}
 
 	@Nullable
 	public static String getPlayerShard(UUID playerUuid) {
-		return RemotePlayerManager.getPlayerShard(playerUuid);
+		return RemotePlayerAPI.getPlayerShard(playerUuid);
 	}
 
 	@Nullable
-	public static RemotePlayerManager.RemotePlayer getRemotePlayer(String playerName) {
-		return RemotePlayerManager.getRemotePlayer(playerName);
+	public static RemotePlayerManagerAbstraction.RemotePlayerAbstraction getRemotePlayer(String playerName) {
+		return RemotePlayerAPI.getRemotePlayer(playerName);
 	}
 
 	@Nullable
-	public static RemotePlayerManager.RemotePlayer getRemotePlayer(UUID playerUuid) {
-		return RemotePlayerManager.getRemotePlayer(playerUuid);
-	}
-
-	public static boolean isPlayerVanished(UUID playerUuid) {
-		return RemotePlayerManager.isPlayerVisible(playerUuid);
+	public static RemotePlayerManagerAbstraction.RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+		return RemotePlayerAPI.getRemotePlayer(playerUuid);
 	}
 
 	public static boolean isPlayerVanished(String playerName) {
-		return RemotePlayerManager.isPlayerVisible(playerName);
+		return RemotePlayerAPI.isPlayerVanished(playerName);
+	}
+
+	public static boolean isPlayerVanished(UUID playerUuid) {
+		return RemotePlayerAPI.isPlayerVanished(playerUuid);
 	}
 
 	/**
