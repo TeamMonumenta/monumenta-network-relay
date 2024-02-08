@@ -34,7 +34,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		}
 
 		public RemotePlayerPaper(UUID mUuid, String mName, boolean mIsHidden, boolean mIsOnline, String mShard, JsonObject remoteData) {
-			super(mUuid, mName, mIsOnline, mShard);
+			super(mUuid, mName, mIsOnline, mShard, remoteData);
 			this.mIsHidden = mIsHidden;
 
 			MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
