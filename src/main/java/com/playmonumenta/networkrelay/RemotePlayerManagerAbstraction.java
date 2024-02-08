@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
-	public static abstract class RemotePlayerAbstraction {
+	public abstract static class RemotePlayerAbstraction {
 		private final ConcurrentMap<String, JsonObject> mPluginData;
 		public final UUID mUuid;
 		public final String mName;
