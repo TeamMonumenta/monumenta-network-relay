@@ -31,12 +31,12 @@ public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 		return new HashMap<>();
 	}
 
-	protected static RemotePlayerGeneric genericFrom(JsonObject remoteData) {
+	protected static RemotePlayerGeneric genericFrom(String serverType, JsonObject remoteData) {
 		UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 		String name = remoteData.get("playerName").getAsString();
 		boolean isOnline = remoteData.get("isOnline").getAsBoolean();
 		String shard = remoteData.get("shard").getAsString();
-		return new RemotePlayerGeneric(uuid, name, isOnline, shard, remoteData);
+		return new RemotePlayerGeneric(uuid, name, isOnline, serverType, shard, remoteData);
 	}
 
 	@Override

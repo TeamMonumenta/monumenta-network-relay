@@ -38,7 +38,7 @@ public abstract class RemotePlayerAbstraction {
 			case RemotePlayerBungee.SERVER_TYPE:
 				return RemotePlayerBungee.bungeeFrom(remoteData);
 			default:
-				return RemotePlayerGeneric.genericFrom(remoteData);
+				return RemotePlayerGeneric.genericFrom(serverType, remoteData);
 		}
 	}
 
