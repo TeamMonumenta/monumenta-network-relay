@@ -41,13 +41,13 @@ public class RemotePlayerAPI {
 	}
 
 	@Nullable
-	public static RemotePlayerManagerAbstraction.RemotePlayerAbstraction getRemotePlayer(String playerName) {
+	public static RemotePlayerAbstraction getRemotePlayer(String playerName) {
 		innerCheckManagerLoaded();
 		return mManager.getRemotePlayer(playerName);
 	}
 
 	@Nullable
-	public static RemotePlayerManagerAbstraction.RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+	public static RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.getRemotePlayer(playerUuid);
 	}

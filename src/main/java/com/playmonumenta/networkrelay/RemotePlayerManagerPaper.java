@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -23,57 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction implements Listener {
-	public static class RemotePlayerPaper extends RemotePlayerAbstraction {
-		private final boolean mIsHidden;
-
-		public RemotePlayerPaper(Player player, boolean isOnline) {
-			super(player.getUniqueId(), player.getName(), isOnline, getShardName());
-			this.mIsHidden = !internalPlayerVisibleTest(player);
-
-			MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
-		}
-
-		public RemotePlayerPaper(UUID mUuid, String mName, boolean mIsHidden, boolean mIsOnline, String mShard, JsonObject remoteData) {
-			super(mUuid, mName, mIsOnline, mShard, remoteData);
-			this.mIsHidden = mIsHidden;
-
-			MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
-		}
-
-		@Override
-		protected Map<String, JsonObject> gatherPluginData() {
-			GatherRemotePlayerDataEvent event = new GatherRemotePlayerDataEvent();
-			Bukkit.getPluginManager().callEvent(event);
-			return event.getPluginData();
-		}
-
-		public static RemotePlayerPaper from(JsonObject remoteData) {
-			UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
-			String name = remoteData.get("playerName").getAsString();
-			boolean isHidden = remoteData.get("isHidden").getAsBoolean();
-			boolean isOnline = remoteData.get("isOnline").getAsBoolean();
-			String shard = remoteData.get("shard").getAsString();
-			return new RemotePlayerPaper(uuid, name, isHidden, isOnline, shard, remoteData);
-		}
-
-		public void broadcast() {
-			JsonObject remotePlayerData = new JsonObject();
-			remotePlayerData.addProperty("playerUuid", mUuid.toString());
-			remotePlayerData.addProperty("playerName", mName);
-			remotePlayerData.addProperty("isHidden", mIsHidden);
-			remotePlayerData.addProperty("isOnline", mIsOnline);
-			remotePlayerData.addProperty("shard", mShard);
-			remotePlayerData.add("plugins", serializePluginData());
-
-			try {
-				NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_UPDATE_CHANNEL,
-					remotePlayerData,
-					REMOTE_PLAYER_MESSAGE_TTL);
-			} catch (Exception e) {
-				MMLog.severe("Failed to broadcast " + REMOTE_PLAYER_UPDATE_CHANNEL);
-			}
-		}
-	}
 
 	public static final int REMOTE_PLAYER_MESSAGE_TTL = 5;
 	public static final String REMOTE_PLAYER_CHANNEL_BASE = "monumenta.redissync.remote_player";
@@ -84,7 +34,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	private static final Map<String, Map<String, RemotePlayerPaper>> mRemotePlayerShardMapped = new ConcurrentSkipListMap<>();
 	private static final Map<UUID, RemotePlayerPaper> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
 	private static final Map<String, RemotePlayerPaper> mRemotePlayersByName = new ConcurrentSkipListMap<>();
-	private static final Set<UUID> mVisiblePlayers = new ConcurrentSkipListSet<>();
+	private static final Set<UUID> mHiddenPlayers = new ConcurrentSkipListSet<>();
 
 	private RemotePlayerManagerPaper() {
 		INSTANCE = this;
@@ -131,12 +81,24 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		return shardName;
 	}
 
+	protected static RemotePlayerPaper fromLocal(Player player, boolean isOnline) {
+		return new RemotePlayerPaper(
+			player.getUniqueId(),
+			player.getName(),
+			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
+			isOnline,
+			RemotePlayerManagerPaper.getShardName(),
+			player.getWorld().getName()
+		);
+	}
+
 	@Override
 	protected Set<String> getAllOnlinePlayersName(boolean visibleOnly) {
+		Set<String> visible = new HashSet<>(mRemotePlayersByName.keySet());
 		if (visibleOnly) {
-			return getVisiblePlayerNames();
+			visible.removeAll(getHiddenPlayerNames());
 		}
-		return new HashSet<>(mRemotePlayersByName.keySet());
+		return visible;
 	}
 
 	@Override
@@ -149,26 +111,26 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		return mRemotePlayersByName.containsKey(playerName);
 	}
 
-	protected Set<String> getVisiblePlayerNames() {
+	protected Set<String> getHiddenPlayerNames() {
 		Set<String> results = new ConcurrentSkipListSet<>();
-		for (UUID playerUuid : mVisiblePlayers) {
+		for (UUID playerUuid : mHiddenPlayers) {
 			results.add(getPlayerName(playerUuid));
 		}
 		return results;
 	}
 
-	private static boolean internalPlayerVisibleTest(Player player) {
+	protected static boolean internalPlayerHiddenTest(Player player) {
 		for (MetadataValue meta : player.getMetadata("vanished")) {
 			if (meta.asBoolean()) {
-				return false;
+				return true;
 			}
 		}
-		return true;
+		return false;
 	}
 
 	protected boolean isPlayerVisible(Player player) {
 		boolean cachedResult = isPlayerVisible(player.getUniqueId());
-		boolean currentResult = internalPlayerVisibleTest(player);
+		boolean currentResult = !internalPlayerHiddenTest(player);
 		if (cachedResult ^ currentResult) {
 			refreshLocalPlayer(player);
 		}
@@ -177,7 +139,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 
 	@Override
 	protected boolean isPlayerVisible(UUID playerUuid) {
-		return mVisiblePlayers.contains(playerUuid);
+		return !mHiddenPlayers.contains(playerUuid);
 	}
 
 	@Override
@@ -194,7 +156,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 			return null;
 		}
 
-		@Nullable RemotePlayerManagerPaper.RemotePlayerPaper remotePlayer = mRemotePlayersByUuid.get(playerUuid);
+		@Nullable RemotePlayerPaper remotePlayer = mRemotePlayersByUuid.get(playerUuid);
 		if (remotePlayer == null) {
 			return null;
 		}
@@ -206,7 +168,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 			return null;
 		}
 
-		@Nullable RemotePlayerManagerPaper.RemotePlayerPaper remotePlayer = mRemotePlayersByName.get(playerName);
+		@Nullable RemotePlayerPaper remotePlayer = mRemotePlayersByName.get(playerName);
 		if (remotePlayer == null) {
 			return null;
 		}
@@ -216,37 +178,37 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	@Nullable
 	@Override
 	protected String getPlayerShard(@NotNull String username) {
-		@Nullable RemotePlayerManagerPaper.RemotePlayerPaper remotePlayer = getRemotePlayer(username);
+		@Nullable RemotePlayerPaper remotePlayer = getRemotePlayer(username);
 		if (remotePlayer == null) {
 			return null;
 		}
-		return remotePlayer.mShard;
+		return remotePlayer.getShard();
 	}
 
 	@Nullable
 	@Override
 	protected String getPlayerShard(@NotNull UUID playerUuid) {
-		@Nullable RemotePlayerManagerPaper.RemotePlayerPaper remotePlayer = getRemotePlayer(playerUuid);
+		@Nullable RemotePlayerPaper remotePlayer = getRemotePlayer(playerUuid);
 		if (remotePlayer == null) {
 			return null;
 		}
-		return remotePlayer.mShard;
+		return remotePlayer.getShard();
 	}
 
 	@Nullable
 	@Override
-	protected RemotePlayerManagerPaper.RemotePlayerPaper getRemotePlayer(@NotNull String username) {
+	protected RemotePlayerPaper getRemotePlayer(@NotNull String username) {
 		return mRemotePlayersByName.get(username);
 	}
 
 	@Nullable
 	@Override
-	protected RemotePlayerManagerPaper.RemotePlayerPaper getRemotePlayer(@Nullable UUID playerUuid) {
+	protected RemotePlayerPaper getRemotePlayer(@Nullable UUID playerUuid) {
 		if (playerUuid == null) {
 			return null;
 		}
 
-		@Nullable RemotePlayerManagerPaper.RemotePlayerPaper remotePlayer = mRemotePlayersByUuid.get(playerUuid);
+		@Nullable RemotePlayerPaper remotePlayer = mRemotePlayersByUuid.get(playerUuid);
 		return remotePlayer;
 	}
 
@@ -259,16 +221,16 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	// Run this on local players whenever their information is out of date
 	protected void refreshLocalPlayer(Player player) {
 		MMLog.fine("Refreshing local player " + player.getName());
-		RemotePlayerPaper remotePlayer = new RemotePlayerPaper(player, true);
+		RemotePlayerPaper remotePlayer = fromLocal(player, true);
 
 		unregisterPlayer(remotePlayer.mUuid);
 		MMLog.fine("Registering player " + remotePlayer.mName);
 		mRemotePlayersByUuid.put(remotePlayer.mUuid, remotePlayer);
 		mRemotePlayersByName.put(remotePlayer.mName, remotePlayer);
-		if (remotePlayer.mIsHidden) {
-			mVisiblePlayers.remove(remotePlayer.mUuid);
+		if (remotePlayer.isHidden()) {
+			mHiddenPlayers.add(remotePlayer.mUuid);
 		} else {
-			mVisiblePlayers.add(remotePlayer.mUuid);
+			mHiddenPlayers.remove(remotePlayer.mUuid);
 		}
 		remotePlayer.broadcast();
 
@@ -277,17 +239,17 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	private void unregisterPlayer(UUID playerUuid) {
-		@Nullable RemotePlayerManagerPaper.RemotePlayerPaper lastPlayerState = mRemotePlayersByUuid.get(playerUuid);
+		@Nullable RemotePlayerPaper lastPlayerState = mRemotePlayersByUuid.get(playerUuid);
 		if (lastPlayerState != null) {
 			MMLog.fine("Unregistering player " + lastPlayerState.mName);
-			String lastLoc = lastPlayerState.mShard;
+			String lastLoc = lastPlayerState.getShard();
 			@Nullable Map<String, RemotePlayerPaper> lastShardRemotePlayers = mRemotePlayerShardMapped.get(lastLoc);
 			if (lastShardRemotePlayers != null) {
 				lastShardRemotePlayers.remove(lastPlayerState.mName);
 			}
 			mRemotePlayersByUuid.remove(playerUuid);
 			mRemotePlayersByName.remove(lastPlayerState.mName);
-			mVisiblePlayers.remove(playerUuid);
+			mHiddenPlayers.remove(playerUuid);
 
 			RemotePlayerUnloadedEvent event = new RemotePlayerUnloadedEvent(lastPlayerState);
 			Bukkit.getServer().getPluginManager().callEvent(event);
@@ -295,7 +257,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	private void remotePlayerChange(JsonObject data) {
-		RemotePlayerPaper remotePlayer;
+		RemotePlayerAbstraction remotePlayer;
 		try {
 			remotePlayer = RemotePlayerPaper.from(data);
 		} catch (Exception ex) {
@@ -305,33 +267,40 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 			return;
 		}
 
-		unregisterPlayer(remotePlayer.mUuid);
-		if (remotePlayer.mIsOnline) {
-			@Nullable Map<String, RemotePlayerPaper> shardRemotePlayers = mRemotePlayerShardMapped.get(remotePlayer.mShard);
+		// TODO All of the broadcasting/receiving/tracking of player data needs to be separated from the tracking and creation of local player data objects that need broadcasting
+		if (!(remotePlayer instanceof RemotePlayerPaper)) {
+			MMLog.severe("NEED TO IMPLEMENT SUPPORT FOR OTHER REMOTE PLAYER SERVER TYPES");
+			return;
+		}
+		RemotePlayerPaper remotePlayerPaper = (RemotePlayerPaper) remotePlayer;
+
+		unregisterPlayer(remotePlayerPaper.mUuid);
+		if (remotePlayerPaper.mIsOnline) {
+			@Nullable Map<String, RemotePlayerPaper> shardRemotePlayers = mRemotePlayerShardMapped.get(remotePlayerPaper.getShard());
 			if (shardRemotePlayers != null) {
-				shardRemotePlayers.put(remotePlayer.mName, remotePlayer);
+				shardRemotePlayers.put(remotePlayerPaper.mName, remotePlayerPaper);
 			}
-			MMLog.fine("Registering remote player " + remotePlayer.mName);
-			mRemotePlayersByUuid.put(remotePlayer.mUuid, remotePlayer);
-			mRemotePlayersByName.put(remotePlayer.mName, remotePlayer);
-			if (!remotePlayer.mIsHidden) {
-				mVisiblePlayers.add(remotePlayer.mUuid);
+			MMLog.fine("Registering remote player " + remotePlayerPaper.mName);
+			mRemotePlayersByUuid.put(remotePlayerPaper.mUuid, remotePlayerPaper);
+			mRemotePlayersByName.put(remotePlayerPaper.mName, remotePlayerPaper);
+			if (remotePlayerPaper.isHidden()) {
+				mHiddenPlayers.add(remotePlayerPaper.mUuid);
 			}
-			RemotePlayerLoadedEvent remotePLE = new RemotePlayerLoadedEvent(remotePlayer);
+			RemotePlayerLoadedEvent remotePLE = new RemotePlayerLoadedEvent(remotePlayerPaper);
 			Bukkit.getServer().getPluginManager().callEvent(remotePLE);
 			return;
 		}
 
-		@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayer.mUuid);
+		@Nullable Player localPlayer = Bukkit.getPlayer(remotePlayerPaper.mUuid);
 		if (localPlayer != null && localPlayer.isOnline()) {
 			// Player logged off on remote shard, but is locally online.
 			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.fine("Detected race condition, triggering refresh on " + remotePlayer.mName);
+			MMLog.fine("Detected race condition, triggering refresh on " + remotePlayerPaper.mName);
 			refreshLocalPlayer(localPlayer);
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
 		if (getShardName().equals(remoteShardName)) {
@@ -359,7 +328,7 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	// Player ran a command
-	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		String command = event.getMessage();
 
@@ -370,26 +339,32 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		}
 	}
 
-	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		refreshLocalPlayer(player);
 	}
 
-	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		RemotePlayerPaper oldRemotePlayer = mRemotePlayersByUuid.get(player.getUniqueId());
-		if (oldRemotePlayer != null && !oldRemotePlayer.mShard.equals(getShardName())) {
+		if (oldRemotePlayer != null && !oldRemotePlayer.getShard().equals(getShardName())) {
 			MMLog.fine("Refusing to unregister player " + player.getName() + ": they are on another shard");
 			return;
 		}
-		RemotePlayerPaper remotePlayer = new RemotePlayerPaper(player, false);
+		RemotePlayerPaper remotePlayer = fromLocal(player, false);
 		unregisterPlayer(remotePlayer.mUuid);
 		remotePlayer.broadcast();
 	}
 
-	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void playerChangedWorldEvent(PlayerChangedWorldEvent event) {
+		Player player = event.getPlayer();
+		refreshLocalPlayer(player);
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_UPDATE_CHANNEL: {

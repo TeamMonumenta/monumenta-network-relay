@@ -122,12 +122,12 @@ public class NetworkRelayAPI {
 	}
 
 	@Nullable
-	public static RemotePlayerManagerAbstraction.RemotePlayerAbstraction getRemotePlayer(String playerName) {
+	public static RemotePlayerAbstraction getRemotePlayer(String playerName) {
 		return RemotePlayerAPI.getRemotePlayer(playerName);
 	}
 
 	@Nullable
-	public static RemotePlayerManagerAbstraction.RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+	public static RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
 		return RemotePlayerAPI.getRemotePlayer(playerUuid);
 	}
 

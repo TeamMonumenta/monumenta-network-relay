@@ -6,12 +6,12 @@ import org.bukkit.event.HandlerList;
 public class RemotePlayerLoadedEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
 
-	public final RemotePlayerManagerPaper.RemotePlayerPaper mRemotePlayer;
+	public final RemotePlayerPaper mRemotePlayer;
 	public final String mShard;
 
-	public RemotePlayerLoadedEvent(RemotePlayerManagerPaper.RemotePlayerPaper remotePlayer) {
+	public RemotePlayerLoadedEvent(RemotePlayerPaper remotePlayer) {
 		mRemotePlayer = remotePlayer;
-		mShard = remotePlayer.mShard;
+		mShard = remotePlayer.getShard();
 	}
 
 	@Override
