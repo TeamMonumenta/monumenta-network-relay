@@ -8,19 +8,18 @@ import java.util.UUID;
 
 public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "proxy";
-	private final String mProxy;
-	private final String mShard;
 
 	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String shard, String proxy) {
-		super(uuid, name, isOnline);
-		mProxy = proxy;
-		mShard = shard;
+		super(uuid, name);
+		super.mIsOnline = isOnline;
+		super.mShard = shard;
+		super.mProxy = proxy;
 
 		MMLog.fine("Created RemotePlayerBungee for " + mName + " from " + mProxy + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String shard, String proxy, JsonObject remoteData) {
-		super(uuid, name, isOnline, remoteData);
+		super(uuid, name, remoteData);
 		mProxy = proxy;
 		mShard = shard;
 

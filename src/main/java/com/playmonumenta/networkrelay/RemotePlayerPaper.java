@@ -8,24 +8,23 @@ import org.bukkit.Bukkit;
 
 public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "minecraft";
-	private final boolean mIsHidden;
-	private final String mShard;
-	private final String mWorld;
 
 	protected RemotePlayerPaper(UUID uuid, String name, boolean isHidden, boolean isOnline, String shard, String world) {
-		super(uuid, name, isOnline);
-		mIsHidden = isHidden;
-		mShard = shard;
-		mWorld = world;
+		super(uuid, name);
+		super.mIsOnline = isOnline;
+		super.mIsHidden = isHidden;
+		super.mShard = shard;
+		super.mWorld = world;
 
 		MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerPaper(UUID uuid, String name, boolean isHidden, boolean isOnline, String shard, String world, JsonObject remoteData) {
-		super(uuid, name, isOnline, remoteData);
-		mIsHidden = isHidden;
-		mShard = shard;
-		mWorld = world;
+		super(uuid, name, remoteData);
+		super.mIsOnline = isOnline;
+		super.mIsHidden = isHidden;
+		super.mShard = shard;
+		super.mWorld = world;
 
 		MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	}

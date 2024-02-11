@@ -10,21 +10,37 @@ import org.jetbrains.annotations.Nullable;
 public abstract class RemotePlayerAbstraction {
 	protected final UUID mUuid;
 	protected final String mName;
-	protected final boolean mIsOnline;
+	protected boolean mIsOnline = true;
+	protected boolean mIsHidden = false;
+	/*
+	 * What proxy the player is on:
+	 * This should never be null unless it is a fakeplayer from RemotePlayerGeneric
+	 */
+	@Nullable protected String mProxy = null;
+	/*
+	 * What shard the player is on
+	 * This can be null since the player could still be in the server selection phase when they first connect
+	 */
+	@Nullable protected String mShard = null;
+	/*
+	 * What world the player is on
+	 * This can be null since the player could still be in the server selection phase when they first connect
+	 */
+	@Nullable protected String mWorld = null;
 	private final ConcurrentMap<String, JsonObject> mPluginData;
 
-	protected RemotePlayerAbstraction(UUID uuid, String name, boolean isOnline) {
+	protected RemotePlayerAbstraction(UUID uuid, String name) {
 		mUuid = uuid;
 		mName = name;
-		mIsOnline = isOnline;
+
 		mPluginData = new ConcurrentHashMap<>();
 		mPluginData.putAll(gatherPluginData());
 	}
 
-	protected RemotePlayerAbstraction(UUID uuid, String name, boolean isOnline, JsonObject remoteData) {
+	protected RemotePlayerAbstraction(UUID uuid, String name, JsonObject remoteData) {
 		mUuid = uuid;
 		mName = name;
-		mIsOnline = isOnline;
+
 		mPluginData = deserializePluginData(remoteData);
 	}
 
@@ -73,9 +89,5 @@ public abstract class RemotePlayerAbstraction {
 
 	public String getName() {
 		return mName;
-	}
-
-	public boolean isOnline() {
-		return mIsOnline;
 	}
 }

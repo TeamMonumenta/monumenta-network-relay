@@ -8,22 +8,19 @@ import java.util.UUID;
 
 public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 	protected final String mServerType;
-	protected final String mShard;
 
-	protected RemotePlayerGeneric(UUID uuid, String name, boolean isOnline, String serverType, String shard) {
-		super(uuid, name, isOnline);
+	protected RemotePlayerGeneric(UUID uuid, String name, String serverType) {
+		super(uuid, name);
 		mServerType = serverType;
-		mShard = shard;
 
-		MMLog.fine("Created RemotePlayerBungee for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine("Created RemotePlayerGeneric for " + mName);
 	}
 
-	protected RemotePlayerGeneric(UUID uuid, String name, boolean isOnline, String serverType, String shard, JsonObject remoteData) {
-		super(uuid, name, isOnline, remoteData);
+	protected RemotePlayerGeneric(UUID uuid, String name, String serverType, JsonObject remoteData) {
+		super(uuid, name, remoteData);
 		mServerType = serverType;
-		mShard = shard;
 
-		MMLog.fine("Received RemotePlayerBungee for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine("Created RemotePlayerGeneric for " + mName);
 	}
 
 	@Override
@@ -34,17 +31,11 @@ public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 	protected static RemotePlayerGeneric genericFrom(String serverType, JsonObject remoteData) {
 		UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 		String name = remoteData.get("playerName").getAsString();
-		boolean isOnline = remoteData.get("isOnline").getAsBoolean();
-		String shard = remoteData.get("shard").getAsString();
-		return new RemotePlayerGeneric(uuid, name, isOnline, serverType, shard, remoteData);
+		return new RemotePlayerGeneric(uuid, name, serverType, remoteData);
 	}
 
 	@Override
 	public String getServerType() {
 		return mServerType;
-	}
-
-	public String getShard() {
-		return mShard;
 	}
 }
