@@ -102,6 +102,15 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	}
 
 	@Override
+	protected Set<UUID> getAllOnlinePlayersUuids(boolean visibleOnly) {
+		Set<UUID> visible = new HashSet<>(mRemotePlayersByUuid.keySet());
+		if (visibleOnly) {
+			visible.removeAll(getHiddenPlayerUuids());
+		}
+		return visible;
+	}
+
+	@Override
 	protected boolean isPlayerOnline(UUID playerUuid) {
 		return mRemotePlayersByUuid.containsKey(playerUuid);
 	}
@@ -115,6 +124,14 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		Set<String> results = new ConcurrentSkipListSet<>();
 		for (UUID playerUuid : mHiddenPlayers) {
 			results.add(getPlayerName(playerUuid));
+		}
+		return results;
+	}
+
+	protected Set<UUID> getHiddenPlayerUuids() {
+		Set<UUID> results = new ConcurrentSkipListSet<>();
+		for (UUID playerUuid : mHiddenPlayers) {
+			results.add(playerUuid);
 		}
 		return results;
 	}

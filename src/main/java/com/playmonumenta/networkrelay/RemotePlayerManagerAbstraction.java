@@ -8,6 +8,8 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	protected abstract Set<String> getAllOnlinePlayersName(boolean visibleOnly);
 
+	protected abstract Set<UUID> getAllOnlinePlayersUuids(boolean visibleOnly);
+
 	protected abstract boolean isPlayerOnline(String playerName);
 
 	protected abstract boolean isPlayerOnline(UUID playerUuid);
