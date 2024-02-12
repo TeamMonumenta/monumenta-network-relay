@@ -111,18 +111,20 @@ public abstract class RemotePlayerAbstraction {
 		}
 	}
 
-	protected void update(RemotePlayerAbstraction player) {
-		if (player == null) {
-			return;
-		}
-		if (player.mProxy != null && mProxy == null) {
-			mProxy = player.mProxy;
-		}
-		if (player.mShard != null && mShard == null) {
-			mShard = player.mShard;
-		}
-		if (player.mWorld != null && mWorld == null) {
-			mWorld = player.mWorld;
-		}
+	protected abstract void update(RemotePlayerAbstraction player);
+
+	@Override
+	public String toString() {
+		return "{" +
+			" class='" + this.getClass().getName() + "'" +
+			", mUuid='" + mUuid + "'" +
+			", mName='" + mName + "'" +
+			", mIsOnline='" + mIsOnline + "'" +
+			", mIsHidden='" + mIsHidden + "'" +
+			", mProxy='" + mProxy + "'" +
+			", mShard='" + mShard + "'" +
+			", mWorld='" + mWorld + "'" +
+			", mPluginData='" + mPluginData + "'" +
+			"}";
 	}
 }

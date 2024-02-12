@@ -56,6 +56,20 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	}
 
 	@Override
+	protected void update(RemotePlayerAbstraction remote) {
+		if (remote == null) {
+			return;
+		}
+		mIsHidden = remote.mIsHidden;
+		if (remote.mShard != null) {
+			mShard = remote.mShard;
+		}
+		if (remote.mWorld != null) {
+			mWorld = remote.mWorld;
+		}
+	}
+
+	@Override
 	public String getServerType() {
 		return SERVER_TYPE;
 	}

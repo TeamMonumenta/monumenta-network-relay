@@ -48,6 +48,12 @@ public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 		}
 	}
 
+	protected void update(RemotePlayerAbstraction remote) {
+		if (remote == null) {
+			return;
+		}
+	}
+
 	@Override
 	public String getServerType() {
 		return "generic";

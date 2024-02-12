@@ -15,7 +15,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		mShard = shard;
 		mWorld = world;
 
-		MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine("Created RemotePlayerPaper for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerPaper(UUID uuid, String name, boolean isHidden, boolean isOnline, String shard, String world, JsonObject remoteData) {
@@ -25,7 +25,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		mShard = shard;
 		mWorld = world;
 
-		MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine("Received RemotePlayerPaper for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	public static RemotePlayerPaper from(JsonObject remoteData) {
@@ -57,6 +57,15 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 				RemotePlayerManagerAbstraction.REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception e) {
 			MMLog.severe("Failed to broadcast " + RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL);
+		}
+	}
+
+	protected void update(RemotePlayerAbstraction remote) {
+		if (remote == null) {
+			return;
+		}
+		if (remote.mProxy != null) {
+			mProxy = remote.mProxy;
 		}
 	}
 

@@ -90,6 +90,9 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 		unregisterPlayer(remotePlayer.mUuid);
 		registerPlayer(remotePlayer);
 		remotePlayer.broadcast();
+
+		RemotePlayerLoadedEventBungee remotePLE = new RemotePlayerLoadedEventBungee(remotePlayer);
+		ProxyServer.getInstance().getPluginManager().callEvent(remotePLE);
 	}
 
 	@Override
@@ -109,8 +112,7 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 		RemotePlayerAbstraction player = super.remotePlayerChange(data);
 
 		if (player == null) {
-			// something really bad happened
-			return null;
+			throw new RuntimeException("Remote player data is null!");
 		}
 
 		if (player.mIsOnline) {
