@@ -20,12 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction implements Listener {
-
-	public static final int REMOTE_PLAYER_MESSAGE_TTL = 5;
-	public static final String REMOTE_PLAYER_CHANNEL_BASE = "monumenta.redissync.remote_player";
-	public static final String REMOTE_PLAYER_REFRESH_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".refresh";
-	public static final String REMOTE_PLAYER_UPDATE_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".update";
-
 	private static @MonotonicNonNull RemotePlayerManagerPaper INSTANCE = null;
 
 	private RemotePlayerManagerPaper() {

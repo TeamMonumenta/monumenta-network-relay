@@ -11,6 +11,11 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
+	public static final int REMOTE_PLAYER_MESSAGE_TTL = 5;
+	public static final String REMOTE_PLAYER_CHANNEL_BASE = "monumenta.redissync.remote_player";
+	public static final String REMOTE_PLAYER_REFRESH_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".refresh";
+	public static final String REMOTE_PLAYER_UPDATE_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".update";
+
 	protected static final Map<UUID, RemotePlayerAbstraction> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
 	protected static final Map<String, RemotePlayerAbstraction> mRemotePlayersByName = new ConcurrentSkipListMap<>();
 	protected static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerShards = new ConcurrentSkipListMap<>();

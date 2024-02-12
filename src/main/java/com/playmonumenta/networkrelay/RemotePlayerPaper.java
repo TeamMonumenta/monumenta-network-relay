@@ -39,6 +39,28 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	}
 
 	@Override
+	protected void broadcast() {
+		JsonObject remotePlayerData = new JsonObject();
+		remotePlayerData.addProperty("serverType", getServerType());
+		remotePlayerData.addProperty("playerUuid", mUuid.toString());
+		remotePlayerData.addProperty("playerName", mName);
+		remotePlayerData.addProperty("isHidden", mIsHidden);
+		remotePlayerData.addProperty("isOnline", mIsOnline);
+		// remotePlayerData.addProperty("proxy", mProxy);
+		remotePlayerData.addProperty("shard", mShard);
+		remotePlayerData.addProperty("world", mWorld);
+		remotePlayerData.add("plugins", serializePluginData());
+
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL,
+				remotePlayerData,
+				RemotePlayerManagerAbstraction.REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception e) {
+			MMLog.severe("Failed to broadcast " + RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL);
+		}
+	}
+
+	@Override
 	public String getServerType() {
 		return SERVER_TYPE;
 	}

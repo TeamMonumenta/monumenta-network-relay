@@ -99,19 +99,15 @@ public abstract class RemotePlayerAbstraction {
 		remotePlayerData.addProperty("serverType", getServerType());
 		remotePlayerData.addProperty("playerUuid", mUuid.toString());
 		remotePlayerData.addProperty("playerName", mName);
-		remotePlayerData.addProperty("isHidden", mIsHidden);
 		remotePlayerData.addProperty("isOnline", mIsOnline);
-		remotePlayerData.addProperty("proxy", mProxy);
-		remotePlayerData.addProperty("shard", mShard);
-		remotePlayerData.addProperty("world", mWorld);
 		remotePlayerData.add("plugins", serializePluginData());
 
 		try {
-			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL,
+			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL,
 				remotePlayerData,
-				RemotePlayerManagerPaper.REMOTE_PLAYER_MESSAGE_TTL);
+				RemotePlayerManagerAbstraction.REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception e) {
-			MMLog.severe("Failed to broadcast " + RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL);
+			MMLog.severe("Failed to broadcast " + RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL);
 		}
 	}
 
