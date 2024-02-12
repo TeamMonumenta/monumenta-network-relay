@@ -13,6 +13,21 @@ public class RemotePlayerAPI {
 		mManager = manager;
 	}
 
+	public static Set<RemotePlayerAbstraction> getOnlinePlayers(boolean visibleOnly) {
+		innerCheckManagerLoaded();
+		return mManager.getAllOnlinePlayers(visibleOnly);
+	}
+
+	public static Set<RemotePlayerAbstraction> getOnlinePlayersOnProxy(String proxy, boolean visibleOnly) {
+		innerCheckManagerLoaded();
+		return mManager.getAllOnlinePlayersOnProxy(proxy, visibleOnly);
+	}
+
+	public static Set<RemotePlayerAbstraction> getOnlinePlayersOnShard(String shard, boolean visibleOnly) {
+		innerCheckManagerLoaded();
+		return mManager.getAllOnlinePlayersOnShard(shard, visibleOnly);
+	}
+
 	public static Set<String> getOnlinePlayerNames(boolean visibleOnly) {
 		innerCheckManagerLoaded();
 		return mManager.getAllOnlinePlayersName(visibleOnly);

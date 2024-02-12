@@ -178,7 +178,7 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 				@Nullable JsonObject data = event.getData();
 				if (!Objects.equals(event.getSource(), getShardName())) {
 					if (data == null) {
-						CustomLogger.getInstance().ifPresent(logger -> logger.severe("Got " + REMOTE_PLAYER_UPDATE_CHANNEL + " channel with null data"));
+						MMLog.severe("Got " + REMOTE_PLAYER_UPDATE_CHANNEL + " channel with null data");
 						return;
 					}
 					remotePlayerChange(data);
