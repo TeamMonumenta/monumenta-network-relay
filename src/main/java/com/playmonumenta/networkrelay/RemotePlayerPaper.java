@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Map;
 import java.util.UUID;
-import org.bukkit.Bukkit;
 
 public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "minecraft";
@@ -27,13 +26,6 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		mWorld = world;
 
 		MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
-	}
-
-	@Override
-	protected Map<String, JsonObject> gatherPluginData() {
-		GatherRemotePlayerDataEvent event = new GatherRemotePlayerDataEvent();
-		Bukkit.getPluginManager().callEvent(event);
-		return event.getPluginData();
 	}
 
 	public static RemotePlayerPaper from(JsonObject remoteData) {

@@ -6,10 +6,10 @@ import org.bukkit.event.HandlerList;
 public class RemotePlayerUnloadedEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
 
-	public final RemotePlayerPaper mRemotePlayer;
+	public final RemotePlayerAbstraction mRemotePlayer;
 	public final String mShard;
 
-	public RemotePlayerUnloadedEvent(RemotePlayerPaper remotePlayer) {
+	public RemotePlayerUnloadedEvent(RemotePlayerAbstraction remotePlayer) {
 		mRemotePlayer = remotePlayer;
 		mShard = remotePlayer.mShard;
 	}

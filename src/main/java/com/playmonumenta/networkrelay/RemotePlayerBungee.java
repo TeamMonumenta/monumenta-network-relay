@@ -9,27 +9,20 @@ import java.util.UUID;
 public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "proxy";
 
-	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String shard, String proxy) {
+	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String proxy) {
 		super(uuid, name);
 		mIsOnline = isOnline;
-		mShard = shard;
 		mProxy = proxy;
 
 		MMLog.fine("Created RemotePlayerBungee for " + mName + " from " + mProxy + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
-	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String shard, String proxy, JsonObject remoteData) {
+	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String proxy, JsonObject remoteData) {
 		super(uuid, name, remoteData);
 		mIsOnline = isOnline;
 		mProxy = proxy;
-		mShard = shard;
 
 		MMLog.fine("Received RemotePlayerBungee for " + mName + " from " + mProxy + ": " + (mIsOnline ? "online" : "offline"));
-	}
-
-	@Override
-	protected Map<String, JsonObject> gatherPluginData() {
-		return new HashMap<>();
 	}
 
 	public static RemotePlayerBungee from(JsonObject remoteData) {
@@ -37,8 +30,7 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		String name = remoteData.get("playerName").getAsString();
 		boolean isOnline = remoteData.get("isOnline").getAsBoolean();
 		String proxy = remoteData.get("proxy").getAsString();
-		String shard = remoteData.get("shard").getAsString();
-		return new RemotePlayerBungee(uuid, name, isOnline, shard, proxy, remoteData);
+		return new RemotePlayerBungee(uuid, name, isOnline, proxy, remoteData);
 	}
 
 	@Override

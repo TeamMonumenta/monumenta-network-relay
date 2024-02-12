@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.HashSet;
 import java.util.Map;
@@ -197,5 +198,27 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 		mRemotePlayerShards.remove(shard);
 		return true;
+	}
+
+	@Nullable
+	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
+		RemotePlayerAbstraction remotePlayer = null;
+		try {
+			remotePlayer = RemotePlayerAbstraction.from(data);
+		} catch (Exception ex) {
+			MMLog.warning("Received invalid RemotePlayer");
+			MMLog.severe(data.toString());
+			MMLog.severe(ex.toString());
+			return remotePlayer;
+		}
+
+		updatePlayer(remotePlayer);
+		unregisterPlayer(remotePlayer.mUuid);
+		if (remotePlayer.mIsOnline) {
+			MMLog.fine("Registering remote player " + remotePlayer.mName);
+			registerPlayer(remotePlayer);
+			return remotePlayer;
+		}
+		return remotePlayer;
 	}
 }

@@ -35,7 +35,6 @@ public abstract class RemotePlayerAbstraction {
 		mName = name;
 
 		mPluginData = new ConcurrentHashMap<>();
-		mPluginData.putAll(gatherPluginData());
 	}
 
 	protected RemotePlayerAbstraction(UUID uuid, String name, JsonObject remoteData) {
@@ -44,8 +43,6 @@ public abstract class RemotePlayerAbstraction {
 
 		mPluginData = deserializePluginData(remoteData);
 	}
-
-	protected abstract Map<String, JsonObject> gatherPluginData();
 
 	public static RemotePlayerAbstraction from(JsonObject remoteData) {
 		String serverType = remoteData.get("serverType").getAsString();
@@ -62,6 +59,11 @@ public abstract class RemotePlayerAbstraction {
 	@Nullable
 	public JsonObject getPluginData(String pluginId) {
 		return mPluginData.get(pluginId);
+	}
+
+	public void setPluginData(Map<String, JsonObject> data) {
+		mPluginData.clear();
+		mPluginData.putAll(data);
 	}
 
 	protected ConcurrentMap<String, JsonObject> deserializePluginData(JsonObject remoteData) {

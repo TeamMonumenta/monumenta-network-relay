@@ -20,11 +20,6 @@ public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 		MMLog.fine("Created RemotePlayerGeneric for " + mName);
 	}
 
-	@Override
-	protected Map<String, JsonObject> gatherPluginData() {
-		return new HashMap<>();
-	}
-
 	public static RemotePlayerGeneric from(JsonObject remoteData) {
 		UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 		String name = remoteData.get("playerName").getAsString();
