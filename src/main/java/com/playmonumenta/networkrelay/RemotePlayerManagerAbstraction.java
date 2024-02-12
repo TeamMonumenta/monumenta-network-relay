@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -9,10 +10,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
-	private static final Map<UUID, RemotePlayerAbstraction> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
-	private static final Map<String, RemotePlayerAbstraction> mRemotePlayersByName = new ConcurrentSkipListMap<>();
-	private static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerShards = new ConcurrentSkipListMap<>();
-	private static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerProxies = new ConcurrentSkipListMap<>();
+	protected static final Map<UUID, RemotePlayerAbstraction> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
+	protected static final Map<String, RemotePlayerAbstraction> mRemotePlayersByName = new ConcurrentSkipListMap<>();
+	protected static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerShards = new ConcurrentSkipListMap<>();
+	protected static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerProxies = new ConcurrentSkipListMap<>();
 
 	protected Set<String> getAllOnlinePlayersName(boolean visibleOnly) {
 		Set<String> visible = new HashSet<>(mRemotePlayersByName.keySet());
@@ -116,20 +117,73 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 	}
 
-	protected void unregisterPlayer(UUID playerUuid) {
+	@Nullable
+	protected boolean unregisterPlayer(UUID playerUuid) {
 		RemotePlayerAbstraction player = mRemotePlayersByUuid.remove(playerUuid);
 		if (player != null) {
+			MMLog.fine(() -> "Unregistering player <" + player.mName + ">,proxy:<" + player.mProxy + ">,shard:<" + player.mShard + ">");
 			mRemotePlayersByName.remove(player.mName);
-			if (player.mProxy != null) {
-				Map<UUID, RemotePlayerAbstraction> proxyPlayers = mRemotePlayerProxies.get(player.mProxy);
-				proxyPlayers.remove(playerUuid);
-				mRemotePlayerProxies.put(player.mProxy, proxyPlayers);
-			}
-			if (player.mShard != null) {
-				Map<UUID, RemotePlayerAbstraction> shardPlayers = mRemotePlayerShards.get(player.mShard);
-				shardPlayers.remove(playerUuid);
-				mRemotePlayerShards.put(player.mProxy, shardPlayers);
+			unregisterPlayerFromProxyList(playerUuid);
+			unregisterPlayerFromShardList(playerUuid);
+			return true;
+		}
+		return false;
+	}
+
+	protected boolean unregisterPlayerFromProxyList(UUID playerUuid) {
+		boolean found = false;
+		for (Entry<String, Map<UUID, RemotePlayerAbstraction>> proxy : mRemotePlayerProxies.entrySet()) {
+			Map<UUID, RemotePlayerAbstraction> proxyPlayers = proxy.getValue();
+			if (proxyPlayers.remove(playerUuid) != null) {
+				mRemotePlayerProxies.put(proxy.getKey(), proxyPlayers);
+				found = true;
 			}
 		}
+		return found;
+	}
+
+	protected boolean unregisterPlayerFromShardList(UUID playerUuid) {
+		boolean found = false;
+		for (Entry<String, Map<UUID, RemotePlayerAbstraction>> shard : mRemotePlayerShards.entrySet()) {
+			Map<UUID, RemotePlayerAbstraction> shardPlayers = shard.getValue();
+			if (shardPlayers.remove(playerUuid) != null) {
+				mRemotePlayerShards.put(shard.getKey(), shardPlayers);
+				found = true;
+			}
+		}
+		/*
+		 * Other way to do this: possibly better?
+		 * player: RemotePlayerAbstraction
+		if (player.mShard != null) {
+			Map<UUID, RemotePlayerAbstraction> shardPlayers = mRemotePlayerShards.get(player.mShard);
+			shardPlayers.remove(playerUuid);
+			mRemotePlayerShards.put(player.mShard, shardPlayers);
+		}
+		 */
+		return found;
+	}
+
+	protected boolean registerShard(String shard) {
+		if (mRemotePlayerShards.containsKey(shard)) {
+			return false;
+		}
+		MMLog.fine("Registering shard " + shard);
+		mRemotePlayerShards.put(shard, new ConcurrentSkipListMap<>());
+		return true;
+	}
+
+	protected boolean unregisterShard(String shard) {
+		@Nullable Map<UUID, RemotePlayerAbstraction> remotePlayers = mRemotePlayerShards.get(shard);
+		if (remotePlayers == null) {
+			return false;
+		}
+
+		MMLog.fine("Unregistering shard " + shard);
+		Set<UUID> uuids = remotePlayers.keySet();
+		for (UUID uuid: uuids) {
+			unregisterPlayer(uuid);
+		}
+		mRemotePlayerShards.remove(shard);
+		return true;
 	}
 }

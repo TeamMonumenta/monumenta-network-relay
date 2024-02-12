@@ -36,7 +36,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		return event.getPluginData();
 	}
 
-	protected static RemotePlayerPaper paperFrom(JsonObject remoteData) {
+	public static RemotePlayerPaper from(JsonObject remoteData) {
 		UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 		String name = remoteData.get("playerName").getAsString();
 		boolean isOnline = remoteData.get("isOnline").getAsBoolean();
@@ -46,36 +46,8 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		return new RemotePlayerPaper(uuid, name, isHidden, isOnline, shard, world, remoteData);
 	}
 
-	protected void broadcast() {
-		JsonObject remotePlayerData = new JsonObject();
-		remotePlayerData.addProperty("serverType", SERVER_TYPE);
-		remotePlayerData.addProperty("playerUuid", mUuid.toString());
-		remotePlayerData.addProperty("playerName", mName);
-		remotePlayerData.addProperty("isHidden", mIsHidden);
-		remotePlayerData.addProperty("isOnline", mIsOnline);
-		remotePlayerData.addProperty("shard", mShard);
-		remotePlayerData.addProperty("world", mWorld);
-		remotePlayerData.add("plugins", serializePluginData());
-
-		try {
-			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL,
-				remotePlayerData,
-				RemotePlayerManagerPaper.REMOTE_PLAYER_MESSAGE_TTL);
-		} catch (Exception e) {
-			MMLog.severe("Failed to broadcast " + RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL);
-		}
-	}
-
 	@Override
 	public String getServerType() {
 		return SERVER_TYPE;
-	}
-
-	public String getShard() {
-		return mShard;
-	}
-
-	public boolean isHidden() {
-		return mIsHidden;
 	}
 }

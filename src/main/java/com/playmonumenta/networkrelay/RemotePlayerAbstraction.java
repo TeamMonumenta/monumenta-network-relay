@@ -1,6 +1,7 @@
 package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
+import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,11 +51,11 @@ public abstract class RemotePlayerAbstraction {
 		String serverType = remoteData.get("serverType").getAsString();
 		switch (serverType) {
 			case RemotePlayerPaper.SERVER_TYPE:
-				return RemotePlayerPaper.paperFrom(remoteData);
+				return RemotePlayerPaper.from(remoteData);
 			case RemotePlayerBungee.SERVER_TYPE:
-				return RemotePlayerBungee.bungeeFrom(remoteData);
+				return RemotePlayerBungee.from(remoteData);
 			default:
-				return RemotePlayerGeneric.genericFrom(serverType, remoteData);
+				return RemotePlayerGeneric.from(remoteData);
 		}
 	}
 
@@ -89,5 +90,37 @@ public abstract class RemotePlayerAbstraction {
 
 	public String getName() {
 		return mName;
+	}
+
+	protected void broadcast() {
+		JsonObject remotePlayerData = new JsonObject();
+		remotePlayerData.addProperty("serverType", getServerType());
+		remotePlayerData.addProperty("playerUuid", mUuid.toString());
+		remotePlayerData.addProperty("playerName", mName);
+		remotePlayerData.addProperty("isHidden", mIsHidden);
+		remotePlayerData.addProperty("isOnline", mIsOnline);
+		remotePlayerData.addProperty("proxy", mProxy);
+		remotePlayerData.addProperty("shard", mShard);
+		remotePlayerData.addProperty("world", mWorld);
+		remotePlayerData.add("plugins", serializePluginData());
+
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL,
+				remotePlayerData,
+				RemotePlayerManagerPaper.REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception e) {
+			MMLog.severe("Failed to broadcast " + RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL);
+		}
+	}
+
+	protected void update(RemotePlayerAbstraction player) {
+		mIsHidden = player.mIsHidden;
+		mIsOnline = player.mIsOnline;
+		if (player.mProxy != null) {
+			mProxy = player.mProxy;
+		}
+		if (player.mShard != null) {
+			mProxy = player.mShard;
+		}
 	}
 }

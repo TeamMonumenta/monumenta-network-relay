@@ -32,7 +32,7 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		return new HashMap<>();
 	}
 
-	protected static RemotePlayerBungee bungeeFrom(JsonObject remoteData) {
+	public static RemotePlayerBungee from(JsonObject remoteData) {
 		UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 		String name = remoteData.get("playerName").getAsString();
 		boolean isOnline = remoteData.get("isOnline").getAsBoolean();
@@ -44,13 +44,5 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	@Override
 	public String getServerType() {
 		return SERVER_TYPE;
-	}
-
-	public String getProxy() {
-		return mProxy;
-	}
-
-	public String getShard() {
-		return mShard;
 	}
 }

@@ -11,7 +11,7 @@ public class RemotePlayerUnloadedEvent extends Event {
 
 	public RemotePlayerUnloadedEvent(RemotePlayerPaper remotePlayer) {
 		mRemotePlayer = remotePlayer;
-		mShard = remotePlayer.getShard();
+		mShard = remotePlayer.mShard;
 	}
 
 	@Override
