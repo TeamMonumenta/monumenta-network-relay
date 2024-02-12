@@ -18,6 +18,11 @@ public class RemotePlayerAPI {
 		return mManager.getAllOnlinePlayersName(visibleOnly);
 	}
 
+	public static Set<UUID> getOnlinePlayerUuids(boolean visibleOnly) {
+		innerCheckManagerLoaded();
+		return mManager.getAllOnlinePlayersUuids(visibleOnly);
+	}
+
 	public static boolean isPlayerOnline(String playerName) {
 		innerCheckManagerLoaded();
 		return mManager.isPlayerOnline(playerName);
@@ -26,6 +31,18 @@ public class RemotePlayerAPI {
 	public static boolean isPlayerOnline(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.isPlayerOnline(playerUuid);
+	}
+
+	@Nullable
+	public static String getPlayerProxy(String playerName) {
+		innerCheckManagerLoaded();
+		return mManager.getPlayerProxy(playerName);
+	}
+
+	@Nullable
+	public static String getPlayerProxy(UUID playerUuid) {
+		innerCheckManagerLoaded();
+		return mManager.getPlayerProxy(playerUuid);
 	}
 
 	@Nullable
