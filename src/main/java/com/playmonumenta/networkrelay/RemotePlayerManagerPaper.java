@@ -88,16 +88,6 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 		);
 	}
 
-	@Override
-	protected boolean isPlayerOnline(UUID playerUuid) {
-		return mRemotePlayersByUuid.containsKey(playerUuid);
-	}
-
-	@Override
-	protected boolean isPlayerOnline(String playerName) {
-		return mRemotePlayersByName.containsKey(playerName);
-	}
-
 	protected static boolean internalPlayerHiddenTest(Player player) {
 		for (MetadataValue meta : player.getMetadata("vanished")) {
 			if (meta.asBoolean()) {
@@ -138,10 +128,9 @@ public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction imp
 	protected void refreshLocalPlayer(Player player) {
 		MMLog.fine("Refreshing local player " + player.getName());
 		RemotePlayerPaper remotePlayer = fromLocal(player, true);
-		RemotePlayerPaper localPlayer = getRemotePlayer(player.getUniqueId());
 
-		// update remote player with new data
-		remotePlayer.update(localPlayer);
+		// update local player with data
+		updatePlayer(remotePlayer);
 		unregisterPlayer(remotePlayer.mUuid);
 		registerPlayer(remotePlayer);
 		remotePlayer.broadcast();

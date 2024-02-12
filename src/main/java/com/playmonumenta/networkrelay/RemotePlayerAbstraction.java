@@ -114,13 +114,17 @@ public abstract class RemotePlayerAbstraction {
 	}
 
 	protected void update(RemotePlayerAbstraction player) {
-		mIsHidden = player.mIsHidden;
-		mIsOnline = player.mIsOnline;
-		if (player.mProxy != null) {
+		if (player == null) {
+			return;
+		}
+		if (player.mProxy != null && mProxy == null) {
 			mProxy = player.mProxy;
 		}
-		if (player.mShard != null) {
-			mProxy = player.mShard;
+		if (player.mShard != null && mShard == null) {
+			mShard = player.mShard;
+		}
+		if (player.mWorld != null && mWorld == null) {
+			mWorld = player.mWorld;
 		}
 	}
 }

@@ -96,6 +96,10 @@ public abstract class RemotePlayerManagerAbstraction {
 	}
 
 	protected void registerPlayer(RemotePlayerAbstraction player) {
+		if (player == null) {
+			return;
+		}
+		MMLog.fine(() -> "Registering player <" + player.mName + ">,proxy:<" + player.mProxy + ">,shard:<" + player.mShard + ">,world:<" + player.mWorld + ">");
 		mRemotePlayersByUuid.put(player.mUuid, player);
 		mRemotePlayersByName.put(player.mName, player);
 		if (player.mProxy != null) {
@@ -121,13 +125,21 @@ public abstract class RemotePlayerManagerAbstraction {
 	protected boolean unregisterPlayer(UUID playerUuid) {
 		RemotePlayerAbstraction player = mRemotePlayersByUuid.remove(playerUuid);
 		if (player != null) {
-			MMLog.fine(() -> "Unregistering player <" + player.mName + ">,proxy:<" + player.mProxy + ">,shard:<" + player.mShard + ">");
+			MMLog.fine(() -> "Unregistering player <" + player.mName + ">,proxy:<" + player.mProxy + ">,shard:<" + player.mShard + ">,world:<" + player.mWorld + ">");
 			mRemotePlayersByName.remove(player.mName);
 			unregisterPlayerFromProxyList(playerUuid);
 			unregisterPlayerFromShardList(playerUuid);
 			return true;
 		}
 		return false;
+	}
+
+	protected void updatePlayer(RemotePlayerAbstraction player) {
+		// update remote copy player with "some" local data
+		RemotePlayerAbstraction localPlayer = getRemotePlayer(player.mUuid);
+		if (localPlayer != null) {
+			player.update(localPlayer);
+		}
 	}
 
 	protected boolean unregisterPlayerFromProxyList(UUID playerUuid) {
