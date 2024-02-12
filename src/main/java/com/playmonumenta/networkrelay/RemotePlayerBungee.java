@@ -11,15 +11,16 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 
 	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String shard, String proxy) {
 		super(uuid, name);
-		super.mIsOnline = isOnline;
-		super.mShard = shard;
-		super.mProxy = proxy;
+		mIsOnline = isOnline;
+		mShard = shard;
+		mProxy = proxy;
 
 		MMLog.fine("Created RemotePlayerBungee for " + mName + " from " + mProxy + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerBungee(UUID uuid, String name, boolean isOnline, String shard, String proxy, JsonObject remoteData) {
 		super(uuid, name, remoteData);
+		mIsOnline = isOnline;
 		mProxy = proxy;
 		mShard = shard;
 

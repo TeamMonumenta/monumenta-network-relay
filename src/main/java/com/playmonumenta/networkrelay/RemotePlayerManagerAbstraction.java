@@ -6,15 +6,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ConcurrentSkipListSet;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
-
-	private static @MonotonicNonNull RemotePlayerManagerPaper INSTANCE = null;
 	private static final Map<UUID, RemotePlayerAbstraction> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
 	private static final Map<String, RemotePlayerAbstraction> mRemotePlayersByName = new ConcurrentSkipListMap<>();
+	private static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerShards = new ConcurrentSkipListMap<>();
+	private static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerProxies = new ConcurrentSkipListMap<>();
 
 	protected Set<String> getAllOnlinePlayersName(boolean visibleOnly) {
 		Set<String> visible = new HashSet<>(mRemotePlayersByName.keySet());
@@ -44,29 +42,94 @@ public abstract class RemotePlayerManagerAbstraction {
 		return visible;
 	}
 
-	protected abstract boolean isPlayerOnline(String playerName);
+	protected boolean isPlayerOnline(String playerName) {
+		return mRemotePlayersByName.containsKey(playerName);
+	}
 
-	protected abstract boolean isPlayerOnline(UUID playerUuid);
-
-	@Nullable
-	protected abstract String getPlayerProxy(String playerName);
-
-	@Nullable
-	protected abstract String getPlayerProxy(UUID playerUuid);
+	protected boolean isPlayerOnline(UUID playerUuid) {
+		return mRemotePlayersByUuid.containsKey(playerUuid);
+	}
 
 	@Nullable
-	protected abstract String getPlayerShard(String playerName);
+	protected String getPlayerProxy(String playerName) {
+		RemotePlayerAbstraction player = mRemotePlayersByName.get(playerName);
+		return player != null ? player.mProxy : null;
+	}
 
 	@Nullable
-	protected abstract String getPlayerShard(UUID playerUuid);
+	protected String getPlayerProxy(UUID playerUuid) {
+		RemotePlayerAbstraction player = mRemotePlayersByUuid.get(playerUuid);
+		return player != null ? player.mProxy : null;
+	}
 
 	@Nullable
-	protected abstract RemotePlayerAbstraction getRemotePlayer(String playerName);
+	protected String getPlayerShard(String playerName) {
+		RemotePlayerAbstraction player = mRemotePlayersByName.get(playerName);
+		return player != null ? player.mShard : null;
+	}
 
 	@Nullable
-	protected abstract RemotePlayerAbstraction getRemotePlayer(UUID playerUuid);
+	protected String getPlayerShard(UUID playerUuid) {
+		RemotePlayerAbstraction player = mRemotePlayersByUuid.get(playerUuid);
+		return player != null ? player.mShard : null;
+	}
 
-	protected abstract boolean isPlayerVisible(String playerName);
+	@Nullable
+	protected RemotePlayerAbstraction getRemotePlayer(String playerName) {
+		return mRemotePlayersByName.get(playerName);
+	}
 
-	protected abstract boolean isPlayerVisible(UUID playerUuid);
+	@Nullable
+	protected RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+		return mRemotePlayersByUuid.get(playerUuid);
+	}
+
+	protected boolean isPlayerVisible(String playerName) {
+		RemotePlayerAbstraction player = mRemotePlayersByName.get(playerName);
+		return player != null ? player.mIsHidden : false;
+	}
+
+	protected boolean isPlayerVisible(UUID playerUuid) {
+		RemotePlayerAbstraction player = mRemotePlayersByUuid.get(playerUuid);
+		return player != null ? player.mIsHidden : false;
+	}
+
+	protected void registerPlayer(RemotePlayerAbstraction player) {
+		mRemotePlayersByUuid.put(player.mUuid, player);
+		mRemotePlayersByName.put(player.mName, player);
+		if (player.mProxy != null) {
+			Map<UUID, RemotePlayerAbstraction> proxyPlayers = mRemotePlayerProxies.get(player.mProxy);
+			if (proxyPlayers == null) {
+				proxyPlayers = new ConcurrentSkipListMap<>();
+			}
+			proxyPlayers.put(player.mUuid, player);
+			mRemotePlayerProxies.put(player.mProxy, proxyPlayers);
+		}
+
+		if (player.mShard != null) {
+			Map<UUID, RemotePlayerAbstraction> shardPlayers = mRemotePlayerShards.get(player.mShard);
+			if (shardPlayers == null) {
+				shardPlayers = new ConcurrentSkipListMap<>();
+			}
+			shardPlayers.put(player.mUuid, player);
+			mRemotePlayerShards.put(player.mShard, shardPlayers);
+		}
+	}
+
+	protected void unregisterPlayer(UUID playerUuid) {
+		RemotePlayerAbstraction player = mRemotePlayersByUuid.remove(playerUuid);
+		if (player != null) {
+			mRemotePlayersByName.remove(player.mName);
+			if (player.mProxy != null) {
+				Map<UUID, RemotePlayerAbstraction> proxyPlayers = mRemotePlayerProxies.get(player.mProxy);
+				proxyPlayers.remove(playerUuid);
+				mRemotePlayerProxies.put(player.mProxy, proxyPlayers);
+			}
+			if (player.mShard != null) {
+				Map<UUID, RemotePlayerAbstraction> shardPlayers = mRemotePlayerShards.get(player.mShard);
+				shardPlayers.remove(playerUuid);
+				mRemotePlayerShards.put(player.mProxy, shardPlayers);
+			}
+		}
+	}
 }

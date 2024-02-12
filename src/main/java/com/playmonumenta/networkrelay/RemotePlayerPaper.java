@@ -11,20 +11,20 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 
 	protected RemotePlayerPaper(UUID uuid, String name, boolean isHidden, boolean isOnline, String shard, String world) {
 		super(uuid, name);
-		super.mIsOnline = isOnline;
-		super.mIsHidden = isHidden;
-		super.mShard = shard;
-		super.mWorld = world;
+		mIsOnline = isOnline;
+		mIsHidden = isHidden;
+		mShard = shard;
+		mWorld = world;
 
 		MMLog.fine("Created RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerPaper(UUID uuid, String name, boolean isHidden, boolean isOnline, String shard, String world, JsonObject remoteData) {
 		super(uuid, name, remoteData);
-		super.mIsOnline = isOnline;
-		super.mIsHidden = isHidden;
-		super.mShard = shard;
-		super.mWorld = world;
+		mIsOnline = isOnline;
+		mIsHidden = isHidden;
+		mShard = shard;
+		mWorld = world;
 
 		MMLog.fine("Received RemotePlayerState for " + mName + " from " + mShard + ": " + (mIsOnline ? "online" : "offline"));
 	}
