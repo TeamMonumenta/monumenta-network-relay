@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Set;
+import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelayAPI {
@@ -96,6 +97,46 @@ public class NetworkRelayAPI {
 
 	public static Set<String> getOnlineShardNames() {
 		return getInstance().getOnlineShardNames();
+	}
+
+	public static Set<String> getOnlinePlayerNames(boolean visibleOnly) {
+		return RemotePlayerAPI.getOnlinePlayerNames(visibleOnly);
+	}
+
+	public static boolean isPlayerOnline(String playerName) {
+		return RemotePlayerAPI.isPlayerOnline(playerName);
+	}
+
+	public static boolean isPlayerOnline(UUID playerUuid) {
+		return RemotePlayerAPI.isPlayerOnline(playerUuid);
+	}
+
+	@Nullable
+	public static String getPlayerShard(String playerName) {
+		return RemotePlayerAPI.getPlayerShard(playerName);
+	}
+
+	@Nullable
+	public static String getPlayerShard(UUID playerUuid) {
+		return RemotePlayerAPI.getPlayerShard(playerUuid);
+	}
+
+	@Nullable
+	public static RemotePlayerAbstraction getRemotePlayer(String playerName) {
+		return RemotePlayerAPI.getRemotePlayer(playerName);
+	}
+
+	@Nullable
+	public static RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+		return RemotePlayerAPI.getRemotePlayer(playerUuid);
+	}
+
+	public static boolean isPlayerVanished(String playerName) {
+		return RemotePlayerAPI.isPlayerVanished(playerName);
+	}
+
+	public static boolean isPlayerVanished(UUID playerUuid) {
+		return RemotePlayerAPI.isPlayerVanished(playerUuid);
 	}
 
 	/**
