@@ -20,6 +20,7 @@ public class NetworkRelay extends JavaPlugin {
 		mBroadcastCommand = new BroadcastCommand(this);
 		ChangeLogLevelCommand.register(this);
 		ListShardsCommand.register();
+		RemotePlayerCommand.register();
 	}
 
 	@Override

@@ -67,6 +67,7 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		if (remote.mWorld != null) {
 			mWorld = remote.mWorld;
 		}
+		super.update(remote);
 	}
 
 	@Override

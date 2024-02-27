@@ -154,7 +154,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		if (player == null) {
 			return;
 		}
-		MMLog.fine(() -> "Registering player <" + player.mName + ">,proxy:<" + player.mProxy + ">,shard:<" + player.mShard + ">,world:<" + player.mWorld + ">");
+		MMLog.fine(() -> "Registering player: " + player.toString());
 		mRemotePlayersByUuid.put(player.mUuid, player);
 		mRemotePlayersByName.put(player.mName, player);
 		if (player.mProxy != null) {
@@ -180,7 +180,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	protected boolean unregisterPlayer(UUID playerUuid) {
 		RemotePlayerAbstraction player = mRemotePlayersByUuid.remove(playerUuid);
 		if (player != null) {
-			MMLog.fine(() -> "Unregistering player <" + player.mName + ">,proxy:<" + player.mProxy + ">,shard:<" + player.mShard + ">,world:<" + player.mWorld + ">");
+			MMLog.fine(() -> "Unregistering player: " + player.toString());
 			mRemotePlayersByName.remove(player.mName);
 			unregisterPlayerFromProxyList(playerUuid);
 			unregisterPlayerFromShardList(playerUuid);

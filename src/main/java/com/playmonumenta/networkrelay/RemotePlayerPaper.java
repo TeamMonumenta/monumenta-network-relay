@@ -67,6 +67,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		if (remote.mProxy != null) {
 			mProxy = remote.mProxy;
 		}
+		super.update(remote);
 	}
 
 	@Override

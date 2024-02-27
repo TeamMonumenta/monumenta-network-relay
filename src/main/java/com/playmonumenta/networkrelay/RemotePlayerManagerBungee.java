@@ -2,6 +2,8 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -66,12 +68,13 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 	}
 
 	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
-		return new RemotePlayerBungee(
+		RemotePlayerBungee remotePlayer = new RemotePlayerBungee(
 			player.getUniqueId(),
 			player.getName(),
 			isOnline,
 			RemotePlayerManagerBungee.getShardName()
 		);
+		return remotePlayer;
 	}
 
 	protected void refreshLocalPlayers() {

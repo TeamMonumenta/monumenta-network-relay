@@ -28,7 +28,10 @@ public abstract class RemotePlayerAbstraction {
 	 * This can be null since the player could still be in the server selection phase when they first connect
 	 */
 	@Nullable protected String mWorld = null;
-	private final ConcurrentMap<String, JsonObject> mPluginData;
+	/*
+	 * Plugin data from any server type (proxy, minecraft, generic)
+	 */
+	protected final ConcurrentMap<String, JsonObject> mPluginData;
 
 	protected RemotePlayerAbstraction(UUID uuid, String name) {
 		mUuid = uuid;
@@ -111,20 +114,32 @@ public abstract class RemotePlayerAbstraction {
 		}
 	}
 
-	protected abstract void update(RemotePlayerAbstraction player);
+	protected void update(RemotePlayerAbstraction player) {
+		if (player == null) {
+			return;
+		}
+		this.updatePluginData(player);
+	}
+
+	protected void updatePluginData(RemotePlayerAbstraction player) {
+		for (Map.Entry<String, JsonObject> entry : player.mPluginData.entrySet()) {
+			mPluginData.put(entry.getKey(), entry.getValue());
+		}
+	}
+
 
 	@Override
 	public String toString() {
 		return "{" +
-			" class='" + this.getClass().getName() + "'" +
-			", mUuid='" + mUuid + "'" +
-			", mName='" + mName + "'" +
-			", mIsOnline='" + mIsOnline + "'" +
-			", mIsHidden='" + mIsHidden + "'" +
-			", mProxy='" + mProxy + "'" +
-			", mShard='" + mShard + "'" +
-			", mWorld='" + mWorld + "'" +
-			", mPluginData='" + mPluginData + "'" +
+			"\"class\"=\"" + this.getClass().getName() + "\"" +
+			",\"mUuid\"=\"" + mUuid + "\"" +
+			",\"mName\"=\"" + mName + "\"" +
+			"\"mIsOnline\"=" + mIsOnline +
+			",\"mIsHidden\"=" + mIsHidden +
+			",\"mProxy\"=\"" + mProxy + "\"" +
+			",\"mShard\"=\"" + mShard + "\"" +
+			",\"mWorld\"=\"" + mWorld + "\"" +
+			",\"mPluginData\"=\"" + mPluginData.toString() + "\"" +
 			"}";
 	}
 }
