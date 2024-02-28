@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
 	public static final int REMOTE_PLAYER_MESSAGE_TTL = 5;
-	public static final String REMOTE_PLAYER_CHANNEL_BASE = "monumenta.redissync.remote_player";
+	public static final String REMOTE_PLAYER_CHANNEL_BASE = "monumenta.networkrelay.remote_player";
 	public static final String REMOTE_PLAYER_REFRESH_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".refresh";
 	public static final String REMOTE_PLAYER_UPDATE_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".update";
 
@@ -202,7 +202,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		for (Entry<String, Map<UUID, RemotePlayerAbstraction>> proxy : mRemotePlayerProxies.entrySet()) {
 			Map<UUID, RemotePlayerAbstraction> proxyPlayers = proxy.getValue();
 			if (proxyPlayers.remove(playerUuid) != null) {
-				mRemotePlayerProxies.put(proxy.getKey(), proxyPlayers);
+				proxy.setValue(proxyPlayers);
 				found = true;
 			}
 		}
@@ -214,7 +214,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		for (Entry<String, Map<UUID, RemotePlayerAbstraction>> shard : mRemotePlayerShards.entrySet()) {
 			Map<UUID, RemotePlayerAbstraction> shardPlayers = shard.getValue();
 			if (shardPlayers.remove(playerUuid) != null) {
-				mRemotePlayerShards.put(shard.getKey(), shardPlayers);
+				shard.setValue(shardPlayers);
 				found = true;
 			}
 		}
