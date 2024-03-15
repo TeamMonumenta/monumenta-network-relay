@@ -6,50 +6,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/*
+ * Server types other than Minecraft and Minecraft Proxies must provide an overridden version of this class
+ * if they wish to broadcast player info. At a minimum, getServerType() must be overridden.
+ */
 public class RemotePlayerGeneric extends RemotePlayerAbstraction {
+	protected final String mServerType;
 
-	protected RemotePlayerGeneric(UUID uuid, String name) {
-		super(uuid, name);
+	protected RemotePlayerGeneric(String serverType, String serverId, UUID uuid, String name, boolean isOnline, boolean isHidden) {
+		super(serverId, uuid, name, isOnline, isHidden);
+		mServerType = serverType;
 
-		MMLog.fine("Created RemotePlayerGeneric for " + mName);
+		MMLog.fine("Created RemotePlayerGeneric (" + mServerType + ") for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
-	protected RemotePlayerGeneric(UUID uuid, String name, JsonObject remoteData) {
-		super(uuid, name, remoteData);
+	protected RemotePlayerGeneric(JsonObject remoteData) {
+		super(remoteData);
+		mServerType = remoteData.get("serverType").getAsString();
 
-		MMLog.fine("Created RemotePlayerGeneric for " + mName);
-	}
-
-	public static RemotePlayerGeneric from(JsonObject remoteData) {
-		UUID uuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
-		String name = remoteData.get("playerName").getAsString();
-		return new RemotePlayerGeneric(uuid, name, remoteData);
-	}
-
-	@Override
-	protected void broadcast() {
-		JsonObject remotePlayerData = new JsonObject();
-		remotePlayerData.addProperty("serverType", getServerType());
-		remotePlayerData.addProperty("playerUuid", mUuid.toString());
-		remotePlayerData.addProperty("playerName", mName);
-		// remotePlayerData.addProperty("isHidden", mIsHidden);
-		remotePlayerData.addProperty("isOnline", mIsOnline);
-		// remotePlayerData.addProperty("proxy", mProxy);
-		// remotePlayerData.addProperty("shard", mShard);
-		// remotePlayerData.addProperty("world", mWorld);
-		remotePlayerData.add("plugins", serializePluginData());
-
-		try {
-			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL,
-				remotePlayerData,
-				RemotePlayerManagerPaper.REMOTE_PLAYER_MESSAGE_TTL);
-		} catch (Exception e) {
-			MMLog.severe("Failed to broadcast " + RemotePlayerManagerPaper.REMOTE_PLAYER_UPDATE_CHANNEL);
-		}
+		MMLog.fine("Received RemotePlayerGeneric (" + mServerType + ") for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	@Override
 	public String getServerType() {
-		return "generic";
+		return mServerType;
 	}
 }

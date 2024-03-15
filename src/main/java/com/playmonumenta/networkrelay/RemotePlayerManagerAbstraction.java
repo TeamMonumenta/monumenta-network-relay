@@ -193,7 +193,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		// update remote copy player with "some" local data
 		RemotePlayerAbstraction localPlayer = getRemotePlayer(player.mUuid);
 		if (localPlayer != null) {
-			player.update(localPlayer);
+			localPlayer.broadcast();
 		}
 	}
 

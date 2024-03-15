@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,74 +10,75 @@ import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerAbstraction {
+	// The ID of the server ID reporting this information for a given server type
+	// For example "proxy" could report "bungee-13", or "minecraft" could report "valley-2"
+	// This is not used for proxies to report which Minecraft instance is most relevant.
+	protected final String mServerId;
+	// The player's Minecraft UUID
 	protected final UUID mUuid;
+	// The player's name
 	protected final String mName;
-	protected boolean mIsOnline = true;
-	protected boolean mIsHidden = false;
-	/*
-	 * What proxy the player is on:
-	 * This should never be null unless it is a fakeplayer from RemotePlayerGeneric
-	 */
-	@Nullable protected String mProxy = null;
-	/*
-	 * What shard the player is on
-	 * This can be null since the player could still be in the server selection phase when they first connect
-	 */
-	@Nullable protected String mShard = null;
-	/*
-	 * What world the player is on
-	 * This can be null since the player could still be in the server selection phase when they first connect
-	 */
-	@Nullable protected String mWorld = null;
-	/*
-	 * Plugin data from any server type (proxy, minecraft, generic)
-	 */
-	protected final ConcurrentMap<String, JsonObject> mPluginData;
+	// Whether the player is online; this is broadcast as offline to remove remote players from local caches
+	protected final boolean mIsOnline;
+	// Whether the player is visible to most players or not
+	protected final boolean mIsHidden;
+	// Data provided by other plugins
+	protected final Map<String, JsonObject> mPluginData;
 
-	protected RemotePlayerAbstraction(UUID uuid, String name) {
+	// Data from this (local) server
+	protected RemotePlayerAbstraction(String serverId, UUID uuid, String name, boolean isOnline, boolean isHidden) {
+		mServerId = serverId;
 		mUuid = uuid;
 		mName = name;
-
-		mPluginData = new ConcurrentHashMap<>();
+		mIsOnline = isOnline;
+		mIsHidden = isHidden;
+		mPluginData = new HashMap<>();
 	}
 
-	protected RemotePlayerAbstraction(UUID uuid, String name, JsonObject remoteData) {
-		mUuid = uuid;
-		mName = name;
-
-		mPluginData = deserializePluginData(remoteData);
+	// Data from a remote server of any type (subclasses provide extra information)
+	public RemotePlayerAbstraction(JsonObject remoteData) {
+		mServerId = remoteData.get("serverId").getAsString();
+		mUuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
+		mName = remoteData.get("playerName").getAsString();
+		mIsOnline = remoteData.get("isOnline").getAsBoolean();
+		mIsHidden = remoteData.get("isHidden").getAsBoolean();
+		mPluginData = new HashMap<>();
+		JsonObject pluginData = remoteData.getAsJsonObject("pluginData");
+		for (String key : pluginData.keySet()) {
+			mPluginData.put(key, pluginData.getAsJsonObject(key));
+		}
 	}
 
+	// Determine the appropriate remote player data type to use
 	public static RemotePlayerAbstraction from(JsonObject remoteData) {
 		String serverType = remoteData.get("serverType").getAsString();
 		switch (serverType) {
 			case RemotePlayerPaper.SERVER_TYPE:
-				return RemotePlayerPaper.from(remoteData);
+				return new RemotePlayerPaper(remoteData);
 			case RemotePlayerBungee.SERVER_TYPE:
-				return RemotePlayerBungee.from(remoteData);
+				return new RemotePlayerBungee(remoteData);
 			default:
-				return RemotePlayerGeneric.from(remoteData);
+				return new RemotePlayerGeneric(remoteData);
 		}
 	}
 
+	// Serializes player data to be broadcast to remote servers
+	public JsonObject toJson() {
+		JsonObject playerData = new JsonObject();
+		playerData.addProperty("serverType", getServerType());
+		playerData.addProperty("serverId", mServerId);
+		playerData.addProperty("playerUuid", mUuid.toString());
+		playerData.addProperty("playerName", mName);
+		playerData.addProperty("isHidden", mIsHidden);
+		playerData.addProperty("isOnline", mIsOnline);
+		playerData.add("pluginData", serializePluginData());
+		return playerData;
+	}
+
+	// Get a given plugin's data, if available
 	@Nullable
 	public JsonObject getPluginData(String pluginId) {
 		return mPluginData.get(pluginId);
-	}
-
-	public void setPluginData(Map<String, JsonObject> data) {
-		mPluginData.clear();
-		mPluginData.putAll(data);
-	}
-
-	protected ConcurrentMap<String, JsonObject> deserializePluginData(JsonObject remoteData) {
-		ConcurrentMap<String, JsonObject> pluginDataMap = new ConcurrentHashMap<>();
-		// "plugins": {"plugin-name": {}}
-		JsonObject pluginData = remoteData.getAsJsonObject("plugins");
-		for (String key : pluginData.keySet()) {
-			pluginDataMap.put(key, pluginData.getAsJsonObject(key));
-		}
-		return pluginDataMap;
 	}
 
 	protected JsonObject serializePluginData() {
@@ -98,48 +100,19 @@ public abstract class RemotePlayerAbstraction {
 	}
 
 	protected void broadcast() {
-		JsonObject remotePlayerData = new JsonObject();
-		remotePlayerData.addProperty("serverType", getServerType());
-		remotePlayerData.addProperty("playerUuid", mUuid.toString());
-		remotePlayerData.addProperty("playerName", mName);
-		remotePlayerData.addProperty("isOnline", mIsOnline);
-		remotePlayerData.add("plugins", serializePluginData());
+		JsonObject playerData = toJson();
 
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL,
-				remotePlayerData,
+				playerData,
 				RemotePlayerManagerAbstraction.REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception e) {
 			MMLog.severe("Failed to broadcast " + RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL);
 		}
 	}
 
-	protected void update(RemotePlayerAbstraction player) {
-		if (player == null) {
-			return;
-		}
-		this.updatePluginData(player);
-	}
-
-	protected void updatePluginData(RemotePlayerAbstraction player) {
-		for (Map.Entry<String, JsonObject> entry : player.mPluginData.entrySet()) {
-			mPluginData.put(entry.getKey(), entry.getValue());
-		}
-	}
-
-
 	@Override
 	public String toString() {
-		return "{" +
-			"\"class\"=\"" + this.getClass().getName() + "\"" +
-			",\"mUuid\"=\"" + mUuid + "\"" +
-			",\"mName\"=\"" + mName + "\"" +
-			"\"mIsOnline\"=" + mIsOnline +
-			",\"mIsHidden\"=" + mIsHidden +
-			",\"mProxy\"=\"" + mProxy + "\"" +
-			",\"mShard\"=\"" + mShard + "\"" +
-			",\"mWorld\"=\"" + mWorld + "\"" +
-			",\"mPluginData\"=\"" + mPluginData.toString() + "\"" +
-			"}";
+		return toJson().toString();
 	}
 }
