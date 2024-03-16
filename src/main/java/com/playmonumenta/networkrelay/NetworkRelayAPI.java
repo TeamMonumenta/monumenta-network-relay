@@ -8,9 +8,10 @@ import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelayAPI {
 	public enum ServerType {
-		BUNGEE("bungee"),
+		PROXY("proxy"),
 		MINECRAFT("minecraft"),
-		ALL("all");
+		ALL("all"),
+		OTHER("other");
 
 		final String mId;
 
@@ -24,12 +25,15 @@ public class NetworkRelayAPI {
 		}
 
 		public static ServerType fromString(@Nullable String id) {
+			if ("bungee".equals(id)) {
+				return ServerType.PROXY;
+			}
 			for (ServerType serverType : ServerType.values()) {
 				if (serverType.toString().equals(id)) {
 					return serverType;
 				}
 			}
-			return ALL;
+			return OTHER;
 		}
 	}
 
