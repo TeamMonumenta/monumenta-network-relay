@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerManagerAbstraction {
@@ -16,58 +18,22 @@ public abstract class RemotePlayerManagerAbstraction {
 	public static final String REMOTE_PLAYER_REFRESH_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".refresh";
 	public static final String REMOTE_PLAYER_UPDATE_CHANNEL = REMOTE_PLAYER_CHANNEL_BASE + ".update";
 
-	protected static final Map<UUID, RemotePlayerAbstraction> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
-	protected static final Map<String, RemotePlayerAbstraction> mRemotePlayersByName = new ConcurrentSkipListMap<>();
-	protected static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerShards = new ConcurrentSkipListMap<>();
-	protected static final Map<String, Map<UUID, RemotePlayerAbstraction>> mRemotePlayerProxies = new ConcurrentSkipListMap<>();
+	// Fast lookup of player by UUID
+	protected static final ConcurrentMap<UUID, RemotePlayerData> mRemotePlayersByUuid = new ConcurrentSkipListMap<>();
+	// Fast lookup of player by name
+	protected static final ConcurrentMap<String, RemotePlayerData> mRemotePlayersByName = new ConcurrentSkipListMap<>();
+	// Required to handle timeout for a given server
+	protected static final ConcurrentMap<String, ConcurrentMap<UUID, RemotePlayerData>> mRemotePlayersByServer
+		= new ConcurrentSkipListMap<>();
+	// Fast lookup of visible players
+	protected static final ConcurrentSkipListSet<RemotePlayerData> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
-	protected Set<RemotePlayerAbstraction> getAllOnlinePlayers(boolean visibleOnly) {
-		Set<RemotePlayerAbstraction> visible = new HashSet<>(mRemotePlayersByName.values());
-		if (!visibleOnly) {
-			return visible;
-		}
-		for (RemotePlayerAbstraction player : mRemotePlayersByName.values()) {
-			if (player == null || player.mIsHidden) {
-				visible.remove(player);
-			}
-		}
-		return visible;
+	protected Set<RemotePlayerData> getAllOnlinePlayers() {
+		return new HashSet<>(mRemotePlayersByUuid.values());
 	}
 
-	protected Set<RemotePlayerAbstraction> getAllOnlinePlayersOnShard(String shard, boolean visibleOnly) {
-		Set<RemotePlayerAbstraction> visible = new HashSet<>();
-		Map<UUID, RemotePlayerAbstraction> playersOnShard = mRemotePlayerShards.get(shard);
-		if (playersOnShard == null || playersOnShard.isEmpty()) {
-			return visible;
-		}
-		visible.addAll(playersOnShard.values());
-		if (!visibleOnly) {
-			return visible;
-		}
-		for (RemotePlayerAbstraction player : playersOnShard.values()) {
-			if (player == null || player.mIsHidden) {
-				visible.remove(player);
-			}
-		}
-		return visible;
-	}
-
-	protected Set<RemotePlayerAbstraction> getAllOnlinePlayersOnProxy(String proxy, boolean visibleOnly) {
-		Set<RemotePlayerAbstraction> visible = new HashSet<>();
-		Map<UUID, RemotePlayerAbstraction> playersOnProxies = mRemotePlayerProxies.get(proxy);
-		if (playersOnProxies == null || playersOnProxies.isEmpty()) {
-			return visible;
-		}
-		visible.addAll(playersOnProxies.values());
-		if (!visibleOnly) {
-			return visible;
-		}
-		for (RemotePlayerAbstraction player : playersOnProxies.values()) {
-			if (player == null || player.mIsHidden) {
-				visible.remove(player);
-			}
-		}
-		return visible;
+	protected Set<RemotePlayerData> getVisiblePlayers() {
+		return new HashSet<>(mVisiblePlayers);
 	}
 
 	protected Set<String> getAllOnlinePlayersName(boolean visibleOnly) {

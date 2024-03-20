@@ -91,6 +91,10 @@ public abstract class RemotePlayerAbstraction {
 
 	public abstract String getServerType();
 
+	public String getServerId() {
+		return mServerId;
+	}
+
 	public UUID getUuid() {
 		return mUuid;
 	}
