@@ -51,6 +51,9 @@ public class RemotePlayerData {
 
 	// Check if the player is hidden on any server type
 	public boolean isHidden() {
+		if (mPlayerData.isEmpty()) {
+			return true;
+		}
 		for (RemotePlayerAbstraction playerData : mPlayerData.values()) {
 			if (playerData.mIsHidden) {
 				return true;
