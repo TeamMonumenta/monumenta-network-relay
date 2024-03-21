@@ -1,5 +1,7 @@
 package com.playmonumenta.networkrelay;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,6 +32,11 @@ public class RemotePlayerData {
 	// Unregister the player's data for a given server type, returning the old data
 	public @Nullable RemotePlayerAbstraction unregister(String serverType) {
 		return mPlayerData.remove(serverType);
+	}
+
+	// Get set of server types the player is currently on
+	public Set<String> getServerTypes() {
+		return new TreeSet<>(mPlayerData.keySet());
 	}
 
 	// Get info about the player from a given server type
