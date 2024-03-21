@@ -1,12 +1,11 @@
 package com.playmonumenta.networkrelay;
 
-import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -28,7 +27,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	// Fast lookup of visible players
 	protected static final ConcurrentSkipListSet<RemotePlayerData> mVisiblePlayers = new ConcurrentSkipListSet<>();
 
-	protected Set<RemotePlayerData> getAllOnlinePlayers() {
+	protected Set<RemotePlayerData> getOnlinePlayers() {
 		return new HashSet<>(mRemotePlayersByUuid.values());
 	}
 
@@ -36,32 +35,28 @@ public abstract class RemotePlayerManagerAbstraction {
 		return new HashSet<>(mVisiblePlayers);
 	}
 
-	protected Set<String> getAllOnlinePlayersName(boolean visibleOnly) {
-		Set<String> visible = new HashSet<>(mRemotePlayersByName.keySet());
-		if (!visibleOnly) {
-			return visible;
-		}
-		for (Entry<String, RemotePlayerAbstraction> data : mRemotePlayersByName.entrySet()) {
-			RemotePlayerAbstraction player = data.getValue();
-			if (player == null || player.mIsHidden) {
-				visible.remove(data.getKey());
-			}
-		}
-		return visible;
+	protected Set<String> getOnlinePlayerNames() {
+		return new TreeSet<>(mRemotePlayersByName.keySet());
 	}
 
-	protected Set<UUID> getAllOnlinePlayersUuids(boolean visibleOnly) {
-		Set<UUID> visible = new HashSet<>(mRemotePlayersByUuid.keySet());
-		if (!visibleOnly) {
-			return visible;
+	protected Set<String> getVisiblePlayerNames() {
+		Set<String> result = new TreeSet<>();
+		for (RemotePlayerData remotePlayerData : mVisiblePlayers) {
+			result.add(remotePlayerData.mName);
 		}
-		for (Entry<UUID, RemotePlayerAbstraction> data : mRemotePlayersByUuid.entrySet()) {
-			RemotePlayerAbstraction player = data.getValue();
-			if (player == null || player.mIsHidden) {
-				visible.remove(data.getKey());
-			}
+		return result;
+	}
+
+	protected Set<UUID> getOnlinePlayerUuids() {
+		return new HashSet<>(mRemotePlayersByUuid.keySet());
+	}
+
+	protected Set<UUID> getVisiblePlayerUuids() {
+		Set<UUID> result = new HashSet<>();
+		for (RemotePlayerData remotePlayerData : mVisiblePlayers) {
+			result.add(remotePlayerData.mUuid);
 		}
-		return visible;
+		return result;
 	}
 
 	protected boolean isPlayerOnline(String playerName) {
@@ -72,173 +67,175 @@ public abstract class RemotePlayerManagerAbstraction {
 		return mRemotePlayersByUuid.containsKey(playerUuid);
 	}
 
-	@Nullable
-	protected String getPlayerProxy(String playerName) {
-		RemotePlayerAbstraction player = mRemotePlayersByName.get(playerName);
-		return player != null ? player.mProxy : null;
-	}
-
-	@Nullable
-	protected String getPlayerProxy(UUID playerUuid) {
-		RemotePlayerAbstraction player = mRemotePlayersByUuid.get(playerUuid);
-		return player != null ? player.mProxy : null;
-	}
-
-	@Nullable
-	protected String getPlayerShard(String playerName) {
-		RemotePlayerAbstraction player = mRemotePlayersByName.get(playerName);
-		return player != null ? player.mShard : null;
-	}
-
-	@Nullable
-	protected String getPlayerShard(UUID playerUuid) {
-		RemotePlayerAbstraction player = mRemotePlayersByUuid.get(playerUuid);
-		return player != null ? player.mShard : null;
-	}
-
-	@Nullable
-	protected RemotePlayerAbstraction getRemotePlayer(String playerName) {
-		return mRemotePlayersByName.get(playerName);
-	}
-
-	@Nullable
-	protected RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
-		return mRemotePlayersByUuid.get(playerUuid);
-	}
-
 	protected boolean isPlayerVisible(String playerName) {
-		RemotePlayerAbstraction player = mRemotePlayersByName.get(playerName);
-		return player != null ? player.mIsHidden : false;
+		RemotePlayerData player = mRemotePlayersByName.get(playerName);
+		return player != null && !player.isHidden();
 	}
 
 	protected boolean isPlayerVisible(UUID playerUuid) {
-		RemotePlayerAbstraction player = mRemotePlayersByUuid.get(playerUuid);
-		return player != null ? player.mIsHidden : false;
+		RemotePlayerData player = mRemotePlayersByUuid.get(playerUuid);
+		return player != null && !player.isHidden();
 	}
 
-	protected void registerPlayer(RemotePlayerAbstraction player) {
-		if (player == null) {
+	protected @Nullable String getPlayerProxy(String playerName) {
+		return getPlayerProxy(mRemotePlayersByName.get(playerName));
+	}
+
+	protected @Nullable String getPlayerProxy(UUID playerUuid) {
+		return getPlayerProxy(mRemotePlayersByUuid.get(playerUuid));
+	}
+
+	protected @Nullable String getPlayerProxy(@Nullable RemotePlayerData remotePlayerData) {
+		if (remotePlayerData == null) {
+			return null;
+		}
+		RemotePlayerAbstraction proxyData = remotePlayerData.get("proxy");
+		if (proxyData == null) {
+			return null;
+		}
+		return proxyData.getServerId();
+	}
+
+	protected @Nullable String getPlayerShard(String playerName) {
+		return getPlayerShard(mRemotePlayersByName.get(playerName));
+	}
+
+	protected @Nullable String getPlayerShard(UUID playerUuid) {
+		return getPlayerShard(mRemotePlayersByUuid.get(playerUuid));
+	}
+
+	protected @Nullable String getPlayerShard(@Nullable RemotePlayerData remotePlayerData) {
+		if (remotePlayerData == null) {
+			return null;
+		}
+		RemotePlayerAbstraction minecraftData = remotePlayerData.get("minecraft");
+		if (minecraftData == null) {
+			return null;
+		}
+		return minecraftData.getServerId();
+	}
+
+	protected @Nullable RemotePlayerData getRemotePlayer(String playerName) {
+		return mRemotePlayersByName.get(playerName);
+	}
+
+	protected @Nullable RemotePlayerData getRemotePlayer(UUID playerUuid) {
+		return mRemotePlayersByUuid.get(playerUuid);
+	}
+
+	protected void registerPlayer(RemotePlayerAbstraction playerServerData) {
+		if (playerServerData == null) {
 			return;
 		}
-		MMLog.fine(() -> "Registering player: " + player.toString());
-		mRemotePlayersByUuid.put(player.mUuid, player);
-		mRemotePlayersByName.put(player.mName, player);
-		if (player.mProxy != null) {
-			Map<UUID, RemotePlayerAbstraction> proxyPlayers = mRemotePlayerProxies.get(player.mProxy);
-			if (proxyPlayers == null) {
-				proxyPlayers = new ConcurrentSkipListMap<>();
-			}
-			proxyPlayers.put(player.mUuid, player);
-			mRemotePlayerProxies.put(player.mProxy, proxyPlayers);
+		MMLog.fine(() -> "Registering player: " + playerServerData);
+		String serverType = playerServerData.getServerType();
+		String serverId = playerServerData.getServerId();
+		UUID playerId = playerServerData.mUuid;
+		String playerName = playerServerData.mName;
+		boolean isOnline = playerServerData.mIsOnline;
+		if (!isOnline) {
+			MMLog.fine(() -> "Player is offline instead; unregistering them");
 		}
 
-		if (player.mShard != null) {
-			Map<UUID, RemotePlayerAbstraction> shardPlayers = mRemotePlayerShards.get(player.mShard);
-			if (shardPlayers == null) {
-				shardPlayers = new ConcurrentSkipListMap<>();
+		// Handle UUID/name checks
+		RemotePlayerData allPlayerData = mRemotePlayersByUuid.get(playerId);
+		if (allPlayerData == null) {
+			MMLog.fine(() -> "Player: " + playerName + " was previously offline network-wide");
+			if (isOnline) {
+				// TODO Add event for player logging in anywhere on the network, just the UUID/Name available so far
+				allPlayerData = new RemotePlayerData(playerId, playerName);
+				mRemotePlayersByUuid.put(playerId, allPlayerData);
+				mRemotePlayersByName.put(playerName, allPlayerData);
+			} else {
+				MMLog.fine("Nothing to do!");
+				return;
 			}
-			shardPlayers.put(player.mUuid, player);
-			mRemotePlayerShards.put(player.mShard, shardPlayers);
+		}
+
+		RemotePlayerAbstraction oldPlayerServerData = allPlayerData.register(playerServerData);
+		if (oldPlayerServerData != null) {
+			String oldServerId = oldPlayerServerData.getServerId();
+			MMLog.fine(() -> "Player: " + playerName + " was previously on server type " + serverType + ", ID " + oldServerId);
+			Map<UUID, RemotePlayerData> allRemoteServerPlayerData = mRemotePlayersByServer.get(oldServerId);
+			if (allRemoteServerPlayerData != null && (isOnline || oldServerId.equals(serverId))) {
+				allRemoteServerPlayerData.remove(oldPlayerServerData.mUuid);
+			}
+		}
+		if (allPlayerData.isHidden()) {
+			mVisiblePlayers.remove(allPlayerData);
+		} else {
+			mVisiblePlayers.add(allPlayerData);
+		}
+		if (isOnline) {
+			mRemotePlayersByServer.computeIfAbsent(serverId, k -> new ConcurrentSkipListMap<>())
+				.put(playerId, allPlayerData);
+		} else if (!allPlayerData.isOnline()) {
+			// Last of that player's info is offline; unregister them completely
+			mRemotePlayersByUuid.remove(playerId);
+			mRemotePlayersByName.remove(playerName);
 		}
 	}
 
-	@Nullable
 	protected boolean unregisterPlayer(UUID playerUuid) {
-		RemotePlayerAbstraction player = mRemotePlayersByUuid.remove(playerUuid);
-		if (player != null) {
-			MMLog.fine(() -> "Unregistering player: " + player.toString());
-			mRemotePlayersByName.remove(player.mName);
-			unregisterPlayerFromProxyList(playerUuid);
-			unregisterPlayerFromShardList(playerUuid);
+		RemotePlayerData allPlayerData = mRemotePlayersByUuid.remove(playerUuid);
+		if (allPlayerData != null) {
+			MMLog.fine(() -> "Unregistering player: " + allPlayerData);
+			mRemotePlayersByName.remove(allPlayerData.mName);
+			mVisiblePlayers.remove(allPlayerData);
+			for (String serverType : allPlayerData.getServerTypes()) {
+				RemotePlayerAbstraction remoteServerPlayerData = allPlayerData.get(serverType);
+				if (remoteServerPlayerData == null) {
+					continue;
+				}
+				String serverId = remoteServerPlayerData.getServerId();
+				mRemotePlayersByServer.remove(serverId);
+			}
 			return true;
 		}
 		return false;
 	}
 
 	protected void updatePlayer(RemotePlayerAbstraction player) {
-		// update remote copy player with "some" local data
-		RemotePlayerAbstraction localPlayer = getRemotePlayer(player.mUuid);
-		if (localPlayer != null) {
-			localPlayer.broadcast();
-		}
+		// Update remote player caches with local data
+		player.broadcast();
 	}
 
-	protected boolean unregisterPlayerFromProxyList(UUID playerUuid) {
-		boolean found = false;
-		for (Entry<String, Map<UUID, RemotePlayerAbstraction>> proxy : mRemotePlayerProxies.entrySet()) {
-			Map<UUID, RemotePlayerAbstraction> proxyPlayers = proxy.getValue();
-			if (proxyPlayers.remove(playerUuid) != null) {
-				proxy.setValue(proxyPlayers);
-				found = true;
-			}
-		}
-		return found;
-	}
-
-	protected boolean unregisterPlayerFromShardList(UUID playerUuid) {
-		boolean found = false;
-		for (Entry<String, Map<UUID, RemotePlayerAbstraction>> shard : mRemotePlayerShards.entrySet()) {
-			Map<UUID, RemotePlayerAbstraction> shardPlayers = shard.getValue();
-			if (shardPlayers.remove(playerUuid) != null) {
-				shard.setValue(shardPlayers);
-				found = true;
-			}
-		}
-		/*
-		 * Other way to do this: possibly better?
-		 * player: RemotePlayerAbstraction
-		if (player.mShard != null) {
-			Map<UUID, RemotePlayerAbstraction> shardPlayers = mRemotePlayerShards.get(player.mShard);
-			shardPlayers.remove(playerUuid);
-			mRemotePlayerShards.put(player.mShard, shardPlayers);
-		}
-		 */
-		return found;
-	}
-
-	protected boolean registerShard(String shard) {
-		if (mRemotePlayerShards.containsKey(shard)) {
+	protected boolean registerServerId(String serverId) {
+		if (mRemotePlayersByServer.containsKey(serverId)) {
 			return false;
 		}
-		MMLog.fine("Registering shard " + shard);
-		mRemotePlayerShards.put(shard, new ConcurrentSkipListMap<>());
+		MMLog.fine("Registering shard " + serverId);
+		mRemotePlayersByServer.put(serverId, new ConcurrentSkipListMap<>());
 		return true;
 	}
 
-	protected boolean unregisterShard(String shard) {
-		@Nullable Map<UUID, RemotePlayerAbstraction> remotePlayers = mRemotePlayerShards.get(shard);
+	protected boolean unregisterShard(String serverId) {
+		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.remove(serverId);
 		if (remotePlayers == null) {
 			return false;
 		}
 
-		MMLog.fine("Unregistering shard " + shard);
-		Set<UUID> uuids = remotePlayers.keySet();
-		for (UUID uuid: uuids) {
-			unregisterPlayer(uuid);
+		MMLog.fine("Unregistering server ID " + serverId);
+		String serverType = RabbitMQManager.getInstance().getOnlineDestinationType(serverId);
+		if (serverType == null) {
+			throw new RuntimeException("ERROR: Server type for server ID cleared before unregistering players from that server");
 		}
-		mRemotePlayerShards.remove(shard);
+		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
+			RemotePlayerAbstraction oldPlayerData = allPlayerData.unregister(serverType);
+			if (oldPlayerData == null) {
+				continue;
+			}
+			if (!allPlayerData.isOnline()) {
+				// The player is now offline on all server types
+				mRemotePlayersByUuid.remove(allPlayerData.mUuid);
+				mRemotePlayersByName.remove(allPlayerData.mName);
+			}
+			if (allPlayerData.isHidden()) {
+				mVisiblePlayers.remove(allPlayerData);
+			} else {
+				mVisiblePlayers.add(allPlayerData);
+			}
+		}
 		return true;
-	}
-
-	@Nullable
-	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
-		RemotePlayerAbstraction remotePlayer = null;
-		try {
-			remotePlayer = RemotePlayerAbstraction.from(data);
-		} catch (Exception ex) {
-			MMLog.warning("Received invalid RemotePlayer");
-			MMLog.severe(data.toString());
-			MMLog.severe(ex.toString());
-			return remotePlayer;
-		}
-
-		updatePlayer(remotePlayer);
-		unregisterPlayer(remotePlayer.mUuid);
-		if (remotePlayer.mIsOnline) {
-			MMLog.fine("Registering remote player " + remotePlayer.mName);
-			registerPlayer(remotePlayer);
-			return remotePlayer;
-		}
-		return remotePlayer;
 	}
 }
