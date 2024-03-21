@@ -35,6 +35,29 @@ public abstract class RemotePlayerManagerAbstraction {
 		return new HashSet<>(mVisiblePlayers);
 	}
 
+	protected Set<RemotePlayerData> getOnlinePlayersOnServer(String serverId) {
+		ConcurrentMap<UUID, RemotePlayerData> result = mRemotePlayersByServer.get(serverId);
+		if (result == null) {
+			return new HashSet<>();
+		} else {
+			return new HashSet<>(result.values());
+		}
+	}
+
+	protected Set<RemotePlayerData> getVisiblePlayersOnServer(String serverId) {
+		ConcurrentMap<UUID, RemotePlayerData> playersOnServer = mRemotePlayersByServer.get(serverId);
+		if (playersOnServer == null) {
+			return new HashSet<>();
+		}
+		Set<RemotePlayerData> result = new HashSet<>();
+		for (RemotePlayerData remotePlayerData : playersOnServer.values()) {
+			if (!remotePlayerData.isHidden()) {
+				result.add(remotePlayerData);
+			}
+		}
+		return result;
+	}
+
 	protected Set<String> getOnlinePlayerNames() {
 		return new TreeSet<>(mRemotePlayersByName.keySet());
 	}
@@ -218,7 +241,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		MMLog.fine("Unregistering server ID " + serverId);
 		String serverType = RabbitMQManager.getInstance().getOnlineDestinationType(serverId);
 		if (serverType == null) {
-			throw new RuntimeException("ERROR: Server type for server ID cleared before unregistering players from that server");
+			throw new IllegalStateException("ERROR: Server type for server ID cleared before unregistering players from that server");
 		}
 		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
 			RemotePlayerAbstraction oldPlayerData = allPlayerData.unregister(serverType);

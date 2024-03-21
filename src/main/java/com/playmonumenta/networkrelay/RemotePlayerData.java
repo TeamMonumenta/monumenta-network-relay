@@ -6,8 +6,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 
-public class RemotePlayerData {
+public class RemotePlayerData implements Comparable<RemotePlayerData> {
 	public final UUID mUuid;
 	public final String mName;
 	private final ConcurrentMap<String, RemotePlayerAbstraction> mPlayerData;
@@ -60,5 +61,10 @@ public class RemotePlayerData {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public int compareTo(@NotNull RemotePlayerData o) {
+		return mUuid.compareTo(o.mUuid);
 	}
 }

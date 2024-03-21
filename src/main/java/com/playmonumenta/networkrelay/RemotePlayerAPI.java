@@ -6,36 +6,50 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerAPI {
-	@MonotonicNonNull
-	private static RemotePlayerManagerAbstraction mManager = null;
+	private static @MonotonicNonNull RemotePlayerManagerAbstraction mManager = null;
 
 	public static void init(RemotePlayerManagerAbstraction manager) {
 		mManager = manager;
 	}
 
-	public static Set<RemotePlayerAbstraction> getOnlinePlayers(boolean visibleOnly) {
+	public static Set<RemotePlayerData> getOnlinePlayers() {
 		innerCheckManagerLoaded();
-		return mManager.getAllOnlinePlayers(visibleOnly);
+		return mManager.getOnlinePlayers();
 	}
 
-	public static Set<RemotePlayerAbstraction> getOnlinePlayersOnProxy(String proxy, boolean visibleOnly) {
+	public static Set<RemotePlayerData> getVisiblePlayers() {
 		innerCheckManagerLoaded();
-		return mManager.getAllOnlinePlayersOnProxy(proxy, visibleOnly);
+		return mManager.getVisiblePlayers();
 	}
 
-	public static Set<RemotePlayerAbstraction> getOnlinePlayersOnShard(String shard, boolean visibleOnly) {
+	public static Set<RemotePlayerData> getOnlinePlayersOnServer(String serverId) {
 		innerCheckManagerLoaded();
-		return mManager.getAllOnlinePlayersOnShard(shard, visibleOnly);
+		return mManager.getOnlinePlayersOnServer(serverId);
 	}
 
-	public static Set<String> getOnlinePlayerNames(boolean visibleOnly) {
+	public static Set<RemotePlayerData> getVisiblePlayersOnServer(String serverId) {
 		innerCheckManagerLoaded();
-		return mManager.getAllOnlinePlayersName(visibleOnly);
+		return mManager.getVisiblePlayersOnServer(serverId);
 	}
 
-	public static Set<UUID> getOnlinePlayerUuids(boolean visibleOnly) {
+	public static Set<String> getOnlinePlayerNames() {
 		innerCheckManagerLoaded();
-		return mManager.getAllOnlinePlayersUuids(visibleOnly);
+		return mManager.getOnlinePlayerNames();
+	}
+
+	public static Set<String> getVisiblePlayerNames() {
+		innerCheckManagerLoaded();
+		return mManager.getVisiblePlayerNames();
+	}
+
+	public static Set<UUID> getOnlinePlayerUuids() {
+		innerCheckManagerLoaded();
+		return mManager.getOnlinePlayerUuids();
+	}
+
+	public static Set<UUID> getVisiblePlayerUuids() {
+		innerCheckManagerLoaded();
+		return mManager.getVisiblePlayerUuids();
 	}
 
 	public static boolean isPlayerOnline(String playerName) {
@@ -48,38 +62,32 @@ public class RemotePlayerAPI {
 		return mManager.isPlayerOnline(playerUuid);
 	}
 
-	@Nullable
-	public static String getPlayerProxy(String playerName) {
+	public static @Nullable String getPlayerProxy(String playerName) {
 		innerCheckManagerLoaded();
 		return mManager.getPlayerProxy(playerName);
 	}
 
-	@Nullable
-	public static String getPlayerProxy(UUID playerUuid) {
+	public static @Nullable String getPlayerProxy(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.getPlayerProxy(playerUuid);
 	}
 
-	@Nullable
-	public static String getPlayerShard(String playerName) {
+	public static @Nullable String getPlayerShard(String playerName) {
 		innerCheckManagerLoaded();
 		return mManager.getPlayerShard(playerName);
 	}
 
-	@Nullable
-	public static String getPlayerShard(UUID playerUuid) {
+	public static @Nullable String getPlayerShard(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.getPlayerShard(playerUuid);
 	}
 
-	@Nullable
-	public static RemotePlayerAbstraction getRemotePlayer(String playerName) {
+	public static @Nullable RemotePlayerData getRemotePlayer(String playerName) {
 		innerCheckManagerLoaded();
 		return mManager.getRemotePlayer(playerName);
 	}
 
-	@Nullable
-	public static RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+	public static @Nullable RemotePlayerData getRemotePlayer(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.getRemotePlayer(playerUuid);
 	}
