@@ -221,8 +221,10 @@ public class RabbitMQManager {
 
 				/* Check for heartbeat data - online status */
 				boolean isDestShutdown = false;
-				if (root.has("online")) {
-					if (root.getAsJsonPrimitive("online").isBoolean() && !root.getAsJsonPrimitive("online").getAsBoolean()) {
+				JsonElement onlineJson = root.get("online");
+				if (onlineJson instanceof JsonPrimitive) {
+					JsonPrimitive onlinePrimitive = (JsonPrimitive) onlineJson;
+					if (onlinePrimitive.isBoolean() && !onlinePrimitive.getAsBoolean()) {
 						isDestShutdown = true;
 						mDestinationLastHeartbeat.remove(source);
 						mDestinationHeartbeatData.remove(source);
@@ -466,6 +468,10 @@ public class RabbitMQManager {
 
 	protected Set<String> getOnlineDestinationTypes() {
 		return new HashSet<>(mDestinationTypes.values());
+	}
+
+	protected @Nullable String getOnlineDestinationType(String destination) {
+		return mDestinationTypes.get(destination);
 	}
 
 	protected Set<String> getOnlineDestinationsOfType(String type) {
