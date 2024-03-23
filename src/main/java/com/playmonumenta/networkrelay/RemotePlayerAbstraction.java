@@ -1,12 +1,11 @@
 package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerAbstraction {
@@ -21,12 +20,12 @@ public abstract class RemotePlayerAbstraction {
 	// Whether the player is online; this is broadcast as offline to remove remote players from local caches
 	protected final boolean mIsOnline;
 	// Whether the player is visible to most players or not
-	protected final boolean mIsHidden;
+	protected final Boolean mIsHidden;
 	// Data provided by other plugins
 	protected final Map<String, JsonObject> mPluginData;
 
 	// Data from this (local) server
-	protected RemotePlayerAbstraction(String serverId, UUID uuid, String name, boolean isOnline, boolean isHidden) {
+	protected RemotePlayerAbstraction(String serverId, UUID uuid, String name, boolean isOnline, Boolean isHidden) {
 		mServerId = serverId;
 		mUuid = uuid;
 		mName = name;
@@ -41,7 +40,12 @@ public abstract class RemotePlayerAbstraction {
 		mUuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
 		mName = remoteData.get("playerName").getAsString();
 		mIsOnline = remoteData.get("isOnline").getAsBoolean();
-		mIsHidden = remoteData.get("isHidden").getAsBoolean();
+		JsonPrimitive isHiddenJson = remoteData.getAsJsonPrimitive("isHidden");
+		if (isHiddenJson == null || !isHiddenJson.isBoolean()) {
+			mIsHidden = null;
+		} else {
+			mIsHidden = isHiddenJson.getAsBoolean();
+		}
 		mPluginData = new HashMap<>();
 		JsonObject pluginData = remoteData.getAsJsonObject("pluginData");
 		for (String key : pluginData.keySet()) {
@@ -69,7 +73,9 @@ public abstract class RemotePlayerAbstraction {
 		playerData.addProperty("serverId", mServerId);
 		playerData.addProperty("playerUuid", mUuid.toString());
 		playerData.addProperty("playerName", mName);
-		playerData.addProperty("isHidden", mIsHidden);
+		if (mIsHidden != null) {
+			playerData.addProperty("isHidden", mIsHidden);
+		}
 		playerData.addProperty("isOnline", mIsOnline);
 		playerData.add("pluginData", serializePluginData());
 		return playerData;

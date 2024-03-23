@@ -52,15 +52,13 @@ public class RemotePlayerData implements Comparable<RemotePlayerData> {
 
 	// Check if the player is hidden on any server type
 	public boolean isHidden() {
-		if (mPlayerData.isEmpty()) {
-			return true;
-		}
+		Boolean isHidden = null;
 		for (RemotePlayerAbstraction playerData : mPlayerData.values()) {
-			if (playerData.mIsHidden) {
-				return true;
+			if (playerData.mIsHidden != null) {
+				isHidden |= playerData.mIsHidden;
 			}
 		}
-		return false;
+		return isHidden == null || isHidden;
 	}
 
 	@Override

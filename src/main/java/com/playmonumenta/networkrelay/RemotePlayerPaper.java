@@ -11,7 +11,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	// The world the player is on for this Minecraft server
 	protected final String mWorld;
 
-	protected RemotePlayerPaper(String serverId, UUID uuid, String name, boolean isHidden, boolean isOnline, String world) {
+	protected RemotePlayerPaper(String serverId, UUID uuid, String name, Boolean isHidden, boolean isOnline, String world) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mWorld = world;
 
