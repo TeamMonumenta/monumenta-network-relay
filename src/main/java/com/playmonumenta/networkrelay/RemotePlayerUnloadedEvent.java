@@ -7,11 +7,11 @@ public class RemotePlayerUnloadedEvent extends Event {
 	private static final HandlerList handlers = new HandlerList();
 
 	public final RemotePlayerAbstraction mRemotePlayer;
-	public final String mShard;
+	public final String mServerId;
 
 	public RemotePlayerUnloadedEvent(RemotePlayerAbstraction remotePlayer) {
 		mRemotePlayer = remotePlayer;
-		mShard = remotePlayer.mShard;
+		mServerId = remotePlayer.mServerId;
 	}
 
 	@Override

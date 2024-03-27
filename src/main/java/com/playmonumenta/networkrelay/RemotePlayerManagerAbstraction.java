@@ -199,30 +199,6 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 	}
 
-	protected boolean unregisterPlayer(UUID playerUuid) {
-		RemotePlayerData allPlayerData = mRemotePlayersByUuid.remove(playerUuid);
-		if (allPlayerData != null) {
-			MMLog.fine(() -> "Unregistering player: " + allPlayerData);
-			mRemotePlayersByName.remove(allPlayerData.mName);
-			mVisiblePlayers.remove(allPlayerData);
-			for (String serverType : allPlayerData.getServerTypes()) {
-				RemotePlayerAbstraction remoteServerPlayerData = allPlayerData.get(serverType);
-				if (remoteServerPlayerData == null) {
-					continue;
-				}
-				String serverId = remoteServerPlayerData.getServerId();
-				mRemotePlayersByServer.remove(serverId);
-			}
-			return true;
-		}
-		return false;
-	}
-
-	protected void updatePlayer(RemotePlayerAbstraction player) {
-		// Update remote player caches with local data
-		player.broadcast();
-	}
-
 	protected boolean registerServerId(String serverId) {
 		if (mRemotePlayersByServer.containsKey(serverId)) {
 			return false;

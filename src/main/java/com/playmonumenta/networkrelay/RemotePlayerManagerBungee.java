@@ -2,8 +2,6 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -11,12 +9,10 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction implements Listener {
@@ -24,14 +20,10 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 
 	private RemotePlayerManagerBungee() {
 		INSTANCE = this;
-		String lShard = getShardName();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
-				if (shard.equals(lShard)) {
-					continue;
-				}
 				MMLog.fine("Registering shard " + shard);
-				mRemotePlayerShards.put(shard, new ConcurrentSkipListMap<>());
+				mRemotePlayersByServer.put(shard, new ConcurrentSkipListMap<>());
 			}
 		} catch (Exception ex) {
 			MMLog.severe("Failed to get remote shard names");
@@ -54,7 +46,7 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 		return INSTANCE;
 	}
 
-	protected static String getShardName() {
+	protected static String getServerId() {
 		@Nullable String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();
@@ -69,10 +61,12 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 
 	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
 		RemotePlayerBungee remotePlayer = new RemotePlayerBungee(
+			getServerId(),
 			player.getUniqueId(),
 			player.getName(),
 			isOnline,
-			RemotePlayerManagerBungee.getShardName()
+			null,
+			RemotePlayerManagerBungee.getServerId()
 		);
 		return remotePlayer;
 	}
@@ -86,37 +80,19 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 	// Run this on local players whenever their information is out of date
 	protected void refreshLocalPlayer(ProxiedPlayer player) {
 		MMLog.fine("Refreshing local player " + player.getName());
-		RemotePlayerBungee remotePlayer = fromLocal(player, true);
+		RemotePlayerBungee localPlayer = fromLocal(player, true);
 
 		// update local player with data
-		updatePlayer(remotePlayer);
-		unregisterPlayer(remotePlayer.mUuid);
-		registerPlayer(remotePlayer);
-		remotePlayer.broadcast();
+		registerPlayer(localPlayer);
+		localPlayer.broadcast();
 
-		RemotePlayerLoadedEventBungee remotePLE = new RemotePlayerLoadedEventBungee(remotePlayer);
+		RemotePlayerLoadedEventBungee remotePLE = new RemotePlayerLoadedEventBungee(localPlayer);
 		ProxyServer.getInstance().getPluginManager().callEvent(remotePLE);
-	}
-
-	@Override
-	protected boolean unregisterPlayer(UUID playerUuid) {
-		RemotePlayerAbstraction player = getRemotePlayer(playerUuid);
-		if (player != null) {
-			super.unregisterPlayer(playerUuid);
-			RemotePlayerUnloadedEventBungee remotePLE = new RemotePlayerUnloadedEventBungee(player);
-			ProxyServer.getInstance().getPluginManager().callEvent(remotePLE);
-			return true;
-		}
-		return false;
 	}
 
 	@Nullable
 	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
-		RemotePlayerAbstraction player = super.remotePlayerChange(data);
-
-		if (player == null) {
-			throw new RuntimeException("Remote player data is null!");
-		}
+		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
 
 		if (player.mIsOnline) {
 			RemotePlayerLoadedEventBungee remotePLE = new RemotePlayerLoadedEventBungee(player);
@@ -137,7 +113,7 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void destOnlineEvent(DestOnlineEventBungee event) {
 		String remoteShardName = event.getDest();
-		if (getShardName().equals(remoteShardName)) {
+		if (getServerId().equals(remoteShardName)) {
 			return;
 		}
 		registerShard(remoteShardName);
@@ -158,9 +134,9 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerQuitEvent(PlayerDisconnectEvent event) {
 		ProxiedPlayer player = event.getPlayer();
-		RemotePlayerBungee remotePlayer = fromLocal(player, false);
-		unregisterPlayer(remotePlayer.mUuid);
-		remotePlayer.broadcast();
+		RemotePlayerBungee localPlayer = fromLocal(player, false);
+		registerPlayer(localPlayer);
+		localPlayer.broadcast();
 	}
 
 	// Technically this is already handled... by the shard
@@ -175,7 +151,7 @@ public class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction im
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_UPDATE_CHANNEL: {
 				@Nullable JsonObject data = event.getData();
-				if (!Objects.equals(event.getSource(), getShardName())) {
+				if (!Objects.equals(event.getSource(), getServerId())) {
 					if (data == null) {
 						MMLog.severe("Got " + REMOTE_PLAYER_UPDATE_CHANNEL + " channel with null data");
 						return;

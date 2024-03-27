@@ -2,7 +2,6 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -17,7 +16,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.metadata.MetadataValue;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction implements Listener {

@@ -2,10 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
-import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "proxy";
