@@ -109,7 +109,7 @@ public class NetworkRelayAPI {
 	 * @return JsonObject stored in the most recent heartbeat, or null if either shardName or pluginIdentifier not found
 	 */
 	public static @Nullable JsonObject getHeartbeatPluginData(String shardName, String pluginIdentifier) {
-		@Nullable JsonObject allShardData = getInstance().getOnlineShardHeartbeatData().get(shardName);
+		JsonObject allShardData = getInstance().getOnlineShardHeartbeatData().get(shardName);
 		if (allShardData != null) {
 			JsonElement element = allShardData.get(pluginIdentifier);
 			if (element != null && element.isJsonObject()) {
