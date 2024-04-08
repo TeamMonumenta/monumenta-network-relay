@@ -1,9 +1,9 @@
 package com.playmonumenta.networkrelay;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Set;
 import org.jetbrains.annotations.Nullable;
+import com.google.gson.JsonElement;
 
 public class NetworkRelayAPI {
 	public enum ServerType {
@@ -24,9 +24,8 @@ public class NetworkRelayAPI {
 
 		public static ServerType fromString(@Nullable String id) {
 			for (ServerType serverType : ServerType.values()) {
-				if (serverType.toString().equals(id)) {
+				if (serverType.toString().equals(id))
 					return serverType;
-				}
 			}
 			return ALL;
 		}
