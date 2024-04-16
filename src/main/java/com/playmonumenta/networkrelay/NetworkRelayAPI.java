@@ -25,6 +25,7 @@ public class NetworkRelayAPI {
 		}
 
 		public static ServerType fromString(@Nullable String id) {
+			// TODO: remove this in the future - usb
 			if ("bungee".equals(id)) {
 				return ServerType.PROXY;
 			}
@@ -103,8 +104,12 @@ public class NetworkRelayAPI {
 		return getInstance().getOnlineShardNames();
 	}
 
-	public static Set<String> getOnlinePlayerNames(boolean visibleOnly) {
-		return RemotePlayerAPI.getOnlinePlayerNames(visibleOnly);
+	public static Set<String> getOnlinePlayerNames() {
+		return RemotePlayerAPI.getOnlinePlayerNames();
+	}
+
+	public static Set<String> getVisiblePlayerNames() {
+		return RemotePlayerAPI.getVisiblePlayerNames();
 	}
 
 	public static boolean isPlayerOnline(String playerName) {
@@ -126,12 +131,12 @@ public class NetworkRelayAPI {
 	}
 
 	@Nullable
-	public static RemotePlayerAbstraction getRemotePlayer(String playerName) {
+	public static RemotePlayerData getRemotePlayer(String playerName) {
 		return RemotePlayerAPI.getRemotePlayer(playerName);
 	}
 
 	@Nullable
-	public static RemotePlayerAbstraction getRemotePlayer(UUID playerUuid) {
+	public static RemotePlayerData getRemotePlayer(UUID playerUuid) {
 		return RemotePlayerAPI.getRemotePlayer(playerUuid);
 	}
 

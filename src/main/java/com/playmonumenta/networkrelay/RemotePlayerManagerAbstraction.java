@@ -146,7 +146,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		return mRemotePlayersByUuid.get(playerUuid);
 	}
 
-	protected void registerPlayer(RemotePlayerAbstraction playerServerData) {
+	protected void updatePlayer(RemotePlayerAbstraction playerServerData) {
 		if (playerServerData == null) {
 			return;
 		}
@@ -170,7 +170,7 @@ public abstract class RemotePlayerManagerAbstraction {
 				mRemotePlayersByUuid.put(playerId, allPlayerData);
 				mRemotePlayersByName.put(playerName, allPlayerData);
 			} else {
-				MMLog.fine("Nothing to do!");
+				MMLog.fine(() -> "Nothing to do!");
 				return;
 			}
 		}
@@ -199,16 +199,16 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 	}
 
-	protected boolean registerServerId(String serverId) {
+	protected boolean registerServer(String serverId) {
 		if (mRemotePlayersByServer.containsKey(serverId)) {
 			return false;
 		}
-		MMLog.fine("Registering shard " + serverId);
+		MMLog.fine("Registering server ID " + serverId);
 		mRemotePlayersByServer.put(serverId, new ConcurrentSkipListMap<>());
 		return true;
 	}
 
-	protected boolean unregisterShard(String serverId) {
+	protected boolean unregisterServer(String serverId) {
 		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.remove(serverId);
 		if (remotePlayers == null) {
 			return false;

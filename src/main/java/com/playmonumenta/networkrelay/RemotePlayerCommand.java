@@ -8,7 +8,13 @@ public class RemotePlayerCommand {
 	public static void register() {
 		new CommandAPICommand("remoteplayerinfo")
 		.executes((sender, args) -> {
-			sender.sendMessage(RemotePlayerAPI.getRemotePlayer(sender.getName()).toString());
+			// TODO: REMOVE THIS COMMAND, THIS IS FOR DEBUGGING DEV/MOD only - usb
+			RemotePlayerData data = RemotePlayerAPI.getRemotePlayer(sender.getName());
+			if (data == null) {
+				sender.sendMessage("No data found :c");
+				return;
+			}
+			sender.sendMessage(data.toString());
 		})
 		.register();
 	}
