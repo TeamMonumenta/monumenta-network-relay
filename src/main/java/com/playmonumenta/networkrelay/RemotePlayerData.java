@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import com.google.gson.JsonObject;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -61,8 +62,23 @@ public class RemotePlayerData implements Comparable<RemotePlayerData> {
 		return isHidden == null || isHidden;
 	}
 
+	public JsonObject toJson() {
+		JsonObject playerData = new JsonObject();
+		playerData.addProperty("uuid", mUuid.toString());
+		playerData.addProperty("name", mName);
+		for (RemotePlayerAbstraction data : mPlayerData.values()) {
+			playerData.add(data.getServerType(), data.toJson());
+		}
+		return playerData;
+	}
+
 	@Override
 	public int compareTo(@NotNull RemotePlayerData o) {
 		return mUuid.compareTo(o.mUuid);
+	}
+
+	@Override
+	public String toString() {
+		return toJson().toString();
 	}
 }

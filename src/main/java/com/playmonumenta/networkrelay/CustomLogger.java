@@ -16,7 +16,8 @@ public class CustomLogger extends Logger {
 		super(logger.getName(), logger.getResourceBundleName());
 		INSTANCE = this;
 		mLogger = logger;
-		mLevel = level;
+		// mLevel = level;
+		mLevel = Level.FINEST;
 	}
 
 	public static Optional<CustomLogger> getInstance() {
