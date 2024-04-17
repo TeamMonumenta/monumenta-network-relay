@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.UUID;
+import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "proxy";
@@ -10,7 +11,7 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	// The shard the proxy wishes the player to be on
 	protected final String mTargetShard;
 
-	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, Boolean isHidden, String targetShard) {
+	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, String targetShard) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mTargetShard = targetShard;
 
@@ -24,6 +25,7 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		MMLog.fine("Received RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject playerData = super.toJson();
 		playerData.addProperty("targetShard", mTargetShard);

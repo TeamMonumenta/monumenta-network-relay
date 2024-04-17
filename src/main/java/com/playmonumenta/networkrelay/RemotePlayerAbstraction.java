@@ -20,12 +20,12 @@ public abstract class RemotePlayerAbstraction {
 	// Whether the player is online; this is broadcast as offline to remove remote players from local caches
 	protected final boolean mIsOnline;
 	// Whether the player is visible to most players or not
-	protected final Boolean mIsHidden;
+	protected final @Nullable Boolean mIsHidden;
 	// Data provided by other plugins
 	protected final Map<String, JsonObject> mPluginData;
 
 	// Data from this (local) server
-	protected RemotePlayerAbstraction(String serverId, UUID uuid, String name, boolean isOnline, Boolean isHidden) {
+	protected RemotePlayerAbstraction(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden) {
 		mServerId = serverId;
 		mUuid = uuid;
 		mName = name;
@@ -110,7 +110,7 @@ public abstract class RemotePlayerAbstraction {
 	}
 
 	protected void broadcast() {
-		JsonObject playerData = toJson();
+		JsonObject playerData = this.toJson();
 
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL,
@@ -123,6 +123,6 @@ public abstract class RemotePlayerAbstraction {
 
 	@Override
 	public String toString() {
-		return toJson().toString();
+		return this.toJson().toString();
 	}
 }

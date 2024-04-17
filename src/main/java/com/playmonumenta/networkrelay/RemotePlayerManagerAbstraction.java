@@ -217,7 +217,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		MMLog.fine("Unregistering server ID " + serverId);
 		String serverType = RabbitMQManager.getInstance().getOnlineDestinationType(serverId);
 		if (serverType == null) {
-			throw new IllegalStateException("ERROR: Server type for server ID cleared before unregistering players from that server");
+			throw new IllegalStateException("ERROR: Server type for server ID cleared before unregistering players from that server: id:" + serverId);
 		}
 		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
 			RemotePlayerAbstraction oldPlayerData = allPlayerData.unregister(serverType);

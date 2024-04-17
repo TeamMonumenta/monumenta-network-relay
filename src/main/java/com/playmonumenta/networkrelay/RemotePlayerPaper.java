@@ -2,8 +2,8 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.Map;
 import java.util.UUID;
+import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "minecraft";
@@ -11,7 +11,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	// The world the player is on for this Minecraft server
 	protected final String mWorld;
 
-	protected RemotePlayerPaper(String serverId, UUID uuid, String name, Boolean isHidden, boolean isOnline, String world) {
+	protected RemotePlayerPaper(String serverId, UUID uuid, String name, @Nullable Boolean isHidden, boolean isOnline, String world) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mWorld = world;
 
@@ -25,6 +25,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		MMLog.fine("Received RemotePlayerPaper for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
+	@Override
 	public JsonObject toJson() {
 		JsonObject playerData = super.toJson();
 		playerData.addProperty("world", mWorld);

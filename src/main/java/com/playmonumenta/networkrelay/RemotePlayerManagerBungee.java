@@ -3,8 +3,6 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListMap;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
@@ -60,13 +58,18 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
+		String targetShard = ""; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
+		return fromLocal(player, isOnline, targetShard);
+	}
+
+	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
 		return new RemotePlayerBungee(
 			getServerId(),
 			player.getUniqueId(),
 			player.getName(),
 			isOnline,
 			null,
-			RemotePlayerManagerBungee.getServerId()
+			targetShard
 		);
 	}
 
