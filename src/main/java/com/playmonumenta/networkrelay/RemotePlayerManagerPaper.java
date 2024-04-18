@@ -3,8 +3,6 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentSkipListMap;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

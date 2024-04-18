@@ -2,8 +2,6 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 /*
