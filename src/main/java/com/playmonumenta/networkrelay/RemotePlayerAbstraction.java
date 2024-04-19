@@ -9,22 +9,32 @@ import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RemotePlayerAbstraction {
-	// The ID of the server ID reporting this information for a given server type
-	// For example "proxy" could report "bungee-13", or "minecraft" could report "valley-2"
-	// This is not used for proxies to report which Minecraft instance is most relevant.
+	/**
+	 * The ID of the server ID reporting this information for a given server type.
+	 * For example "proxy" could report "bungee-13", or "minecraft" could report "valley-2".
+	 * This is not used for proxies to report which Minecraft instance is most relevant.
+	 */
 	protected final String mServerId;
-	// The player's Minecraft UUID
+	/** The player's Minecraft UUID */
 	protected final UUID mUuid;
-	// The player's name
+	/** The player's name */
 	protected final String mName;
-	// Whether the player is online; this is broadcast as offline to remove remote players from local caches
+	/** Whether the player is online; this is broadcast as offline to remove remote players from local caches */
 	protected final boolean mIsOnline;
-	// Whether the player is visible to most players or not
+	/** Whether the player is visible to most players or not. Is null if unset */
 	protected final @Nullable Boolean mIsHidden;
-	// Data provided by other plugins
+	/** Data provided by other plugins */
 	protected final Map<String, JsonObject> mPluginData;
 
-	// Data from this (local) server
+	/**
+	 * Data from this (local) server
+	 *
+	 * @param serverId - server id (shard name)
+	 * @param uuid - player's uuid
+	 * @param name - player's name
+	 * @param isOnline - player's online status
+	 * @param isHidden - player's visibility status
+	 */
 	protected RemotePlayerAbstraction(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden) {
 		mServerId = serverId;
 		mUuid = uuid;
@@ -34,7 +44,7 @@ public abstract class RemotePlayerAbstraction {
 		mPluginData = new HashMap<>();
 	}
 
-	// Data from a remote server of any type (subclasses provide extra information)
+	/** Data from a remote server of any type (subclasses provide extra information) */
 	public RemotePlayerAbstraction(JsonObject remoteData) {
 		mServerId = remoteData.get("serverId").getAsString();
 		mUuid = UUID.fromString(remoteData.get("playerUuid").getAsString());
@@ -53,8 +63,11 @@ public abstract class RemotePlayerAbstraction {
 		}
 	}
 
-	// Determine the appropriate remote player data type to use
-	public static RemotePlayerAbstraction from(JsonObject remoteData) {
+	/** Determine the appropriate remote player data type to use */
+	public static @Nullable RemotePlayerAbstraction from(JsonObject remoteData) {
+		if (remoteData == null) {
+			return null;
+		}
 		String serverType = remoteData.get("serverType").getAsString();
 		switch (serverType) {
 			case RemotePlayerPaper.SERVER_TYPE:
@@ -66,7 +79,7 @@ public abstract class RemotePlayerAbstraction {
 		}
 	}
 
-	// Serializes player data to be broadcast to remote servers
+	/** Serializes player data to be broadcast to remote servers */
 	public JsonObject toJson() {
 		JsonObject playerData = new JsonObject();
 		playerData.addProperty("serverType", getServerType());
@@ -81,7 +94,7 @@ public abstract class RemotePlayerAbstraction {
 		return playerData;
 	}
 
-	// Get a given plugin's data, if available
+	/** Get a given plugin's data, if available */
 	@Nullable
 	public JsonObject getPluginData(String pluginId) {
 		return mPluginData.get(pluginId);
@@ -109,8 +122,9 @@ public abstract class RemotePlayerAbstraction {
 		return mName;
 	}
 
+	/** Broadcast this player's data to other servers */
 	protected void broadcast() {
-		JsonObject playerData = this.toJson();
+		JsonObject playerData = toJson();
 
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL,
@@ -123,6 +137,6 @@ public abstract class RemotePlayerAbstraction {
 
 	@Override
 	public String toString() {
-		return this.toJson().toString();
+		return toJson().toString();
 	}
 }

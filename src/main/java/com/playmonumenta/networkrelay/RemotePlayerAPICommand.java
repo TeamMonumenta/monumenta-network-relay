@@ -20,7 +20,6 @@ public class RemotePlayerAPICommand {
 					} else {
 						player = sender;
 					}
-					// TODO: REMOVE THIS COMMAND, THIS IS FOR DEBUGGING DEV/MOD only - usb
 					RemotePlayerData data = RemotePlayerAPI.getRemotePlayer(player.getName());
 					if (data == null) {
 						sender.sendMessage("No data found: " + player.getName());

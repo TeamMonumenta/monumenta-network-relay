@@ -58,11 +58,11 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
-		String targetShard = ""; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
+		@Nullable String targetShard = ""; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
 		return fromLocal(player, isOnline, targetShard);
 	}
 
-	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
+	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, @Nullable String targetShard) {
 		return new RemotePlayerBungee(
 			getServerId(),
 			player.getUniqueId(),
@@ -94,9 +94,14 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 
 	@Nullable
 	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
+		if (data == null) {
+			MMLog.severe("Null player data recieved from an unknown source!");
+			return null;
+		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
 		if (player == null) {
 			// something really bad happened
+			MMLog.severe("Invalid player data recieved from an unknown source!");
 			return null;
 		}
 

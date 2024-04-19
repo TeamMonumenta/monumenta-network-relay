@@ -112,10 +112,15 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		Bukkit.getServer().getPluginManager().callEvent(remotePLE);
 	}
 
+	// We recieved data from another server, add more data
 	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
+		if (data == null) {
+			MMLog.severe("Null player data recieved from an unknown source!");
+			return null;
+		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
 		if (player == null) {
-			// something really bad happened
+			MMLog.severe("Invalid player data recieved from an unknown source!");
 			return null;
 		}
 

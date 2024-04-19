@@ -8,10 +8,13 @@ import org.jetbrains.annotations.Nullable;
 public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "proxy";
 
-	// The shard the proxy wishes the player to be on
-	protected final String mTargetShard;
+	/**
+	 * The shard the proxy wishes the player to be on
+	 * To be fixed when switching to Velocity
+	 */
+	protected final @Nullable String mTargetShard;
 
-	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, String targetShard) {
+	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, @Nullable String targetShard) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mTargetShard = targetShard;
 
