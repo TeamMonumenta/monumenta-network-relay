@@ -5,8 +5,11 @@ import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Objects;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
+import net.md_5.bungee.api.event.ServerConnectedEvent;
+import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
@@ -58,7 +61,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
-		@Nullable String targetShard = ""; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
+		@Nullable String targetShard = player.getServer() != null ? player.getServer().getInfo().getName() : null; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
 		return fromLocal(player, isOnline, targetShard);
 	}
 
@@ -85,42 +88,59 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		RemotePlayerBungee localPlayer = fromLocal(player, true);
 
 		// update local player with data
-		updatePlayer(localPlayer);
-		localPlayer.broadcast();
-
-		RemotePlayerLoadedEventBungee remotePLE = new RemotePlayerLoadedEventBungee(localPlayer);
-		ProxyServer.getInstance().getPluginManager().callEvent(remotePLE);
+		if (updatePlayerLocal(localPlayer, false)) {
+			localPlayer.broadcast();
+		}
 	}
 
-	@Nullable
-	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
+	protected void remotePlayerChange(JsonObject data) {
 		if (data == null) {
 			MMLog.severe("Null player data recieved from an unknown source!");
-			return null;
+			return;
 		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
 		if (player == null) {
 			// something really bad happened
 			MMLog.severe("Invalid player data recieved from an unknown source!");
-			return null;
+			return;
 		}
 
-		updatePlayer(player);
+		updatePlayerLocal(player, true);
+	}
 
-		if (player.mIsOnline) {
-			RemotePlayerLoadedEventBungee remotePLE = new RemotePlayerLoadedEventBungee(player);
-			ProxyServer.getInstance().getPluginManager().callEvent(remotePLE);
-			return player;
-		}
+	protected boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
+		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
+		String serverType = player.getServerType();
+		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
 
-		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
-		if (!player.mIsOnline && localPlayer != null && localPlayer.isConnected()) {
-			// Player logged off on remote shard, but is locally online.
-			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.fine("Detected race condition, triggering refresh on " + player.mName);
-			refreshLocalPlayer(localPlayer);
+		// Update the player before calling events
+		super.updatePlayer(player);
+
+		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
+			RemotePlayerLoadedEventBungee remotePE = new RemotePlayerLoadedEventBungee(player);
+			ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+			MMLog.info("Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
+		} else if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
+			@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
+			if (localPlayer != null && localPlayer.isConnected()) {
+				// Player logged off on remote shard, but is locally online.
+				// This can happen if the remote shard was not notified the player logged in here in time.
+				MMLog.warning("Detected race condition, triggering refresh on " + player.mName);
+				refreshLocalPlayer(localPlayer);
+				return false;
+			}
+			MMLog.info("Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			RemotePlayerUnloadedEventBungee remotePE = new RemotePlayerUnloadedEventBungee(player);
+			ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+			return true;
+		} else if (!player.equals(oldPlayer)) {
+			RemotePlayerUpdatedEventBungee remotePE = new RemotePlayerUpdatedEventBungee(player);
+			ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+			MMLog.info("Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
 		}
-		return player;
+		return false;
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -138,31 +158,34 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		unregisterServer(remoteShardName);
 	}
 
+	// This is when the player logins into the proxy
 	@EventHandler(priority = EventPriority.HIGHEST)
-	public void playerJoinEvent(PostLoginEvent event) {
+	public void playerConnectEvent(PostLoginEvent event) {
 		ProxiedPlayer player = event.getPlayer();
 		refreshLocalPlayer(player);
 	}
 
+	// This is when the player connects or reconnects to a shard on the proxy
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void playerChangedServerEvent(ServerSwitchEvent event) {
+		ProxiedPlayer player = event.getPlayer();
+		refreshLocalPlayer(player);
+	}
+
+	// This is when the player disconnects from the proxy
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerQuitEvent(PlayerDisconnectEvent event) {
 		ProxiedPlayer player = event.getPlayer();
-		RemotePlayerBungee localPlayer = fromLocal(player, false);
 		String playerProxy = getPlayerProxy(player.getUniqueId());
-		if (playerProxy != null && playerProxy.equals(getServerId())) {
-			MMLog.fine("Refusing to unregister player " + player.getName() + ": they are on another proxy");
+		if (playerProxy != null && !playerProxy.equals(getServerId())) {
+			MMLog.warning("Refusing to unregister player " + player.getName() + ": they are on another proxy");
 			return;
 		}
-		updatePlayer(localPlayer);
-		localPlayer.broadcast();
+		RemotePlayerBungee localPlayer = fromLocal(player, false);
+		if (updatePlayerLocal(localPlayer, false)) {
+			localPlayer.broadcast();
+		}
 	}
-
-	// Technically this is already handled... by the shard
-	// @EventHandler(priority = EventPriority.HIGHEST)
-	// public void playerChangedServerEvent(ServerSwitchEvent event) {
-	// 	ProxiedPlayer player = event.getPlayer();
-	// 	refreshLocalPlayer(player);
-	// }
 
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void networkRelayMessageEventBungee(NetworkRelayMessageEventBungee event) {

@@ -102,44 +102,63 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	// Run this on local players whenever their information is out of date
 	protected void refreshLocalPlayer(Player player) {
 		MMLog.fine("Refreshing local player " + player.getName());
-		RemotePlayerPaper remotePlayer = fromLocal(player, true);
+		RemotePlayerPaper localPlayer = fromLocal(player, true);
 
-		// update local player with data
-		updatePlayer(remotePlayer);
-		remotePlayer.broadcast();
-
-		RemotePlayerLoadedEvent remotePLE = new RemotePlayerLoadedEvent(remotePlayer);
-		Bukkit.getServer().getPluginManager().callEvent(remotePLE);
+		// update local player with data'
+		if (updatePlayerLocal(localPlayer, false)) {
+			localPlayer.broadcast();
+		}
 	}
 
 	// We recieved data from another server, add more data
-	protected RemotePlayerAbstraction remotePlayerChange(JsonObject data) {
+	protected void remotePlayerChange(JsonObject data) {
 		if (data == null) {
 			MMLog.severe("Null player data recieved from an unknown source!");
-			return null;
+			return;
 		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
 		if (player == null) {
 			MMLog.severe("Invalid player data recieved from an unknown source!");
-			return null;
+			return;
 		}
 
-		updatePlayer(player);
+		updatePlayerLocal(player, true);
+	}
 
-		if (player.mIsOnline) {
-			RemotePlayerLoadedEvent remotePLE = new RemotePlayerLoadedEvent(player);
-			Bukkit.getServer().getPluginManager().callEvent(remotePLE);
-			return player;
-		}
+	protected boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
+		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
+		String serverType = player.getServerType();
+		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
 
-		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
-		if (localPlayer != null && localPlayer.isOnline()) {
-			// Player logged off on remote shard, but is locally online.
-			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.fine("Detected race condition, triggering refresh on " + player.mName);
-			refreshLocalPlayer(localPlayer);
+		// Update the player before calling events
+		super.updatePlayer(player);
+
+		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
+			RemotePlayerLoadedEvent remotePE = new RemotePlayerLoadedEvent(player);
+			Bukkit.getServer().getPluginManager().callEvent(remotePE);
+			MMLog.info("Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
 		}
-		return player;
+		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
+			@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
+			if (localPlayer != null && localPlayer.isOnline()) {
+				// Player logged off on remote shard, but is locally online.
+				// This can happen if the remote shard was not notified the player logged in here in time.
+				MMLog.warning("Detected race condition, triggering refresh on " + player.mName);
+				refreshLocalPlayer(localPlayer);
+				return false;
+			}
+			MMLog.info("Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			RemotePlayerUnloadedEvent remotePE = new RemotePlayerUnloadedEvent(player);
+			Bukkit.getServer().getPluginManager().callEvent(remotePE);
+			return true;
+		} else if (!player.equals(oldPlayer)) {
+			RemotePlayerUpdatedEvent remotePE = new RemotePlayerUpdatedEvent(player);
+			Bukkit.getServer().getPluginManager().callEvent(remotePE);
+			MMLog.info("Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
+		}
+		return false;
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -177,15 +196,19 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerQuitEvent(PlayerQuitEvent event) {
-		Player player = event.getPlayer();
-		String playerShard = getPlayerShard(player.getUniqueId());
-		if (playerShard != null && playerShard.equals(getServerId())) {
-			MMLog.fine("Refusing to unregister player " + player.getName() + ": they are on another shard");
-			return;
-		}
-		RemotePlayerPaper remotePlayer = fromLocal(player, false);
-		updatePlayer(remotePlayer);
-		remotePlayer.broadcast();
+		// Run this with a 1 tick delay since a player can switch shards, since players can take a bit to switch
+		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
+			Player player = event.getPlayer();
+			String playerShard = getPlayerShard(player.getUniqueId());
+			if (playerShard != null && !playerShard.equals(getServerId())) {
+				MMLog.warning("Refusing to unregister player " + player.getName() + ": they are on another shard");
+				return;
+			}
+			RemotePlayerPaper localPlayer = fromLocal(player, false);
+			if (updatePlayerLocal(localPlayer, false)) {
+				localPlayer.broadcast();
+			}
+		}, 1L);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

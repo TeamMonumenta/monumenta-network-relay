@@ -1,11 +1,15 @@
 package com.playmonumenta.networkrelay;
 
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.Set;
 import java.util.UUID;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
 
 public class RemotePlayerAPI {
+	public static final ArgumentSuggestions VISIBLE_PLAYER_ONLINE_SUGGESTIONS = ArgumentSuggestions.strings((unused) -> NetworkRelayAPI.getVisiblePlayerNames().toArray(String[]::new));
+	public static final ArgumentSuggestions ALL_PLAYER_ONLINE_SUGGESTIONS = ArgumentSuggestions.strings((unused) -> NetworkRelayAPI.getVisiblePlayerNames().toArray(String[]::new));
+
 	private static @MonotonicNonNull RemotePlayerManagerAbstraction mManager = null;
 
 	public static void init(RemotePlayerManagerAbstraction manager) {

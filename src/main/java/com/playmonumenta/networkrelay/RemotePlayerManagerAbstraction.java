@@ -1,6 +1,7 @@
 package com.playmonumenta.networkrelay;
 
 import com.playmonumenta.networkrelay.util.MMLog;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -144,6 +145,20 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	protected @Nullable RemotePlayerData getRemotePlayer(UUID playerUuid) {
 		return mRemotePlayersByUuid.get(playerUuid);
+	}
+
+	protected @Nullable RemotePlayerAbstraction getRemotePlayerProxy(@Nullable RemotePlayerData remotePlayerData) {
+		if (remotePlayerData == null) {
+			return null;
+		}
+		return remotePlayerData.get("proxy");
+	}
+
+	protected @Nullable RemotePlayerAbstraction getRemotePlayerShard(@Nullable RemotePlayerData remotePlayerData) {
+		if (remotePlayerData == null) {
+			return null;
+		}
+		return remotePlayerData.get("minecraft");
 	}
 
 	protected void updatePlayer(RemotePlayerAbstraction playerServerData) {
