@@ -6,7 +6,7 @@
 
 <suppressions>
 	<!-- suppress the @EventHandler ignoreCancelled check for bungee, as that EventHandler does not have this attribute -->
-	<suppress files=".*[\\/]NetworkMessageListenerBungee\.java"
+	<suppress files=".*[\\/]\w+Bungee\.java"
 			  checks="RegexpSinglelineJava"
 			  message="Event handlers must specify ignoreCancelled"/>
 </suppressions>
