@@ -41,12 +41,13 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		return mWorld;
 	}
 
+	@Override
 	public boolean isSimilar(RemotePlayerAbstraction other) {
 		if (!super.isSimilar(other)) {
 			return false;
 		}
 		if (other instanceof RemotePlayerPaper otherP) {
-			return this.mWorld == otherP.mWorld;
+			return this.mWorld.equals(otherP.mWorld);
 		}
 		return true;
 	}

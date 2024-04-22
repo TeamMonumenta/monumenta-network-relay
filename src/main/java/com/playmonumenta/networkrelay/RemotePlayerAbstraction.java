@@ -5,6 +5,7 @@ import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
@@ -140,11 +141,15 @@ public abstract class RemotePlayerAbstraction {
 		return toJson().toString();
 	}
 
-	public boolean isSimilar(RemotePlayerAbstraction other) {
-		return this.mName == other.mName &&
-			this.mUuid == other.mUuid &&
-			this.mServerId == other.mServerId &&
+	public boolean isSimilar(@Nullable RemotePlayerAbstraction other) {
+		if (other == null) {
+			return false;
+		}
+		return this.mName.equals(other.mName) &&
+			this.mUuid.equals(other.mUuid) &&
+			this.mServerId.equals(other.mServerId) &&
 			this.mIsOnline == other.mIsOnline &&
-			this.mIsHidden == other.mIsHidden;
+			this.getServerType() == other.getServerType() &&
+			Objects.equals(this.mIsHidden, other.mIsHidden);
 	}
 }

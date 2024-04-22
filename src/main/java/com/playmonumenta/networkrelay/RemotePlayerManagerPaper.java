@@ -51,7 +51,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return INSTANCE;
 	}
 
-	protected static String getServerId() {
+	static String getServerId() {
 		@Nullable String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();

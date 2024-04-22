@@ -10,11 +10,11 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 
 	/**
 	 * The shard the proxy wishes the player to be on
-	 * To be fixed when switching to Velocity
+	 * This will be blank if the target shard could not be determined
 	 */
-	protected final @Nullable String mTargetShard;
+	protected final String mTargetShard;
 
-	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, @Nullable String targetShard) {
+	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, String targetShard) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mTargetShard = targetShard;
 
@@ -44,12 +44,13 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		return mTargetShard;
 	}
 
+	@Override
 	public boolean isSimilar(RemotePlayerAbstraction other) {
 		if (!super.isSimilar(other)) {
 			return false;
 		}
 		if (other instanceof RemotePlayerBungee otherB) {
-			return this.mTargetShard == otherB.mTargetShard;
+			return this.mTargetShard.equals(otherB.mTargetShard);
 		}
 		return true;
 	}

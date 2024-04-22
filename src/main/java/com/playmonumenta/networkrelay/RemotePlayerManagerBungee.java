@@ -45,7 +45,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return INSTANCE;
 	}
 
-	protected static String getServerId() {
+	static String getServerId() {
 		@Nullable String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();
@@ -63,7 +63,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return fromLocal(player, isOnline, targetShard);
 	}
 
-	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, @Nullable String targetShard) {
+	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
 		return new RemotePlayerBungee(
 			getServerId(),
 			player.getUniqueId(),
