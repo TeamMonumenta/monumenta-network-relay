@@ -42,7 +42,7 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 	}
 
 	@Override
-	public boolean isSimilar(RemotePlayerAbstraction other) {
+	public boolean isSimilar(@Nullable RemotePlayerAbstraction other) {
 		if (!super.isSimilar(other)) {
 			return false;
 		}

@@ -58,12 +58,12 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return shardName;
 	}
 
-	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
+	static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
 		@Nullable String targetShard = player.getServer() != null ? player.getServer().getInfo().getName() : ""; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
 		return fromLocal(player, isOnline, targetShard);
 	}
 
-	protected static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
+	static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
 		return new RemotePlayerBungee(
 			getServerId(),
 			player.getUniqueId(),
@@ -74,14 +74,14 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		);
 	}
 
-	protected void refreshLocalPlayers() {
+	void refreshLocalPlayers() {
 		for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
 			refreshLocalPlayer(player);
 		}
 	}
 
 	// Run this on local players whenever their information is out of date
-	protected void refreshLocalPlayer(ProxiedPlayer player) {
+	void refreshLocalPlayer(ProxiedPlayer player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerBungee localPlayer = fromLocal(player, true);
 
@@ -91,7 +91,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		}
 	}
 
-	protected void remotePlayerChange(JsonObject data) {
+	void remotePlayerChange(JsonObject data) {
 		if (data == null) {
 			MMLog.severe(() -> "Null player data recieved from an unknown source!");
 			return;
@@ -106,7 +106,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		updatePlayerLocal(player, true);
 	}
 
-	protected boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
+	boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
 		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
 		String serverType = player.getServerType();
 		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;

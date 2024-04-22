@@ -149,7 +149,7 @@ public abstract class RemotePlayerAbstraction {
 			this.mUuid.equals(other.mUuid) &&
 			this.mServerId.equals(other.mServerId) &&
 			this.mIsOnline == other.mIsOnline &&
-			this.getServerType() == other.getServerType() &&
+			this.getServerType().equals(other.getServerType()) &&
 			Objects.equals(this.mIsHidden, other.mIsHidden);
 	}
 }

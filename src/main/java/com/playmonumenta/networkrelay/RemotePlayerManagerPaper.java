@@ -64,7 +64,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return shardName;
 	}
 
-	protected static RemotePlayerPaper fromLocal(Player player, boolean isOnline) {
+	static RemotePlayerPaper fromLocal(Player player, boolean isOnline) {
 		return new RemotePlayerPaper(
 			getServerId(),
 			player.getUniqueId(),
@@ -75,7 +75,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		);
 	}
 
-	protected static boolean internalPlayerHiddenTest(Player player) {
+	static boolean internalPlayerHiddenTest(Player player) {
 		for (MetadataValue meta : player.getMetadata("vanished")) {
 			if (meta.asBoolean()) {
 				return true;
@@ -84,7 +84,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return false;
 	}
 
-	protected boolean isPlayerVisible(Player player) {
+	boolean isPlayerVisible(Player player) {
 		boolean cachedResult = isPlayerVisible(player.getUniqueId());
 		boolean currentResult = !internalPlayerHiddenTest(player);
 		if (cachedResult ^ currentResult) {
@@ -93,14 +93,14 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return currentResult;
 	}
 
-	protected void refreshLocalPlayers() {
+	void refreshLocalPlayers() {
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			refreshLocalPlayer(player);
 		}
 	}
 
 	// Run this on local players whenever their information is out of date
-	protected void refreshLocalPlayer(Player player) {
+	void refreshLocalPlayer(Player player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerPaper localPlayer = fromLocal(player, true);
 
@@ -111,7 +111,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	// We recieved data from another server, add more data
-	protected void remotePlayerChange(JsonObject data) {
+	void remotePlayerChange(JsonObject data) {
 		if (data == null) {
 			MMLog.severe(() -> "Null player data recieved from an unknown source!");
 			return;
@@ -125,7 +125,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		updatePlayerLocal(player, true);
 	}
 
-	protected boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
+	boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
 		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
 		String serverType = player.getServerType();
 		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
