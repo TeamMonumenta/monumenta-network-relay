@@ -131,12 +131,20 @@ public abstract class RemotePlayerAbstraction {
 				playerData,
 				RemotePlayerManagerAbstraction.REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception e) {
-			MMLog.severe("Failed to broadcast " + RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL);
+			MMLog.severe(() -> "Failed to broadcast " + RemotePlayerManagerAbstraction.REMOTE_PLAYER_UPDATE_CHANNEL);
 		}
 	}
 
 	@Override
 	public String toString() {
 		return toJson().toString();
+	}
+
+	public boolean isSimilar(RemotePlayerAbstraction other) {
+		return this.mName == other.mName &&
+			this.mUuid == other.mUuid &&
+			this.mServerId == other.mServerId &&
+			this.mIsOnline == other.mIsOnline &&
+			this.mIsHidden == other.mIsHidden;
 	}
 }

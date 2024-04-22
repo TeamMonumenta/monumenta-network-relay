@@ -27,11 +27,11 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				if (shard.equals(lShard)) {
 					continue;
 				}
-				MMLog.fine("Registering shard " + shard);
+				MMLog.fine(() -> "Registering shard " + shard);
 				registerServer(shard);
 			}
 		} catch (Exception ex) {
-			MMLog.severe("Failed to get remote shard names");
+			MMLog.severe(() -> "Failed to get remote shard names");
 			throw new RuntimeException("Failed to get remote shard names");
 		}
 
@@ -40,11 +40,11 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				new JsonObject(),
 				REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception ex) {
-			MMLog.severe("Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
 		}
 	}
 
-	protected static RemotePlayerManagerPaper getInstance() {
+	static RemotePlayerManagerPaper getInstance() {
 		if (INSTANCE == null) {
 			INSTANCE = new RemotePlayerManagerPaper();
 		}
@@ -56,7 +56,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		try {
 			shardName = NetworkRelayAPI.getShardName();
 		} catch (Exception e) {
-			MMLog.severe("Failed to get shard name");
+			MMLog.severe(() -> "Failed to get shard name");
 		}
 		if (shardName == null) {
 			throw new RuntimeException("Got null shard name");
@@ -101,7 +101,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	// Run this on local players whenever their information is out of date
 	protected void refreshLocalPlayer(Player player) {
-		MMLog.fine("Refreshing local player " + player.getName());
+		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerPaper localPlayer = fromLocal(player, true);
 
 		// update local player with data'
@@ -113,12 +113,12 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	// We recieved data from another server, add more data
 	protected void remotePlayerChange(JsonObject data) {
 		if (data == null) {
-			MMLog.severe("Null player data recieved from an unknown source!");
+			MMLog.severe(() -> "Null player data recieved from an unknown source!");
 			return;
 		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
 		if (player == null) {
-			MMLog.severe("Invalid player data recieved from an unknown source!");
+			MMLog.severe(() -> "Invalid player data recieved from an unknown source!");
 			return;
 		}
 
@@ -136,27 +136,31 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
 			RemotePlayerLoadedEvent remotePE = new RemotePlayerLoadedEvent(player);
 			Bukkit.getServer().getPluginManager().callEvent(remotePE);
-			MMLog.info("Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.info(() -> "Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			return true;
 		}
+
+		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
+		if (isRemote && serverType.equals(RemotePlayerPaper.SERVER_TYPE) && localPlayer != null && localPlayer.isOnline()) {
+			// Player logged off on remote shard, but is locally online.
+			// This can happen if the remote shard was not notified the player logged in here in time.
+			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			refreshLocalPlayer(localPlayer);
+			return false;
+		}
+
 		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
-			@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
-			if (localPlayer != null && localPlayer.isOnline()) {
-				// Player logged off on remote shard, but is locally online.
-				// This can happen if the remote shard was not notified the player logged in here in time.
-				MMLog.warning("Detected race condition, triggering refresh on " + player.mName);
-				refreshLocalPlayer(localPlayer);
-				return false;
-			}
-			MMLog.info("Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.info(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			RemotePlayerUnloadedEvent remotePE = new RemotePlayerUnloadedEvent(player);
 			Bukkit.getServer().getPluginManager().callEvent(remotePE);
 			return true;
-		} else if (!player.equals(oldPlayer)) {
+		} else if (!isRemote || !player.isSimilar(oldPlayer)) {
 			RemotePlayerUpdatedEvent remotePE = new RemotePlayerUpdatedEvent(player);
 			Bukkit.getServer().getPluginManager().callEvent(remotePE);
-			MMLog.info("Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.info(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			return true;
+		} else {
+			MMLog.warning(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 		}
 		return false;
 	}
@@ -182,7 +186,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		String command = event.getMessage();
 
 		if (command.startsWith("/pv ")
-			|| command.equals("/pv")
+			|| "/pv".equals(command)
 			|| command.contains("vanish")) {
 			Bukkit.getScheduler().runTask(NetworkRelay.getInstance(), this::refreshLocalPlayers);
 		}
@@ -201,7 +205,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			Player player = event.getPlayer();
 			String playerShard = getPlayerShard(player.getUniqueId());
 			if (playerShard != null && !playerShard.equals(getServerId())) {
-				MMLog.warning("Refusing to unregister player " + player.getName() + ": they are on another shard");
+				MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
 				return;
 			}
 			RemotePlayerPaper localPlayer = fromLocal(player, false);
@@ -224,7 +228,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				@Nullable JsonObject data = event.getData();
 				if (!Objects.equals(event.getSource(), getServerId())) {
 					if (data == null) {
-						MMLog.severe("Got " + REMOTE_PLAYER_UPDATE_CHANNEL + " channel with null data");
+						MMLog.severe(() -> "Got " + REMOTE_PLAYER_UPDATE_CHANNEL + " channel with null data");
 						return;
 					}
 					remotePlayerChange(data);

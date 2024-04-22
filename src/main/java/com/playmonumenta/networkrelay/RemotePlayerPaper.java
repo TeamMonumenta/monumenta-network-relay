@@ -15,14 +15,14 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mWorld = world;
 
-		MMLog.fine("Created RemotePlayerPaper for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine(() -> "Created RemotePlayerPaper for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerPaper(JsonObject remoteData) {
 		super(remoteData);
 		mWorld = remoteData.get("world").getAsString();
 
-		MMLog.fine("Received RemotePlayerPaper for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine(() -> "Received RemotePlayerPaper for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	@Override
@@ -39,5 +39,15 @@ public class RemotePlayerPaper extends RemotePlayerAbstraction {
 
 	public String world() {
 		return mWorld;
+	}
+
+	public boolean isSimilar(RemotePlayerAbstraction other) {
+		if (!super.isSimilar(other)) {
+			return false;
+		}
+		if (other instanceof RemotePlayerPaper otherP) {
+			return this.mWorld == otherP.mWorld;
+		}
+		return true;
 	}
 }

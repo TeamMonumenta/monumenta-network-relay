@@ -18,14 +18,14 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mTargetShard = targetShard;
 
-		MMLog.fine("Created RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine(() -> "Created RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	protected RemotePlayerBungee(JsonObject remoteData) {
 		super(remoteData);
 		mTargetShard = remoteData.get("targetShard").getAsString();
 
-		MMLog.fine("Received RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine(() -> "Received RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	@Override
@@ -42,5 +42,15 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 
 	public String targetShard() {
 		return mTargetShard;
+	}
+
+	public boolean isSimilar(RemotePlayerAbstraction other) {
+		if (!super.isSimilar(other)) {
+			return false;
+		}
+		if (other instanceof RemotePlayerBungee otherB) {
+			return this.mTargetShard == otherB.mTargetShard;
+		}
+		return true;
 	}
 }

@@ -2,9 +2,8 @@ package com.playmonumenta.networkrelay;
 
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.StringArgument;
-import org.bukkit.command.CommandSender;
 
-public class RemotePlayerAPICommand {
+public abstract class RemotePlayerAPICommand {
 	public static void register() {
 		// moderator command
 		new CommandAPICommand("remoteplayerapi")

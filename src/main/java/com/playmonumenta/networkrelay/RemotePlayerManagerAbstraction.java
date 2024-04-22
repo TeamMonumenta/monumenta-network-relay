@@ -1,7 +1,6 @@
 package com.playmonumenta.networkrelay;
 
 import com.playmonumenta.networkrelay.util.MMLog;
-import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -218,7 +217,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		if (mRemotePlayersByServer.containsKey(serverId)) {
 			return false;
 		}
-		MMLog.fine("Registering server ID " + serverId);
+		MMLog.fine(() -> "Registering server ID " + serverId);
 		mRemotePlayersByServer.put(serverId, new ConcurrentSkipListMap<>());
 		return true;
 	}
@@ -229,7 +228,7 @@ public abstract class RemotePlayerManagerAbstraction {
 			return false;
 		}
 
-		MMLog.fine("Unregistering server ID " + serverId);
+		MMLog.fine(() -> "Unregistering server ID " + serverId);
 		String serverType = RabbitMQManager.getInstance().getOnlineDestinationType(serverId);
 		if (serverType == null) {
 			throw new IllegalStateException("ERROR: Server type for server ID cleared before unregistering players from that server: id:" + serverId);

@@ -3,12 +3,9 @@ package com.playmonumenta.networkrelay;
 import dev.jorel.commandapi.CommandAPI;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
-import dev.jorel.commandapi.arguments.ArgumentSuggestions;
-import dev.jorel.commandapi.arguments.EntitySelectorArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
-import org.bukkit.entity.Player;
 
-public class WhereIsCommand {
+public abstract class WhereIsCommand {
 	public static void register() {
 		new CommandAPICommand("whereis")
 			.withPermission(CommandPermission.fromString("monumenta.networkrelay.whereis"))
