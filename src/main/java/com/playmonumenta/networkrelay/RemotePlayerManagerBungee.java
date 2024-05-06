@@ -59,7 +59,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
-		@Nullable String targetShard = player.getServer() != null ? player.getServer().getInfo().getName() : ""; // TODO: add a way to get the shard name. IT IS MUCH EASIER IN VELOCITY - usb
+		// player.getServer() has no information prior to the ServerSwitchEvent - we populate the player's information in the PostLoginEvent
+		@Nullable String targetShard = player.getServer() != null ? player.getServer().getInfo().getName() : "";
 		return fromLocal(player, isOnline, targetShard);
 	}
 
@@ -86,7 +87,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		RemotePlayerBungee localPlayer = fromLocal(player, true);
 
 		// update local player with data
-		if (updatePlayerLocal(localPlayer, false)) {
+		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
 	}
@@ -103,45 +104,32 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 			return;
 		}
 
-		updatePlayerLocal(player, true);
+		updateLocalPlayer(player, true);
 	}
 
-	boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
-		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
-		String serverType = player.getServerType();
-		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
+	void callPlayerLoadEvent(RemotePlayerAbstraction player) {
+		RemotePlayerLoadedEventBungee remotePE = new RemotePlayerLoadedEventBungee(player);
+		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+	}
 
-		// Update the player before calling events
-		super.updatePlayer(player);
+	void callPlayerUnloadEvent(RemotePlayerAbstraction player) {
+		RemotePlayerUnloadedEventBungee remotePE = new RemotePlayerUnloadedEventBungee(player);
+		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+	}
 
-		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
-			RemotePlayerLoadedEventBungee remotePE = new RemotePlayerLoadedEventBungee(player);
-			ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
-			MMLog.info(() -> "Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		}
+	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
+		RemotePlayerUpdatedEventBungee remotePE = new RemotePlayerUpdatedEventBungee(player);
+		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+	}
 
-		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
-		if (isRemote && serverType.equals(RemotePlayerBungee.SERVER_TYPE) && localPlayer != null && localPlayer.isConnected()) {
-			// Player logged off on remote shard, but is locally online.
-			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			refreshLocalPlayer(localPlayer);
+	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
+		if (!player.getServerType().equals(RemotePlayerBungee.SERVER_TYPE)) {
 			return false;
 		}
-
-		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
-			MMLog.info(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			RemotePlayerUnloadedEventBungee remotePE = new RemotePlayerUnloadedEventBungee(player);
-			ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
+		if (localPlayer != null && localPlayer.isConnected()) {
+			refreshLocalPlayer(localPlayer);
 			return true;
-		} else if (!isRemote || !player.isSimilar(oldPlayer)) {
-			RemotePlayerUpdatedEventBungee remotePE = new RemotePlayerUpdatedEventBungee(player);
-			ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
-			MMLog.info(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		} else {
-			MMLog.warning(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 		}
 		return false;
 	}
@@ -185,7 +173,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 			return;
 		}
 		RemotePlayerBungee localPlayer = fromLocal(player, false);
-		if (updatePlayerLocal(localPlayer, false)) {
+		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
 	}

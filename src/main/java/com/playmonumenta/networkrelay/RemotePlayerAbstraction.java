@@ -65,10 +65,7 @@ public abstract class RemotePlayerAbstraction {
 	}
 
 	/** Determine the appropriate remote player data type to use */
-	public static @Nullable RemotePlayerAbstraction from(JsonObject remoteData) {
-		if (remoteData == null) {
-			return null;
-		}
+	public static RemotePlayerAbstraction from(JsonObject remoteData) {
 		String serverType = remoteData.get("serverType").getAsString();
 		switch (serverType) {
 			case RemotePlayerPaper.SERVER_TYPE:

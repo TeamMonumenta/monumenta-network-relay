@@ -160,6 +160,62 @@ public abstract class RemotePlayerManagerAbstraction {
 		return remotePlayerData.get("minecraft");
 	}
 
+	// Call respective events on minecraft/proxy platforms
+	abstract void callPlayerLoadEvent(RemotePlayerAbstraction player);
+
+	abstract void callPlayerUnloadEvent(RemotePlayerAbstraction player);
+
+	abstract void callPlayerUpdatedEvent(RemotePlayerAbstraction player);
+
+	/**
+	 * Check if this remote player is on our shard, and refresh if so
+	 */
+	abstract boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player);
+
+
+	/**
+	 * Update the locally cached player with data, from remote or not
+	 * @param player - the player to update data for
+	 * @param isRemote - if it originated from another shard/proxy
+	 * @see RemotePlayerManagerAbstraction#updatePlayer
+	 * @return A boolean indicating if the local player changes should be broadcasted to other shards
+	 */
+	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
+		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
+		String serverType = player.getServerType();
+		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
+
+		// Update the player before calling events
+		this.updatePlayer(player);
+
+		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
+			this.callPlayerLoadEvent(player);
+			MMLog.info(() -> "Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
+		}
+
+		if (isRemote && this.checkAndRefreshIfLocalPlayer(player)) {
+			// Player logged off on remote shard, but is locally online.
+			// This can happen if the remote shard was not notified the player logged in here in time.
+			MMLog.info(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return false;
+		}
+
+		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
+			this.callPlayerUnloadEvent(player);
+			MMLog.info(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
+		} else if (!isRemote || !player.isSimilar(oldPlayer)) {
+			this.callPlayerUpdatedEvent(player);
+			MMLog.info(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
+		} else {
+			// TODO: add more granular logging to see differences
+			MMLog.fine(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+		}
+		return false;
+	}
+
 	protected void updatePlayer(RemotePlayerAbstraction playerServerData) {
 		if (playerServerData == null) {
 			return;

@@ -105,7 +105,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		RemotePlayerPaper localPlayer = fromLocal(player, true);
 
 		// update local player with data'
-		if (updatePlayerLocal(localPlayer, false)) {
+		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
 	}
@@ -122,10 +122,10 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			return;
 		}
 
-		updatePlayerLocal(player, true);
+		updateLocalPlayer(player, true);
 	}
 
-	boolean updatePlayerLocal(RemotePlayerAbstraction player, boolean isRemote) {
+	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
 		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
 		String serverType = player.getServerType();
 		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
@@ -161,6 +161,33 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			return true;
 		} else {
 			MMLog.warning(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+		}
+		return false;
+	}
+
+	void callPlayerLoadEvent(RemotePlayerAbstraction player) {
+		RemotePlayerLoadedEvent remotePE = new RemotePlayerLoadedEvent(player);
+		Bukkit.getServer().getPluginManager().callEvent(remotePE);
+	}
+
+	void callPlayerUnloadEvent(RemotePlayerAbstraction player) {
+		RemotePlayerUnloadedEvent remotePE = new RemotePlayerUnloadedEvent(player);
+		Bukkit.getServer().getPluginManager().callEvent(remotePE);
+	}
+
+	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
+		RemotePlayerUpdatedEvent remotePE = new RemotePlayerUpdatedEvent(player);
+		Bukkit.getServer().getPluginManager().callEvent(remotePE);
+	}
+
+	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
+		if (!player.getServerType().equals(RemotePlayerPaper.SERVER_TYPE)) {
+			return false;
+		}
+		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
+		if (localPlayer != null && localPlayer.isOnline()) {
+			refreshLocalPlayer(localPlayer);
+			return true;
 		}
 		return false;
 	}
@@ -209,7 +236,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				return;
 			}
 			RemotePlayerPaper localPlayer = fromLocal(player, false);
-			if (updatePlayerLocal(localPlayer, false)) {
+			if (updateLocalPlayer(localPlayer, false)) {
 				localPlayer.broadcast();
 			}
 		}, 1L);
