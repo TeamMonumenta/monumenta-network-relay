@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.HashSet;
 import java.util.Map;
@@ -173,6 +174,8 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	abstract void callPlayerUpdatedEvent(RemotePlayerAbstraction player);
 
+	abstract Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player);
+
 	/**
 	 * Check if this remote player is on our shard, and refresh if so
 	 * @see #refreshLocalPlayer
@@ -192,6 +195,12 @@ public abstract class RemotePlayerManagerAbstraction {
 		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
 		String serverType = player.getServerType();
 		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
+
+		// Gather plugin data (if local and online)
+		if (!isRemote && player.mIsOnline) {
+			player.mPluginData.clear();
+			player.mPluginData.putAll(this.callGatherPluginDataEvent(player));
+		}
 
 		// Update the player before calling events
 		this.updatePlayer(player);

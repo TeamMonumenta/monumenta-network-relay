@@ -3,17 +3,14 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
-import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
+import net.md_5.bungee.api.plugin.Event;
 
-public class GatherRemotePlayerDataEvent extends Event {
-	private static final HandlerList handlers = new HandlerList();
-
+public class GatherRemotePlayerDataEventBungee extends Event {
 	private final Map<String, JsonObject> mPluginData = new HashMap<>();
 
 	public final RemotePlayerAbstraction mRemotePlayer;
 
-	public GatherRemotePlayerDataEvent(RemotePlayerAbstraction remotePlayer) {
+	public GatherRemotePlayerDataEventBungee(RemotePlayerAbstraction remotePlayer) {
 		mRemotePlayer = remotePlayer;
 	}
 
@@ -51,14 +48,5 @@ public class GatherRemotePlayerDataEvent extends Event {
 	 */
 	public Map<String, JsonObject> getPluginData() {
 		return mPluginData;
-	}
-
-	@Override
-	public HandlerList getHandlers() {
-		return handlers;
-	}
-
-	public static HandlerList getHandlerList() {
-		return handlers;
 	}
 }

@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import net.md_5.bungee.api.ProxyServer;
@@ -131,6 +132,12 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
 		RemotePlayerUpdatedEventBungee remotePE = new RemotePlayerUpdatedEventBungee(player);
 		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+	}
+
+	Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player) {
+		GatherRemotePlayerDataEventBungee remotePE = new GatherRemotePlayerDataEventBungee(player);
+		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+		return remotePE.getPluginData();
 	}
 
 	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {

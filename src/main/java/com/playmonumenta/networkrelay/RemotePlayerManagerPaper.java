@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.bukkit.Bukkit;
@@ -150,6 +151,12 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
 		RemotePlayerUpdatedEvent remotePE = new RemotePlayerUpdatedEvent(player);
 		Bukkit.getServer().getPluginManager().callEvent(remotePE);
+	}
+
+	Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player) {
+		GatherRemotePlayerDataEvent remotePE = new GatherRemotePlayerDataEvent(player);
+		Bukkit.getServer().getPluginManager().callEvent(remotePE);
+		return remotePE.getPluginData();
 	}
 
 	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
