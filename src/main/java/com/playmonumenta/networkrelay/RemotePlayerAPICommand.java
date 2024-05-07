@@ -6,7 +6,6 @@ import dev.jorel.commandapi.arguments.StringArgument;
 
 public abstract class RemotePlayerAPICommand {
 	public static final ArgumentSuggestions VISIBLE_PLAYER_ONLINE_SUGGESTIONS = ArgumentSuggestions.strings((unused) -> NetworkRelayAPI.getVisiblePlayerNames().toArray(String[]::new));
-	public static final ArgumentSuggestions ALL_PLAYER_ONLINE_SUGGESTIONS = ArgumentSuggestions.strings((unused) -> NetworkRelayAPI.getOnlinePlayerNames().toArray(String[]::new));
 
 	public static void register() {
 		// moderator command
@@ -15,7 +14,7 @@ public abstract class RemotePlayerAPICommand {
 			.withSubcommand(new CommandAPICommand("get")
 				.withArguments(
 					// we use all here for moderators
-					new StringArgument("player").replaceSuggestions(ALL_PLAYER_ONLINE_SUGGESTIONS)
+					new StringArgument("player").replaceSuggestions(VISIBLE_PLAYER_ONLINE_SUGGESTIONS)
 				)
 				.executes((sender, args) -> {
 					String playerName = (String) args[0];
