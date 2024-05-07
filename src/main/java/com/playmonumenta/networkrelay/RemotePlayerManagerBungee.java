@@ -83,6 +83,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		}
 	}
 
+	@Override
 	boolean refreshLocalPlayer(UUID uuid) {
 		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(uuid);
 		if (localPlayer != null && localPlayer.isConnected()) {
@@ -119,27 +120,32 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		updateLocalPlayer(player, true);
 	}
 
+	@Override
 	void callPlayerLoadEvent(RemotePlayerAbstraction player) {
 		RemotePlayerLoadedEventBungee remotePE = new RemotePlayerLoadedEventBungee(player);
 		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
 	}
 
+	@Override
 	void callPlayerUnloadEvent(RemotePlayerAbstraction player) {
 		RemotePlayerUnloadedEventBungee remotePE = new RemotePlayerUnloadedEventBungee(player);
 		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
 	}
 
+	@Override
 	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
 		RemotePlayerUpdatedEventBungee remotePE = new RemotePlayerUpdatedEventBungee(player);
 		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
 	}
 
+	@Override
 	Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player) {
 		GatherRemotePlayerDataEventBungee remotePE = new GatherRemotePlayerDataEventBungee(player);
 		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
 		return remotePE.getPluginData();
 	}
 
+	@Override
 	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
 		if (!player.getServerType().equals(RemotePlayerBungee.SERVER_TYPE)) {
 			return false;

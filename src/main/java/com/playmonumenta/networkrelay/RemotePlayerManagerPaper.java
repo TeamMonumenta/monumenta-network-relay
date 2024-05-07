@@ -101,7 +101,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		}
 	}
 
-	//
+	@Override
 	boolean refreshLocalPlayer(UUID uuid) {
 		@Nullable Player localPlayer = Bukkit.getPlayer(uuid);
 		if (localPlayer != null && localPlayer.isOnline()) {
@@ -138,27 +138,32 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		updateLocalPlayer(player, true);
 	}
 
+	@Override
 	void callPlayerLoadEvent(RemotePlayerAbstraction player) {
 		RemotePlayerLoadedEvent remotePE = new RemotePlayerLoadedEvent(player);
 		Bukkit.getServer().getPluginManager().callEvent(remotePE);
 	}
 
+	@Override
 	void callPlayerUnloadEvent(RemotePlayerAbstraction player) {
 		RemotePlayerUnloadedEvent remotePE = new RemotePlayerUnloadedEvent(player);
 		Bukkit.getServer().getPluginManager().callEvent(remotePE);
 	}
 
+	@Override
 	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
 		RemotePlayerUpdatedEvent remotePE = new RemotePlayerUpdatedEvent(player);
 		Bukkit.getServer().getPluginManager().callEvent(remotePE);
 	}
 
+	@Override
 	Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player) {
 		GatherRemotePlayerDataEvent remotePE = new GatherRemotePlayerDataEvent(player);
 		Bukkit.getServer().getPluginManager().callEvent(remotePE);
 		return remotePE.getPluginData();
 	}
 
+	@Override
 	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
 		if (!player.getServerType().equals(RemotePlayerPaper.SERVER_TYPE)) {
 			return false;
