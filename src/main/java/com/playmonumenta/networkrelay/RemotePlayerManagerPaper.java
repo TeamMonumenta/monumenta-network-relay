@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Objects;
+import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -99,8 +100,18 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		}
 	}
 
+	//
+	boolean refreshLocalPlayer(UUID uuid) {
+		@Nullable Player localPlayer = Bukkit.getPlayer(uuid);
+		if (localPlayer != null && localPlayer.isOnline()) {
+			refreshLocalPlayer(localPlayer);
+			return true;
+		}
+		return false;
+	}
+
 	// Run this on local players whenever their information is out of date
-	void refreshLocalPlayer(Player player) {
+	boolean refreshLocalPlayer(Player player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerPaper localPlayer = fromLocal(player, true);
 
@@ -108,6 +119,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
+		return true;
 	}
 
 	// We recieved data from another server, add more data
@@ -123,46 +135,6 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		}
 
 		updateLocalPlayer(player, true);
-	}
-
-	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
-		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
-		String serverType = player.getServerType();
-		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
-
-		// Update the player before calling events
-		super.updatePlayer(player);
-
-		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
-			RemotePlayerLoadedEvent remotePE = new RemotePlayerLoadedEvent(player);
-			Bukkit.getServer().getPluginManager().callEvent(remotePE);
-			MMLog.info(() -> "Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		}
-
-		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
-		if (isRemote && serverType.equals(RemotePlayerPaper.SERVER_TYPE) && localPlayer != null && localPlayer.isOnline()) {
-			// Player logged off on remote shard, but is locally online.
-			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			refreshLocalPlayer(localPlayer);
-			return false;
-		}
-
-		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
-			MMLog.info(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			RemotePlayerUnloadedEvent remotePE = new RemotePlayerUnloadedEvent(player);
-			Bukkit.getServer().getPluginManager().callEvent(remotePE);
-			return true;
-		} else if (!isRemote || !player.isSimilar(oldPlayer)) {
-			RemotePlayerUpdatedEvent remotePE = new RemotePlayerUpdatedEvent(player);
-			Bukkit.getServer().getPluginManager().callEvent(remotePE);
-			MMLog.info(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		} else {
-			MMLog.warning(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-		}
-		return false;
 	}
 
 	void callPlayerLoadEvent(RemotePlayerAbstraction player) {
@@ -184,12 +156,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		if (!player.getServerType().equals(RemotePlayerPaper.SERVER_TYPE)) {
 			return false;
 		}
-		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
-		if (localPlayer != null && localPlayer.isOnline()) {
-			refreshLocalPlayer(localPlayer);
-			return true;
-		}
-		return false;
+		return refreshLocalPlayer(player.mUuid);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

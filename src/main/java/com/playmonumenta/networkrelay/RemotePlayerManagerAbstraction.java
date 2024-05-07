@@ -160,6 +160,12 @@ public abstract class RemotePlayerManagerAbstraction {
 		return remotePlayerData.get("minecraft");
 	}
 
+	/**
+	 * Refresh the local player if online
+	 * @return true if the player was online, false if not
+	 */
+	abstract boolean refreshLocalPlayer(UUID playerUuid);
+
 	// Call respective events on minecraft/proxy platforms
 	abstract void callPlayerLoadEvent(RemotePlayerAbstraction player);
 
@@ -169,6 +175,8 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	/**
 	 * Check if this remote player is on our shard, and refresh if so
+	 * @see #refreshLocalPlayer
+	 * @return boolean that indicates the refresh was successful or not
 	 */
 	abstract boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player);
 

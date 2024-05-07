@@ -148,6 +148,10 @@ public class NetworkRelayAPI {
 		return RemotePlayerAPI.isPlayerVanished(playerUuid);
 	}
 
+	public static boolean refreshPlayer(UUID playerUuid) {
+		return RemotePlayerAPI.refreshPlayer(playerUuid);
+	}
+
 	/**
 	 * Gets the most recent plugin data provided via heartbeat
 	 * <p>

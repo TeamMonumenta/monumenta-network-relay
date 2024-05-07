@@ -106,6 +106,11 @@ public class RemotePlayerAPI {
 		return mManager.isPlayerVisible(playerUuid);
 	}
 
+	public static boolean refreshPlayer(UUID playerUuid) {
+		innerCheckManagerLoaded();
+		return mManager.refreshLocalPlayer(playerUuid);
+	}
+
 	public static boolean isManagerLoaded() {
 		return !(mManager == null);
 	}

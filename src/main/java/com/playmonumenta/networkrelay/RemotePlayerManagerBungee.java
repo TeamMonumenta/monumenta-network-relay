@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Objects;
+import java.util.UUID;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
@@ -81,8 +82,17 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		}
 	}
 
+	boolean refreshLocalPlayer(UUID uuid) {
+		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(uuid);
+		if (localPlayer != null && localPlayer.isConnected()) {
+			refreshLocalPlayer(localPlayer);
+			return true;
+		}
+		return false;
+	}
+
 	// Run this on local players whenever their information is out of date
-	void refreshLocalPlayer(ProxiedPlayer player) {
+	boolean refreshLocalPlayer(ProxiedPlayer player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerBungee localPlayer = fromLocal(player, true);
 
@@ -90,6 +100,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
+		return true;
 	}
 
 	void remotePlayerChange(JsonObject data) {
@@ -126,12 +137,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		if (!player.getServerType().equals(RemotePlayerBungee.SERVER_TYPE)) {
 			return false;
 		}
-		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
-		if (localPlayer != null && localPlayer.isConnected()) {
-			refreshLocalPlayer(localPlayer);
-			return true;
-		}
-		return false;
+		return refreshLocalPlayer(player.mUuid);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
