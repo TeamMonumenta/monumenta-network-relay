@@ -49,6 +49,8 @@ public class NetworkRelayBungee extends Plugin {
 		//Loaded last to avoid issues where it not being able to load the shard would cause it to fail.
 		ProxyServer.getInstance().getPluginManager().registerListener(this, RemotePlayerManagerBungee.getInstance());
 		RemotePlayerAPI.init(RemotePlayerManagerBungee.getInstance());
+
+		ProxyServer.getInstance().getPluginManager().registerCommand(this, new WhereIsCommandBungee());
 	}
 
 	@Override

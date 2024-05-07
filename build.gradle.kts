@@ -60,6 +60,7 @@ dependencies {
     implementation("com.rabbitmq:amqp-client:5.20.0")
     compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
     compileOnly("io.github.waterfallmc:waterfall-api:1.19-R0.1-SNAPSHOT")
+    implementation("net.kyori:adventure-text-serializer-bungeecord:4.3.2") // TODO: remove when we transition to velocity
     compileOnly("me.clip:placeholderapi:2.10.4")
     errorprone("com.google.errorprone:error_prone_core:2.10.0")
     errorprone("com.uber.nullaway:nullaway:0.9.5")

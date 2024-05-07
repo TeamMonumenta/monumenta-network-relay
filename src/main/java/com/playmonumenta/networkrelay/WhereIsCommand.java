@@ -9,7 +9,7 @@ public abstract class WhereIsCommand {
 	public static void register() {
 		new CommandAPICommand("whereis")
 			.withPermission(CommandPermission.fromString("monumenta.networkrelay.whereis"))
-			.withArguments(new StringArgument("player").replaceSuggestions(RemotePlayerAPI.VISIBLE_PLAYER_ONLINE_SUGGESTIONS))
+			.withArguments(new StringArgument("player").replaceSuggestions(RemotePlayerAPICommand.VISIBLE_PLAYER_ONLINE_SUGGESTIONS))
 			.executes((sender, args) -> {
 				String playerName = (String) args[0];
 				RemotePlayerData data = RemotePlayerAPI.getRemotePlayer(playerName);
