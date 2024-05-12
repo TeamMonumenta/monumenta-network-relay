@@ -140,12 +140,12 @@ public class NetworkRelayAPI {
 		return RemotePlayerAPI.getRemotePlayer(playerUuid);
 	}
 
-	public static boolean isPlayerVanished(String playerName) {
-		return RemotePlayerAPI.isPlayerVanished(playerName);
+	public static boolean isPlayerVisible(String playerName) {
+		return RemotePlayerAPI.isPlayerVisible(playerName);
 	}
 
-	public static boolean isPlayerVanished(UUID playerUuid) {
-		return RemotePlayerAPI.isPlayerVanished(playerUuid);
+	public static boolean isPlayerVisible(UUID playerUuid) {
+		return RemotePlayerAPI.isPlayerVisible(playerUuid);
 	}
 
 	public static boolean refreshPlayer(UUID playerUuid) {

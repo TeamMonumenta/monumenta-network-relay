@@ -92,12 +92,12 @@ public class RemotePlayerAPI {
 		return mManager.getRemotePlayer(playerUuid);
 	}
 
-	public static boolean isPlayerVanished(String playerName) {
+	public static boolean isPlayerVisible(String playerName) {
 		innerCheckManagerLoaded();
 		return mManager.isPlayerVisible(playerName);
 	}
 
-	public static boolean isPlayerVanished(UUID playerUuid) {
+	public static boolean isPlayerVisible(UUID playerUuid) {
 		innerCheckManagerLoaded();
 		return mManager.isPlayerVisible(playerUuid);
 	}
