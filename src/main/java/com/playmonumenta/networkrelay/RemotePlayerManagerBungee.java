@@ -60,14 +60,14 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return shardName;
 	}
 
-	static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline) {
+	static RemotePlayerProxy fromLocal(ProxiedPlayer player, boolean isOnline) {
 		// player.getServer() has no information prior to the ServerSwitchEvent - we populate the player's information in the PostLoginEvent
 		@Nullable String targetShard = player.getServer() != null ? player.getServer().getInfo().getName() : "";
 		return fromLocal(player, isOnline, targetShard);
 	}
 
-	static RemotePlayerBungee fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
-		return new RemotePlayerBungee(
+	static RemotePlayerProxy fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
+		return new RemotePlayerProxy(
 			getServerId(),
 			player.getUniqueId(),
 			player.getName(),
@@ -96,7 +96,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	// Run this on local players whenever their information is out of date
 	boolean refreshLocalPlayer(ProxiedPlayer player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
-		RemotePlayerBungee localPlayer = fromLocal(player, true);
+		RemotePlayerProxy localPlayer = fromLocal(player, true);
 
 		// update local player with data
 		if (updateLocalPlayer(localPlayer, false)) {
@@ -147,7 +147,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 
 	@Override
 	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
-		if (!player.getServerType().equals(RemotePlayerBungee.SERVER_TYPE)) {
+		if (!player.getServerType().equals(RemotePlayerProxy.SERVER_TYPE)) {
 			return false;
 		}
 		return refreshLocalPlayer(player.mUuid);
@@ -191,7 +191,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 			MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another proxy");
 			return;
 		}
-		RemotePlayerBungee localPlayer = fromLocal(player, false);
+		RemotePlayerProxy localPlayer = fromLocal(player, false);
 		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}

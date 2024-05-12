@@ -68,10 +68,10 @@ public abstract class RemotePlayerAbstraction {
 	public static RemotePlayerAbstraction from(JsonObject remoteData) {
 		String serverType = remoteData.get("serverType").getAsString();
 		switch (serverType) {
-			case RemotePlayerPaper.SERVER_TYPE:
-				return new RemotePlayerPaper(remoteData);
-			case RemotePlayerBungee.SERVER_TYPE:
-				return new RemotePlayerBungee(remoteData);
+			case RemotePlayerMinecraft.SERVER_TYPE:
+				return new RemotePlayerMinecraft(remoteData);
+			case RemotePlayerProxy.SERVER_TYPE:
+				return new RemotePlayerProxy(remoteData);
 			default:
 				return new RemotePlayerGeneric(remoteData);
 		}

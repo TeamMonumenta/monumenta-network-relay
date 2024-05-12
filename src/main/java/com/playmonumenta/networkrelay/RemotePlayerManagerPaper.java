@@ -66,8 +66,8 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return shardName;
 	}
 
-	static RemotePlayerPaper fromLocal(Player player, boolean isOnline) {
-		return new RemotePlayerPaper(
+	static RemotePlayerMinecraft fromLocal(Player player, boolean isOnline) {
+		return new RemotePlayerMinecraft(
 			getServerId(),
 			player.getUniqueId(),
 			player.getName(),
@@ -114,7 +114,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	// Run this on local players whenever their information is out of date
 	boolean refreshLocalPlayer(Player player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
-		RemotePlayerPaper localPlayer = fromLocal(player, true);
+		RemotePlayerMinecraft localPlayer = fromLocal(player, true);
 
 		// update local player with data'
 		if (updateLocalPlayer(localPlayer, false)) {
@@ -165,7 +165,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@Override
 	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
-		if (!player.getServerType().equals(RemotePlayerPaper.SERVER_TYPE)) {
+		if (!player.getServerType().equals(RemotePlayerMinecraft.SERVER_TYPE)) {
 			return false;
 		}
 		return refreshLocalPlayer(player.mUuid);
@@ -214,7 +214,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
 				return;
 			}
-			RemotePlayerPaper localPlayer = fromLocal(player, false);
+			RemotePlayerMinecraft localPlayer = fromLocal(player, false);
 			if (updateLocalPlayer(localPlayer, false)) {
 				localPlayer.broadcast();
 			}

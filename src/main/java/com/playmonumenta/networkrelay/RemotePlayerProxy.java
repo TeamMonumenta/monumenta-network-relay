@@ -5,7 +5,7 @@ import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
-public class RemotePlayerBungee extends RemotePlayerAbstraction {
+public class RemotePlayerProxy extends RemotePlayerAbstraction {
 	protected static final String SERVER_TYPE = "proxy";
 
 	/**
@@ -14,18 +14,18 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 	 */
 	protected final String mTargetShard;
 
-	protected RemotePlayerBungee(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, String targetShard) {
+	protected RemotePlayerProxy(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, String targetShard) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mTargetShard = targetShard;
 
-		MMLog.fine(() -> "Created RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine(() -> "Created RemotePlayerProxy for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
-	protected RemotePlayerBungee(JsonObject remoteData) {
+	protected RemotePlayerProxy(JsonObject remoteData) {
 		super(remoteData);
 		mTargetShard = remoteData.get("targetShard").getAsString();
 
-		MMLog.fine(() -> "Received RemotePlayerBungee for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+		MMLog.fine(() -> "Received RemotePlayerProxy for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
 	}
 
 	@Override
@@ -49,7 +49,7 @@ public class RemotePlayerBungee extends RemotePlayerAbstraction {
 		if (!super.isSimilar(other)) {
 			return false;
 		}
-		if (other instanceof RemotePlayerBungee otherB) {
+		if (other instanceof RemotePlayerProxy otherB) {
 			return this.mTargetShard.equals(otherB.mTargetShard);
 		}
 		return true;
