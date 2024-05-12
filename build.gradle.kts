@@ -1,7 +1,7 @@
-import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.ltgt.gradle.errorprone.errorprone
 import net.ltgt.gradle.errorprone.CheckSeverity
+import net.ltgt.gradle.errorprone.errorprone
+import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 
 plugins {
     java
@@ -12,7 +12,7 @@ plugins {
     id("net.minecrell.plugin-yml.bungee") version "0.5.1" // Generates bungee.yml
     id("net.ltgt.errorprone") version "2.0.2"
     id("net.ltgt.nullaway") version "1.3.0"
-	id("com.playmonumenta.deployment") version "1.0"
+    id("com.playmonumenta.deployment") version "1.0"
     checkstyle
     pmd
 }
@@ -58,7 +58,7 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:16.0.2")
     implementation("com.rabbitmq:amqp-client:5.20.0")
-    compileOnly("dev.jorel.CommandAPI:commandapi-core:8.7.0")
+    compileOnly("dev.jorel:commandapi-bukkit-core:9.4.1")
     compileOnly("io.github.waterfallmc:waterfall-api:1.19-R0.1-SNAPSHOT")
     implementation("net.kyori:adventure-text-serializer-bungeecord:4.3.2") // TODO: remove when we transition to velocity
     compileOnly("me.clip:placeholderapi:2.10.4")

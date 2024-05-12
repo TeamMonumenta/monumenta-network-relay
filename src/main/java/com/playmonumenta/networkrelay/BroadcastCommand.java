@@ -38,18 +38,20 @@ public class BroadcastCommand implements Listener {
 	protected BroadcastCommand(Plugin plugin) {
 		mLogger = plugin.getLogger();
 
+		GreedyStringArgument commandArg = new GreedyStringArgument("command");
+
 		CommandAPICommand broadcastCommand = new CommandAPICommand("broadcastcommand")
 			.withPermission(BROADCAST_PERMISSION)
-			.withArguments(new GreedyStringArgument("command"))
+			.withArguments(commandArg)
 			.executes((sender, args) -> {
-				run(plugin, sender, (String)args[0], NetworkRelayAPI.ServerType.ALL);
+				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.ALL);
 			});
 
 		CommandAPICommand broadcastBungeeCommand = new CommandAPICommand("broadcastbungeecommand")
 			.withPermission(BROADCAST_PROXY_PERMISSION)
-			.withArguments(new GreedyStringArgument("command"))
+			.withArguments(commandArg)
 			.executes((sender, args) -> {
-				String command = (String)args[0];
+				String command = args.getByArgument(commandArg);
 				String warning = "Warning: use broadcastproxycommand instead of broadcastbungeecommand";
 				sender.sendMessage(warning);
 				MMLog.warning(warning + ": " + command);
@@ -58,16 +60,16 @@ public class BroadcastCommand implements Listener {
 
 		CommandAPICommand broadcastMinecraftCommand = new CommandAPICommand("broadcastminecraftcommand")
 			.withPermission(BROADCAST_MINECRAFT_PERMISSION)
-			.withArguments(new GreedyStringArgument("command"))
+			.withArguments(commandArg)
 			.executes((sender, args) -> {
-				run(plugin, sender, (String)args[0], NetworkRelayAPI.ServerType.MINECRAFT);
+				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.MINECRAFT);
 			});
 
 		CommandAPICommand broadcastProxyCommand = new CommandAPICommand("broadcastproxycommand")
 			.withPermission(BROADCAST_PROXY_PERMISSION)
-			.withArguments(new GreedyStringArgument("command"))
+			.withArguments(commandArg)
 			.executes((sender, args) -> {
-				run(plugin, sender, (String)args[0], NetworkRelayAPI.ServerType.PROXY);
+				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.PROXY);
 			});
 
 		// Register first under the monumenta -> networkRelay namespace
