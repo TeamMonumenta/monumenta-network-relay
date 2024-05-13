@@ -1,9 +1,7 @@
 package com.playmonumenta.networkrelay;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 
@@ -25,9 +23,9 @@ public class WhereIsCommandBungee extends Command {
 				data = RemotePlayerAPI.getRemotePlayer(name);
 			}
 			if (data != null && !(!isSender && data.isHidden())) {
-				player.sendMessage(BungeeComponentSerializer.get().serialize(Component.text(data.toString())));
+				player.sendMessage(new TextComponent(data.toString()));
 			} else {
-				player.sendMessage(BungeeComponentSerializer.get().serialize(Component.text("No data found!", NamedTextColor.RED)));
+				player.sendMessage(new TextComponent("No data found!"));
 			}
 		}
 	}
