@@ -104,6 +104,18 @@ public class NetworkRelayAPI {
 		return getInstance().getOnlineShardNames();
 	}
 
+	public static Set<String> getOnlineDestinationTypes() {
+		return getInstance().getOnlineDestinationTypes();
+	}
+
+	public static @Nullable String getOnlineDestinationType(String destination) {
+		return getInstance().getOnlineDestinationType(destination);
+	}
+
+	public static Set<String> getOnlineDestinationsOfType(String type) {
+		return getInstance().getOnlineDestinationsOfType(type);
+	}
+
 	public static Set<String> getOnlinePlayerNames() {
 		return RemotePlayerAPI.getOnlinePlayerNames();
 	}
