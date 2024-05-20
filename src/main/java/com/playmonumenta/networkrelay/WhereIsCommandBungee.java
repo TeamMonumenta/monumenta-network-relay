@@ -23,10 +23,15 @@ public class WhereIsCommandBungee extends Command {
 				data = RemotePlayerAPI.getRemotePlayer(name);
 			}
 			if (data != null && !(!isSender && data.isHidden())) {
-				player.sendMessage(new TextComponent(data.toString()));
+				sendMessage(player, data.toString());
 			} else {
-				player.sendMessage(new TextComponent("No data found!"));
+				sendMessage(player, "No data found!");
 			}
 		}
+	}
+
+	@SuppressWarnings("deprecation") // There are no methods for Bungee that AREN'T Deprecated - cope
+	public void sendMessage(ProxiedPlayer player, String message) {
+		player.sendMessage(message);
 	}
 }
