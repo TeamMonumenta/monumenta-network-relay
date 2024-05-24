@@ -19,7 +19,7 @@ public abstract class WhereIsCommand {
 				if (data == null || data.isHidden()) {
 					throw CommandAPI.failWithString("No data found for: " + playerName);
 				}
-				sender.sendMessage(data.toString());
+				sender.sendMessage(data.friendlyString());
 			})
 			.register();
 		new CommandAPICommand("whereis")

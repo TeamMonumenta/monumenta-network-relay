@@ -113,7 +113,7 @@ public class RemotePlayerData implements Comparable<RemotePlayerData> {
 			if (remotePlayerMinecraft.mWorld == null) {
 				builder.append("\nCurrent world cannot be determined");
 			} else {
-				builder.append("\nCurrent world is");
+				builder.append("\nCurrent world is ");
 				builder.append(remotePlayerMinecraft.mWorld);
 			}
 		} else {
