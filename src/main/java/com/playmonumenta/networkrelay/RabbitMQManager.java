@@ -148,9 +148,9 @@ public class RabbitMQManager {
 				Instant lastHeartbeat = entry.getValue();
 
 				if (timeoutThreshold.compareTo(lastHeartbeat) >= 0) {
+					sendDestOfflineEvent(dest);
 					mDestinationHeartbeatData.remove(dest);
 					mDestinationTypes.remove(dest);
-					sendDestOfflineEvent(dest);
 					iter.remove();
 				}
 			}
@@ -226,10 +226,10 @@ public class RabbitMQManager {
 					JsonPrimitive onlinePrimitive = (JsonPrimitive) onlineJson;
 					if (onlinePrimitive.isBoolean() && !onlinePrimitive.getAsBoolean()) {
 						isDestShutdown = true;
+						sendDestOfflineEvent(source);
 						mDestinationLastHeartbeat.remove(source);
 						mDestinationHeartbeatData.remove(source);
 						mDestinationTypes.remove(source);
-						sendDestOfflineEvent(source);
 					}
 				}
 
