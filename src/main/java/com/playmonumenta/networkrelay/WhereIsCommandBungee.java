@@ -22,7 +22,7 @@ public class WhereIsCommandBungee extends Command {
 				data = RemotePlayerAPI.getRemotePlayer(name);
 			}
 			if (data != null && !(!isSender && data.isHidden())) {
-				sendMessage(player, data.toString());
+				sendMessage(player, data.friendlyString());
 			} else {
 				sendMessage(player, "No data found!");
 			}

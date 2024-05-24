@@ -84,4 +84,42 @@ public class RemotePlayerData implements Comparable<RemotePlayerData> {
 	public String toString() {
 		return this.toJson().toString();
 	}
+
+	public String friendlyString() {
+		StringBuilder builder = new StringBuilder();
+
+		builder.append(mName);
+		builder.append(" (");
+		builder.append(mUuid);
+		builder.append(") is ");
+		builder.append(isHidden() ? "hidden" : "not hidden");
+
+		if (mPlayerData.get("proxy") instanceof RemotePlayerProxy remotePlayerProxy) {
+			builder.append("\nConnected to proxy ");
+			builder.append(remotePlayerProxy.getServerId());
+			if (remotePlayerProxy.mTargetShard == null) {
+				builder.append(" which cannot identify their shard");
+			} else {
+				builder.append(" which believes they are on shard ");
+				builder.append(remotePlayerProxy.mTargetShard);
+			}
+		} else {
+			builder.append("\nNot connected to a proxy");
+		}
+
+		if (mPlayerData.get("minecraft") instanceof RemotePlayerMinecraft remotePlayerMinecraft) {
+			builder.append("\nOn shard ");
+			builder.append(remotePlayerMinecraft.getServerId());
+			if (remotePlayerMinecraft.mWorld == null) {
+				builder.append("\nCurrent world cannot be determined");
+			} else {
+				builder.append("\nCurrent world is");
+				builder.append(remotePlayerMinecraft.mWorld);
+			}
+		} else {
+			builder.append("\nNot connected to a shard/Minecraft instance");
+		}
+
+		return builder.toString();
+	}
 }
