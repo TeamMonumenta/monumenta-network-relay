@@ -94,7 +94,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	// Run this on local players whenever their information is out of date
-	boolean refreshLocalPlayer(ProxiedPlayer player) {
+	void refreshLocalPlayer(ProxiedPlayer player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerProxy localPlayer = fromLocal(player, true);
 
@@ -102,20 +102,14 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
-		return true;
 	}
 
 	void remotePlayerChange(JsonObject data) {
 		if (data == null) {
-			MMLog.severe(() -> "Null player data recieved from an unknown source!");
+			MMLog.severe(() -> "Null player data received from an unknown source!");
 			return;
 		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
-		if (player == null) {
-			// something really bad happened
-			MMLog.severe(() -> "Invalid player data recieved from an unknown source!");
-			return;
-		}
 
 		updateLocalPlayer(player, true);
 	}

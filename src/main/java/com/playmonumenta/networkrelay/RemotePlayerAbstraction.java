@@ -67,14 +67,11 @@ public abstract class RemotePlayerAbstraction {
 	/** Determine the appropriate remote player data type to use */
 	public static RemotePlayerAbstraction from(JsonObject remoteData) {
 		String serverType = remoteData.get("serverType").getAsString();
-		switch (serverType) {
-			case RemotePlayerMinecraft.SERVER_TYPE:
-				return new RemotePlayerMinecraft(remoteData);
-			case RemotePlayerProxy.SERVER_TYPE:
-				return new RemotePlayerProxy(remoteData);
-			default:
-				return new RemotePlayerGeneric(remoteData);
-		}
+		return switch (serverType) {
+			case RemotePlayerMinecraft.SERVER_TYPE -> new RemotePlayerMinecraft(remoteData);
+			case RemotePlayerProxy.SERVER_TYPE -> new RemotePlayerProxy(remoteData);
+			default -> new RemotePlayerGeneric(remoteData);
+		};
 	}
 
 	/** Serializes player data to be broadcast to remote servers */

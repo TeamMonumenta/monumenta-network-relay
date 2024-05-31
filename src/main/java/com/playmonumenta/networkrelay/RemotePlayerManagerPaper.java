@@ -112,28 +112,23 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	// Run this on local players whenever their information is out of date
-	boolean refreshLocalPlayer(Player player) {
+	void refreshLocalPlayer(Player player) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerMinecraft localPlayer = fromLocal(player, true);
 
-		// update local player with data'
+		// update local player with data
 		if (updateLocalPlayer(localPlayer, false)) {
 			localPlayer.broadcast();
 		}
-		return true;
 	}
 
-	// We recieved data from another server, add more data
+	// We received data from another server, add more data
 	void remotePlayerChange(JsonObject data) {
 		if (data == null) {
-			MMLog.severe(() -> "Null player data recieved from an unknown source!");
+			MMLog.severe(() -> "Null player data received from an unknown source!");
 			return;
 		}
 		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
-		if (player == null) {
-			MMLog.severe(() -> "Invalid player data recieved from an unknown source!");
-			return;
-		}
 
 		updateLocalPlayer(player, true);
 	}

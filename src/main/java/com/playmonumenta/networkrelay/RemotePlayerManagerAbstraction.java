@@ -189,7 +189,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	 * @param player - the player to update data for
 	 * @param isRemote - if it originated from another shard/proxy
 	 * @see RemotePlayerManagerAbstraction#updatePlayer
-	 * @return A boolean indicating if the local player changes should be broadcasted to other shards
+	 * @return A boolean indicating if the local player changes should be broadcast to other shards
 	 */
 	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
 		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
