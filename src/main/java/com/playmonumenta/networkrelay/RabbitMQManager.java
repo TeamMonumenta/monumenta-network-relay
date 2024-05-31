@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -15,12 +16,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 
 public class RabbitMQManager {
@@ -79,6 +82,11 @@ public class RabbitMQManager {
 	 * based on mDestinationLastHeartbeat
 	 */
 	private final Map<String, JsonObject> mDestinationHeartbeatData = new ConcurrentSkipListMap<>();
+
+	/*
+	 * The type of each server; examples include "minecraft" and "proxy", though others may appear.
+	 */
+	private final Map<String, String> mDestinationTypes = new ConcurrentSkipListMap<>();
 
 	private static class QueuedMessage {
 		final String mChannel;
@@ -140,8 +148,9 @@ public class RabbitMQManager {
 				Instant lastHeartbeat = entry.getValue();
 
 				if (timeoutThreshold.compareTo(lastHeartbeat) >= 0) {
-					mDestinationHeartbeatData.remove(dest);
 					sendDestOfflineEvent(dest);
+					mDestinationHeartbeatData.remove(dest);
+					mDestinationTypes.remove(dest);
 					iter.remove();
 				}
 			}
@@ -212,12 +221,15 @@ public class RabbitMQManager {
 
 				/* Check for heartbeat data - online status */
 				boolean isDestShutdown = false;
-				if (root.has("online")) {
-					if (root.getAsJsonPrimitive("online").isBoolean() && !root.getAsJsonPrimitive("online").getAsBoolean()) {
+				JsonElement onlineJson = root.get("online");
+				if (onlineJson instanceof JsonPrimitive) {
+					JsonPrimitive onlinePrimitive = (JsonPrimitive) onlineJson;
+					if (onlinePrimitive.isBoolean() && !onlinePrimitive.getAsBoolean()) {
 						isDestShutdown = true;
+						sendDestOfflineEvent(source);
 						mDestinationLastHeartbeat.remove(source);
 						mDestinationHeartbeatData.remove(source);
-						sendDestOfflineEvent(source);
+						mDestinationTypes.remove(source);
 					}
 				}
 
@@ -228,6 +240,22 @@ public class RabbitMQManager {
 						/* This message contained heartbeat data - record it */
 						mDestinationLastHeartbeat.put(source, Instant.now());
 						mDestinationHeartbeatData.put(source, pluginDataFinal);
+
+						/* Get the server type, defaulting to "minecraft" */
+						JsonObject networkRelayPluginData
+							= pluginDataFinal.getAsJsonObject(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
+						if (networkRelayPluginData == null) {
+							networkRelayPluginData = new JsonObject();
+						}
+						JsonPrimitive serverTypeJson
+							= networkRelayPluginData.getAsJsonPrimitive("server-type");
+						String serverType;
+						if (serverTypeJson != null && serverTypeJson.isString()) {
+							serverType = serverTypeJson.getAsString();
+						} else {
+							serverType = "minecraft";
+						}
+						mDestinationTypes.put(source, serverType);
 					}
 
 					if (heartbeatDataPresent) {
@@ -436,6 +464,23 @@ public class RabbitMQManager {
 		Set<String> newSet = Collections.newSetFromMap(new ConcurrentSkipListMap<>());
 		newSet.addAll(mDestinationLastHeartbeat.keySet());
 		return newSet;
+	}
+
+	protected Set<String> getOnlineDestinationTypes() {
+		return new HashSet<>(mDestinationTypes.values());
+	}
+
+	protected @Nullable String getOnlineDestinationType(String destination) {
+		return mDestinationTypes.get(destination);
+	}
+
+	protected Set<String> getOnlineDestinationsOfType(String type) {
+		return mDestinationTypes
+			.entrySet()
+			.stream()
+			.filter(entry -> entry.getValue().equals(type))
+			.map(Map.Entry::getKey)
+			.collect(Collectors.toSet());
 	}
 
 	protected Map<String, JsonObject> getOnlineShardHeartbeatData() {

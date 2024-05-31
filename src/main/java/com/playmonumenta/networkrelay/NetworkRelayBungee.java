@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +45,12 @@ public class NetworkRelayBungee extends Plugin {
 				mRabbitMQManager.setServerFinishedStarting();
 			}
 		}, 5, TimeUnit.SECONDS);
+
+		//Loaded last to avoid issues where it not being able to load the shard would cause it to fail.
+		ProxyServer.getInstance().getPluginManager().registerListener(this, RemotePlayerManagerBungee.getInstance());
+		RemotePlayerAPI.init(RemotePlayerManagerBungee.getInstance());
+
+		ProxyServer.getInstance().getPluginManager().registerCommand(this, new WhereIsCommandBungee());
 	}
 
 	@Override

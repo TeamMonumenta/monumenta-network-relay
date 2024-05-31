@@ -2,14 +2,16 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkrelay.util.MMLog;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.arguments.GreedyStringArgument;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ProxiedCommandSender;
 import org.bukkit.entity.Player;
@@ -23,6 +25,12 @@ public class BroadcastCommand implements Listener {
 		NetworkRelayAPI.ServerType.ALL,
 		NetworkRelayAPI.ServerType.MINECRAFT
 	);
+	private static final CommandPermission BROADCAST_PERMISSION
+		= CommandPermission.fromString("monumenta.networkrelay.broadcastcommand");
+	private static final CommandPermission BROADCAST_MINECRAFT_PERMISSION
+		= CommandPermission.fromString("monumenta.networkrelay.broadcastminecraftcommand");
+	private static final CommandPermission BROADCAST_PROXY_PERMISSION
+		= CommandPermission.fromString("monumenta.networkrelay.broadcastproxycommand");
 
 	private static boolean ENABLED = false;
 
@@ -34,24 +42,35 @@ public class BroadcastCommand implements Listener {
 		GreedyStringArgument commandArg = new GreedyStringArgument("command");
 
 		CommandAPICommand broadcastCommand = new CommandAPICommand("broadcastcommand")
-			.withPermission(CommandPermission.fromString("monumenta.networkrelay.broadcastcommand"))
+			.withPermission(BROADCAST_PERMISSION)
 			.withArguments(commandArg)
 			.executes((sender, args) -> {
 				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.ALL);
 			});
 
 		CommandAPICommand broadcastBungeeCommand = new CommandAPICommand("broadcastbungeecommand")
-			.withPermission(CommandPermission.fromString("monumenta.networkrelay.broadcastbungeecommand"))
+			.withPermission(BROADCAST_PROXY_PERMISSION)
 			.withArguments(commandArg)
 			.executes((sender, args) -> {
-				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.BUNGEE);
+				String command = args.getByArgument(commandArg);
+				String warning = "Warning: use broadcastproxycommand instead of broadcastbungeecommand";
+				sender.sendMessage(warning);
+				MMLog.warning(warning + ": " + command);
+				run(plugin, sender, command, NetworkRelayAPI.ServerType.PROXY);
 			});
 
 		CommandAPICommand broadcastMinecraftCommand = new CommandAPICommand("broadcastminecraftcommand")
-			.withPermission(CommandPermission.fromString("monumenta.networkrelay.broadcastminecraftcommand"))
+			.withPermission(BROADCAST_MINECRAFT_PERMISSION)
 			.withArguments(commandArg)
 			.executes((sender, args) -> {
 				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.MINECRAFT);
+			});
+
+		CommandAPICommand broadcastProxyCommand = new CommandAPICommand("broadcastproxycommand")
+			.withPermission(BROADCAST_PROXY_PERMISSION)
+			.withArguments(commandArg)
+			.executes((sender, args) -> {
+				run(plugin, sender, args.getByArgument(commandArg), NetworkRelayAPI.ServerType.PROXY);
 			});
 
 		// Register first under the monumenta -> networkRelay namespace
@@ -60,12 +79,14 @@ public class BroadcastCommand implements Listener {
 				.withSubcommand(broadcastCommand)
 				.withSubcommand(broadcastBungeeCommand)
 				.withSubcommand(broadcastMinecraftCommand)
+				.withSubcommand(broadcastProxyCommand)
 			).register();
 
 		// Then directly, for convenience
 		broadcastCommand.register();
 		broadcastBungeeCommand.register();
 		broadcastMinecraftCommand.register();
+		broadcastProxyCommand.register();
 	}
 
 	private static void run(Plugin plugin, CommandSender sender, String command, NetworkRelayAPI.ServerType serverType) {
@@ -88,27 +109,20 @@ public class BroadcastCommand implements Listener {
 		/* Replace all instances of @S with the player's name */
 		command = command.replaceAll("@S", name);
 
-		String typeStr;
-		switch (serverType) {
-			case BUNGEE:
-				typeStr = "all bungee";
-				break;
-			case MINECRAFT:
-				typeStr = "all minecraft";
-				break;
-			case ALL:
-			default:
-				typeStr = "all";
-		}
+		String typeStr = switch (serverType) {
+			case PROXY -> "all proxy";
+			case MINECRAFT -> "all minecraft";
+			default -> "all";
+		};
 		if (!(sender instanceof Player) || sender.isOp()) {
-			sender.sendMessage(ChatColor.GOLD + "Broadcasting command '" + command + "' to " + typeStr + " servers");
+			sender.sendMessage(Component.text("Broadcasting command '" + command + "' to " + typeStr + " servers", NamedTextColor.GRAY));
 		}
 		plugin.getLogger().fine("Broadcasting command '" + command + "' to " + typeStr + "servers");
 
 		try {
 			NetworkRelayAPI.sendBroadcastCommand(command, serverType);
 		} catch (Exception e) {
-			sender.sendMessage(ChatColor.RED + "Broadcasting command failed");
+			sender.sendMessage(Component.text("Broadcasting command failed", NamedTextColor.RED));
 		}
 	}
 

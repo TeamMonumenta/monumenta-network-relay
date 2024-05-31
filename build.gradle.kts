@@ -55,7 +55,7 @@ dependencies {
 	testImplementation(platform("org.junit:junit-bom:5.9.3"))
 	testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 	testImplementation("org.yaml:snakeyaml:2.0")
-    compileOnly("org.spigotmc:spigot-api:1.16.4-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:16.0.2")
     implementation("com.rabbitmq:amqp-client:5.20.0")
     compileOnly("dev.jorel:commandapi-bukkit-core:9.4.1")
@@ -69,7 +69,8 @@ group = "com.playmonumenta"
 val gitVersion: groovy.lang.Closure<String> by extra
 version = gitVersion()
 description = "monumenta-network-relay"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.sourceCompatibility = JavaVersion.VERSION_17
+java.targetCompatibility = JavaVersion.VERSION_17
 pmd {
     isConsoleOutput = true
     toolVersion = "6.41.0"
@@ -81,7 +82,7 @@ pmd {
 bukkit {
     load = BukkitPluginDescription.PluginLoadOrder.POSTWORLD
     main = "com.playmonumenta.networkrelay.NetworkRelay"
-    apiVersion = "1.13"
+    apiVersion = "1.19"
     name = "MonumentaNetworkRelay"
     authors = listOf("Combustible")
     depend = listOf("CommandAPI")
