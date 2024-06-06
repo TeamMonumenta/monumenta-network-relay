@@ -166,7 +166,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return refreshLocalPlayer(player.mUuid);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void destOnlineEvent(DestOnlineEvent event) {
 		String remoteShardName = event.getDest();
 		if (getServerId().equals(remoteShardName)) {
@@ -182,7 +182,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	// Player ran a command
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		String command = event.getMessage();
 
@@ -193,13 +193,13 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		refreshLocalPlayer(player);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		// Run this with a 1 tick delay since a player can switch shards, since players can take a bit to switch
 		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
@@ -216,13 +216,13 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		}, 1L);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void playerChangedWorldEvent(PlayerChangedWorldEvent event) {
 		Player player = event.getPlayer();
 		refreshLocalPlayer(player);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void networkRelayMessageEvent(NetworkRelayMessageEvent event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_UPDATE_CHANNEL: {
