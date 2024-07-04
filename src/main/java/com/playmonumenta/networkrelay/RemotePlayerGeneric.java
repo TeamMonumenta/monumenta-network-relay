@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.UUID;
+import org.jetbrains.annotations.Nullable;
 
 /*
  * Server types other than Minecraft and Minecraft Proxies must provide an overridden version of this class
@@ -11,7 +12,7 @@ import java.util.UUID;
 public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 	protected final String mServerType;
 
-	protected RemotePlayerGeneric(String serverType, String serverId, UUID uuid, String name, boolean isOnline, boolean isHidden) {
+	protected RemotePlayerGeneric(String serverType, String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mServerType = serverType;
 
@@ -23,6 +24,20 @@ public class RemotePlayerGeneric extends RemotePlayerAbstraction {
 		mServerType = remoteData.get("serverType").getAsString();
 
 		MMLog.fine(() -> "Received RemotePlayerGeneric (" + mServerType + ") for " + mName + " from " + mServerId + ": " + (mIsOnline ? "online" : "offline"));
+	}
+
+	@Override
+	public RemotePlayerAbstraction asOffline() {
+		RemotePlayerGeneric offlineCopy = new RemotePlayerGeneric(
+			mServerType,
+			mServerId,
+			mUuid,
+			mName,
+			false,
+			mIsHidden
+		);
+		offlineCopy.mPluginData.putAll(mPluginData);
+		return offlineCopy;
 	}
 
 	@Override
