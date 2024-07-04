@@ -299,7 +299,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	}
 
 	protected boolean unregisterServer(String serverId) {
-		boolean isRemote = getServerId().equals(serverId);
+		boolean isRemote = !getServerId().equals(serverId);
 		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.remove(serverId);
 		if (remotePlayers == null) {
 			return false;
