@@ -53,7 +53,13 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return INSTANCE;
 	}
 
-	static String getServerId() {
+	@Override
+	public String getServerType() {
+		return "vanilla";
+	}
+
+	@Override
+	public String getServerId() {
 		@Nullable String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();
@@ -68,7 +74,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	static RemotePlayerMinecraft fromLocal(Player player, boolean isOnline) {
 		return new RemotePlayerMinecraft(
-			getServerId(),
+			INSTANCE.getServerId(),
 			player.getUniqueId(),
 			player.getName(),
 			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),

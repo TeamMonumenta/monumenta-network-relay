@@ -161,6 +161,10 @@ public abstract class RemotePlayerManagerAbstraction {
 		return remotePlayerData.get("minecraft");
 	}
 
+	abstract String getServerType();
+
+	abstract String getServerId();
+
 	/**
 	 * Refresh the local player if online
 	 * @return true if the player was online, false if not
@@ -182,7 +186,6 @@ public abstract class RemotePlayerManagerAbstraction {
 	 * @return boolean that indicates the refresh was successful or not
 	 */
 	abstract boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player);
-
 
 	/**
 	 * Update the locally cached player with data, from remote or not
@@ -296,6 +299,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	}
 
 	protected boolean unregisterServer(String serverId) {
+		boolean isRemote = getServerId().equals(serverId);
 		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.remove(serverId);
 		if (remotePlayers == null) {
 			return false;
@@ -307,20 +311,11 @@ public abstract class RemotePlayerManagerAbstraction {
 			throw new IllegalStateException("ERROR: Server type for server ID cleared before unregistering players from that server: id:" + serverId);
 		}
 		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
-			RemotePlayerAbstraction oldPlayerData = allPlayerData.unregister(serverType);
+			RemotePlayerAbstraction oldPlayerData = allPlayerData.get(serverType);
 			if (oldPlayerData == null) {
 				continue;
 			}
-			if (!allPlayerData.isOnline()) {
-				// The player is now offline on all server types
-				mRemotePlayersByUuid.remove(allPlayerData.mUuid);
-				mRemotePlayersByName.remove(allPlayerData.mName);
-			}
-			if (allPlayerData.isHidden()) {
-				mVisiblePlayers.remove(allPlayerData);
-			} else {
-				mVisiblePlayers.add(allPlayerData);
-			}
+			updateLocalPlayer(oldPlayerData.asOffline(), isRemote);
 		}
 		return true;
 	}

@@ -74,6 +74,8 @@ public abstract class RemotePlayerAbstraction {
 		};
 	}
 
+	public abstract RemotePlayerAbstraction asOffline();
+
 	/** Serializes player data to be broadcast to remote servers */
 	public JsonObject toJson() {
 		JsonObject playerData = new JsonObject();

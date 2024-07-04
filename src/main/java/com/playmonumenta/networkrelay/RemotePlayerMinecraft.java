@@ -26,6 +26,20 @@ public class RemotePlayerMinecraft extends RemotePlayerAbstraction {
 	}
 
 	@Override
+	public RemotePlayerAbstraction asOffline() {
+		RemotePlayerMinecraft offlineCopy = new RemotePlayerMinecraft(
+			mServerId,
+			mUuid,
+			mName,
+			mIsHidden,
+			false,
+			mWorld
+		);
+		offlineCopy.mPluginData.putAll(mPluginData);
+		return offlineCopy;
+	}
+
+	@Override
 	public JsonObject toJson() {
 		JsonObject playerData = super.toJson();
 		playerData.addProperty("world", mWorld);

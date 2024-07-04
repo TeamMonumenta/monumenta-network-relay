@@ -29,6 +29,20 @@ public class RemotePlayerProxy extends RemotePlayerAbstraction {
 	}
 
 	@Override
+	public RemotePlayerAbstraction asOffline() {
+		RemotePlayerAbstraction offlineCopy = new RemotePlayerProxy(
+			mServerId,
+			mUuid,
+			mName,
+			false,
+			mIsHidden,
+			mTargetShard
+		);
+		offlineCopy.mPluginData.putAll(mPluginData);
+		return offlineCopy;
+	}
+
+	@Override
 	public JsonObject toJson() {
 		JsonObject playerData = super.toJson();
 		playerData.addProperty("targetShard", mTargetShard);
