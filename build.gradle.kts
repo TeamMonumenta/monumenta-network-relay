@@ -12,7 +12,7 @@ plugins {
     id("net.minecrell.plugin-yml.bungee") version "0.5.1" // Generates bungee.yml
     id("net.ltgt.errorprone") version "2.0.2"
     id("net.ltgt.nullaway") version "1.3.0"
-    id("com.playmonumenta.deployment") version "1.0"
+    id("com.playmonumenta.deployment") version "1.+"
     checkstyle
     pmd
 }
@@ -20,35 +20,14 @@ plugins {
 repositories {
     mavenLocal()
     mavenCentral()
-
-    maven {
-        url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    }
-
-    maven {
-        url = uri("https://repo.papermc.io/repository/maven-public/")
-    }
-
-    maven {
-        url = uri("https://jitpack.io")
-    }
-
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-    }
-
-    maven {
-        url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")
-    }
-
+    maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+    maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://jitpack.io")
+    maven("https://oss.sonatype.org/content/repositories/snapshots/")
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     // NBT API, pulled in by CommandAPI
-    maven {
-        url = uri("https://repo.codemc.org/repository/maven-public/")
-    }
-
-    maven {
-        url = uri("https://repo.maven.apache.org/maven2/")
-    }
+    maven("https://repo.codemc.org/repository/maven-public/")
+    maven("https://repo.maven.apache.org/maven2/")
 }
 
 dependencies {
@@ -96,20 +75,31 @@ bungee {
     author = "Combustible"
 }
 
+java {
+	withJavadocJar()
+	withSourcesJar()
+}
+
 publishing {
-    publications.create<MavenPublication>("maven") {
-        project.shadow.component(this)
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/TeamMonumenta/monumenta-network-relay")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
+	publications {
+		create<MavenPublication>("maven") {
+			from(components["java"])
+		}
+	}
+	repositories {
+		maven {
+			name = "MonumentaMaven"
+			url = when (version.toString().endsWith("SNAPSHOT")) {
+				true -> uri("https://maven.playmonumenta.com/snapshots")
+				false -> uri("https://maven.playmonumenta.com/releases")
+			}
+
+			credentials {
+				username = System.getenv("USERNAME")
+				password = System.getenv("TOKEN")
+			}
+		}
+	}
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -136,4 +126,4 @@ tasks.withType<JavaCompile>().configureEach {
     }
 }
 
-ssh.easySetup(tasks.named<ShadowJar>("shadowJar").get(), "MonumentaNetworkRelay")
+ssh.easySetup(tasks.shadowJar.get(), "MonumentaNetworkRelay")
