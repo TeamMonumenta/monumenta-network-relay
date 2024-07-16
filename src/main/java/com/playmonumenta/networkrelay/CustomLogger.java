@@ -71,13 +71,28 @@ public class CustomLogger extends Logger {
 	}
 
 	@Override
+	public void info(Supplier<String> msg) {
+		mLogger.info(msg);
+	}
+
+	@Override
 	public void info(String msg) {
 		mLogger.info(msg);
 	}
 
 	@Override
+	public void warning(Supplier<String> msg) {
+		mLogger.warning(msg);
+	}
+
+	@Override
 	public void warning(String msg) {
 		mLogger.warning(msg);
+	}
+
+	@Override
+	public void severe(Supplier<String> msg) {
+		mLogger.severe(msg);
 	}
 
 	@Override
