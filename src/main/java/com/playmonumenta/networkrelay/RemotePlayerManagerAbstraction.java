@@ -229,6 +229,9 @@ public abstract class RemotePlayerManagerAbstraction {
 			this.callPlayerUpdatedEvent(player);
 			MMLog.info(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			return true;
+		} else if (!isRemote) {
+			// Always broadcast local data, regardless of if data changed or not
+			return true;
 		} else {
 			// TODO: add more granular logging to see differences
 			MMLog.fine(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
