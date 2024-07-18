@@ -79,8 +79,8 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			INSTANCE.getServerId(),
 			player.getUniqueId(),
 			player.getName(),
-			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
 			isOnline,
+			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
 			player.getWorld().getName()
 		);
 	}

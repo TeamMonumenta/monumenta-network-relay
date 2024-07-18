@@ -11,7 +11,7 @@ public class RemotePlayerMinecraft extends RemotePlayerAbstraction {
 	// The world the player is on for this Minecraft server
 	protected final String mWorld;
 
-	protected RemotePlayerMinecraft(String serverId, UUID uuid, String name, @Nullable Boolean isHidden, boolean isOnline, String world) {
+	protected RemotePlayerMinecraft(String serverId, UUID uuid, String name, boolean isOnline, @Nullable Boolean isHidden, String world) {
 		super(serverId, uuid, name, isOnline, isHidden);
 		mWorld = world;
 
@@ -31,8 +31,8 @@ public class RemotePlayerMinecraft extends RemotePlayerAbstraction {
 			mServerId,
 			mUuid,
 			mName,
-			mIsHidden,
 			false,
+			mIsHidden,
 			mWorld
 		);
 		offlineCopy.mPluginData.putAll(mPluginData);
