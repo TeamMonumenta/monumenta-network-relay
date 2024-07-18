@@ -57,7 +57,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@Override
 	public String getServerType() {
-		return "vanilla";
+		return RemotePlayerMinecraft.SERVER_TYPE;
 	}
 
 	@Override
@@ -177,10 +177,9 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@Override
 	void refreshLocalPlayerWithDelay(UUID uuid) {
-		if (mRefreshPlayerList.contains(uuid)) {
+		if (!mRefreshPlayerList.add(uuid)) {
 			return;
 		}
-		mRefreshPlayerList.add(uuid);
 		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
 			mRefreshPlayerList.remove(uuid);
 			refreshLocalPlayer(uuid);

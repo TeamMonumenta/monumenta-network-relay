@@ -49,7 +49,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 
 	@Override
 	public String getServerType() {
-		return "proxy";
+		return RemotePlayerProxy.SERVER_TYPE;
 	}
 
 	@Override
