@@ -2,8 +2,10 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -53,7 +55,13 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return INSTANCE;
 	}
 
-	static String getServerId() {
+	@Override
+	public String getServerType() {
+		return RemotePlayerMinecraft.SERVER_TYPE;
+	}
+
+	@Override
+	public String getServerId() {
 		@Nullable String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();
@@ -68,11 +76,11 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	static RemotePlayerMinecraft fromLocal(Player player, boolean isOnline) {
 		return new RemotePlayerMinecraft(
-			getServerId(),
+			INSTANCE.getServerId(),
 			player.getUniqueId(),
 			player.getName(),
-			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
 			isOnline,
+			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
 			player.getWorld().getName()
 		);
 	}
@@ -96,8 +104,12 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	void refreshLocalPlayers() {
+		refreshLocalPlayers(false);
+	}
+
+	void refreshLocalPlayers(boolean forceBroadcast) {
 		for (Player player : Bukkit.getOnlinePlayers()) {
-			refreshLocalPlayer(player);
+			refreshLocalPlayer(player, forceBroadcast);
 		}
 	}
 
@@ -111,26 +123,19 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return false;
 	}
 
-	// Run this on local players whenever their information is out of date
 	void refreshLocalPlayer(Player player) {
+		refreshLocalPlayer(player, false);
+	}
+
+	// Run this on local players whenever their information is out of date
+	void refreshLocalPlayer(Player player, boolean forceBroadcast) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerMinecraft localPlayer = fromLocal(player, true);
 
 		// update local player with data
-		if (updateLocalPlayer(localPlayer, false)) {
+		if (updateLocalPlayer(localPlayer, false, forceBroadcast)) {
 			localPlayer.broadcast();
 		}
-	}
-
-	// We received data from another server, add more data
-	void remotePlayerChange(JsonObject data) {
-		if (data == null) {
-			MMLog.severe(() -> "Null player data received from an unknown source!");
-			return;
-		}
-		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
-
-		updateLocalPlayer(player, true);
 	}
 
 	@Override
@@ -159,11 +164,26 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	@Override
-	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
+	boolean checkIfLocalPlayer(RemotePlayerAbstraction player) {
 		if (!player.getServerType().equals(RemotePlayerMinecraft.SERVER_TYPE)) {
 			return false;
 		}
-		return refreshLocalPlayer(player.mUuid);
+		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
+		return localPlayer != null && localPlayer.isOnline();
+	}
+
+
+	private Set<UUID> mRefreshPlayerList = new HashSet<>();
+
+	@Override
+	void refreshLocalPlayerWithDelay(UUID uuid) {
+		if (!mRefreshPlayerList.add(uuid)) {
+			return;
+		}
+		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
+			mRefreshPlayerList.remove(uuid);
+			refreshLocalPlayer(uuid);
+		}, 2L);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -189,7 +209,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		if (command.startsWith("/pv ")
 			|| "/pv".equals(command)
 			|| command.contains("vanish")) {
-			Bukkit.getScheduler().runTask(NetworkRelay.getInstance(), this::refreshLocalPlayers);
+			Bukkit.getScheduler().runTask(NetworkRelay.getInstance(), () -> refreshLocalPlayers());
 		}
 	}
 
@@ -237,7 +257,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				break;
 			}
 			case REMOTE_PLAYER_REFRESH_CHANNEL: {
-				refreshLocalPlayers();
+				refreshLocalPlayers(true);
 				break;
 			}
 			default: {

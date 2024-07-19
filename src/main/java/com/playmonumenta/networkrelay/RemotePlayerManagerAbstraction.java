@@ -161,11 +161,28 @@ public abstract class RemotePlayerManagerAbstraction {
 		return remotePlayerData.get("minecraft");
 	}
 
+	// We received data from another server, add more data
+	protected void remotePlayerChange(JsonObject data) {
+		if (data == null) {
+			MMLog.severe(() -> "Null player data received from an unknown source!");
+			return;
+		}
+		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
+
+		updateLocalPlayer(player, true, false);
+	}
+
+	abstract String getServerType();
+
+	abstract String getServerId();
+
 	/**
 	 * Refresh the local player if online
 	 * @return true if the player was online, false if not
 	 */
 	abstract boolean refreshLocalPlayer(UUID playerUuid);
+
+	abstract void refreshLocalPlayerWithDelay(UUID playerUuid);
 
 	// Call respective events on minecraft/proxy platforms
 	abstract void callPlayerLoadEvent(RemotePlayerAbstraction player);
@@ -177,21 +194,25 @@ public abstract class RemotePlayerManagerAbstraction {
 	abstract Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player);
 
 	/**
-	 * Check if this remote player is on our shard, and refresh if so
-	 * @see #refreshLocalPlayer
-	 * @return boolean that indicates the refresh was successful or not
+	 * Check if this remote player is on our shard
+	 * @see #refreshLocalPlayerWithDelay
+	 * @return boolean that indicates if the player is online locally
 	 */
-	abstract boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player);
+	abstract boolean checkIfLocalPlayer(RemotePlayerAbstraction player);
 
+	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
+		return updateLocalPlayer(player, isRemote, false);
+	}
 
 	/**
 	 * Update the locally cached player with data, from remote or not
 	 * @param player - the player to update data for
 	 * @param isRemote - if it originated from another shard/proxy
+	 * @param forceBroadcast - force update to broadcast, even if there are no changes, unless the player is on another shard
 	 * @see RemotePlayerManagerAbstraction#updatePlayer
 	 * @return A boolean indicating if the local player changes should be broadcast to other shards
 	 */
-	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
+	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote, boolean forceBroadcast) {
 		RemotePlayerData oldPlayerData = getRemotePlayer(player.mUuid);
 		String serverType = player.getServerType();
 		RemotePlayerAbstraction oldPlayer = oldPlayerData != null ? oldPlayerData.get(serverType) : null;
@@ -205,26 +226,34 @@ public abstract class RemotePlayerManagerAbstraction {
 		// Update the player before calling events
 		this.updatePlayer(player);
 
+		MMLog.fine(() -> "Old player: " + oldPlayer);
+		MMLog.fine(() -> "New player: " + player);
+
 		if (player.mIsOnline && (oldPlayer == null || !oldPlayer.mIsOnline)) {
 			this.callPlayerLoadEvent(player);
-			MMLog.info(() -> "Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.fine(() -> "Loaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			return true;
 		}
 
-		if (isRemote && this.checkAndRefreshIfLocalPlayer(player)) {
+		if (isRemote && this.checkIfLocalPlayer(player)) {
 			// Player logged off on remote shard, but is locally online.
 			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.info(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.fine(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			this.refreshLocalPlayerWithDelay(player.mUuid);
 			return false;
 		}
 
 		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
 			this.callPlayerUnloadEvent(player);
-			MMLog.info(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.fine(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			return true;
-		} else if (!isRemote || !player.isSimilar(oldPlayer)) {
+		} else if (!player.isSimilar(oldPlayer)) {
 			this.callPlayerUpdatedEvent(player);
-			MMLog.info(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.fine(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			return true;
+		} else if (!isRemote && forceBroadcast) {
+			// Broadcast local data, regardless of if data changed or not
+			MMLog.fine(() -> "Broadcasted player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			return true;
 		} else {
 			// TODO: add more granular logging to see differences
@@ -296,6 +325,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	}
 
 	protected boolean unregisterServer(String serverId) {
+		boolean isRemote = !getServerId().equals(serverId);
 		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.remove(serverId);
 		if (remotePlayers == null) {
 			return false;
@@ -307,20 +337,11 @@ public abstract class RemotePlayerManagerAbstraction {
 			throw new IllegalStateException("ERROR: Server type for server ID cleared before unregistering players from that server: id:" + serverId);
 		}
 		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
-			RemotePlayerAbstraction oldPlayerData = allPlayerData.unregister(serverType);
+			RemotePlayerAbstraction oldPlayerData = allPlayerData.get(serverType);
 			if (oldPlayerData == null) {
 				continue;
 			}
-			if (!allPlayerData.isOnline()) {
-				// The player is now offline on all server types
-				mRemotePlayersByUuid.remove(allPlayerData.mUuid);
-				mRemotePlayersByName.remove(allPlayerData.mName);
-			}
-			if (allPlayerData.isHidden()) {
-				mVisiblePlayers.remove(allPlayerData);
-			} else {
-				mVisiblePlayers.add(allPlayerData);
-			}
+			updateLocalPlayer(oldPlayerData.asOffline(), isRemote);
 		}
 		return true;
 	}

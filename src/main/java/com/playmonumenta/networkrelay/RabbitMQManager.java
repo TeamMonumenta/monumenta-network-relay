@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -167,8 +168,13 @@ public class RabbitMQManager {
 
 		/* Declare a broadcast exchange which routes messages to all attached queues */
 		mChannel.exchangeDeclare(BROADCAST_EXCHANGE_NAME, "fanout");
+
+		/* Declare queue arguments */
+		Map<String, Object> queueArgs = new HashMap<String, Object>();
+		// To prevent messages from piling up while a shard is offline - delete a queue after 5 minutes
+		queueArgs.put("x-expires", 300000); // 5 minutes of inactivity (shard not responding/down) until the queue deletes itself
 		/* Declare the queue for this shard */
-		mChannel.queueDeclare(shardName, false, false, false, null);
+		mChannel.queueDeclare(shardName, false, false, false, queueArgs);
 		/* Bind the queue to the exchange */
 		mChannel.queueBind(shardName, BROADCAST_EXCHANGE_NAME, "");
 

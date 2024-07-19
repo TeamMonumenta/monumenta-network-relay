@@ -47,7 +47,13 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return INSTANCE;
 	}
 
-	static String getServerId() {
+	@Override
+	public String getServerType() {
+		return RemotePlayerProxy.SERVER_TYPE;
+	}
+
+	@Override
+	public String getServerId() {
 		@Nullable String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();
@@ -68,7 +74,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 
 	static RemotePlayerProxy fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
 		return new RemotePlayerProxy(
-			getServerId(),
+			INSTANCE.getServerId(),
 			player.getUniqueId(),
 			player.getName(),
 			isOnline,
@@ -78,8 +84,12 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	void refreshLocalPlayers() {
+		refreshLocalPlayers(false);
+	}
+
+	void refreshLocalPlayers(boolean forceBroadcast) {
 		for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
-			refreshLocalPlayer(player);
+			refreshLocalPlayer(player, forceBroadcast);
 		}
 	}
 
@@ -93,25 +103,19 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return false;
 	}
 
-	// Run this on local players whenever their information is out of date
 	void refreshLocalPlayer(ProxiedPlayer player) {
+		refreshLocalPlayer(player, false);
+	}
+
+	// Run this on local players whenever their information is out of date
+	void refreshLocalPlayer(ProxiedPlayer player, boolean forceBroadcast) {
 		MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerProxy localPlayer = fromLocal(player, true);
 
 		// update local player with data
-		if (updateLocalPlayer(localPlayer, false)) {
+		if (updateLocalPlayer(localPlayer, false, forceBroadcast)) {
 			localPlayer.broadcast();
 		}
-	}
-
-	void remotePlayerChange(JsonObject data) {
-		if (data == null) {
-			MMLog.severe(() -> "Null player data received from an unknown source!");
-			return;
-		}
-		RemotePlayerAbstraction player = RemotePlayerAbstraction.from(data);
-
-		updateLocalPlayer(player, true);
 	}
 
 	@Override
@@ -140,11 +144,18 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	@Override
-	boolean checkAndRefreshIfLocalPlayer(RemotePlayerAbstraction player) {
+	boolean checkIfLocalPlayer(RemotePlayerAbstraction player) {
 		if (!player.getServerType().equals(RemotePlayerProxy.SERVER_TYPE)) {
 			return false;
 		}
-		return refreshLocalPlayer(player.mUuid);
+		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
+		return localPlayer != null && localPlayer.isConnected();
+	}
+
+	@Override
+	void refreshLocalPlayerWithDelay(UUID uuid) {
+		// TODO: was lazy and didn't add a delay for the proxy since we can't switch proxies until transfer packets
+		refreshLocalPlayer(uuid);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -206,7 +217,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 				break;
 			}
 			case REMOTE_PLAYER_REFRESH_CHANNEL: {
-				refreshLocalPlayers();
+				refreshLocalPlayers(true);
 				break;
 			}
 			default: {
