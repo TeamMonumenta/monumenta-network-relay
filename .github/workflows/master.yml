@@ -41,6 +41,7 @@ jobs:
 
     - name: Build and deploy to Github Package Registry
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        USERNAME: monumenta
+        TOKEN: ${{ secrets.MAVEN_TOKEN }}
       run: |
         ./gradlew publish
