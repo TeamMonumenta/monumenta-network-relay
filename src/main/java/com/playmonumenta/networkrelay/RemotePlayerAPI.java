@@ -104,7 +104,7 @@ public class RemotePlayerAPI {
 
 	public static boolean refreshPlayer(UUID playerUuid) {
 		innerCheckManagerLoaded();
-		return mManager.refreshLocalPlayer(playerUuid);
+		return mManager.refreshLocalPlayer(playerUuid, false);
 	}
 
 	public static boolean isManagerLoaded() {

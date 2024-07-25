@@ -172,17 +172,31 @@ public abstract class RemotePlayerManagerAbstraction {
 		updateLocalPlayer(player, true, false);
 	}
 
+	protected void remotePlayerRefresh(JsonObject data) {
+		if (data != null && data.has("uuid")) {
+			String uuidString = data.get("uuid").getAsString();
+			if (!uuidString.equals("*")) {
+				UUID uuid = UUID.fromString(uuidString);
+				refreshLocalPlayer(uuid, true);
+			}
+		} else {
+			refreshLocalPlayers(true);
+		}
+	}
+
 	abstract String getServerType();
 
 	abstract String getServerId();
+
+	abstract boolean refreshPlayer(UUID playerUuid);
 
 	/**
 	 * Refresh the local player if online
 	 * @return true if the player was online, false if not
 	 */
-	abstract boolean refreshLocalPlayer(UUID playerUuid);
+	abstract boolean refreshLocalPlayer(UUID playerUuid, boolean forceBroadcast);
 
-	abstract void refreshLocalPlayerWithDelay(UUID playerUuid);
+	abstract void refreshLocalPlayers(boolean forceBroadcast);
 
 	// Call respective events on minecraft/proxy platforms
 	abstract void callPlayerLoadEvent(RemotePlayerAbstraction player);
@@ -195,7 +209,7 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	/**
 	 * Check if this remote player is on our shard
-	 * @see #refreshLocalPlayerWithDelay
+	 * @see #refreshLocalPlayer
 	 * @return boolean that indicates if the player is online locally
 	 */
 	abstract boolean checkIfLocalPlayer(RemotePlayerAbstraction player);
@@ -238,8 +252,8 @@ public abstract class RemotePlayerManagerAbstraction {
 		if (isRemote && this.checkIfLocalPlayer(player)) {
 			// Player logged off on remote shard, but is locally online.
 			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.fine(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			this.refreshLocalPlayerWithDelay(player.mUuid);
+			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			refreshPlayer(player.mUuid);
 			return false;
 		}
 
@@ -344,5 +358,29 @@ public abstract class RemotePlayerManagerAbstraction {
 			updateLocalPlayer(oldPlayerData.asOffline(), isRemote);
 		}
 		return true;
+	}
+
+	protected void refreshRemotePlayer(UUID uuid) {
+		JsonObject data = new JsonObject();
+		data.addProperty("uuid", uuid.toString());
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
+				data,
+				REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
+	}
+
+	protected void refreshRemotePlayers() {
+		JsonObject data = new JsonObject();
+		data.addProperty("uuid", "*");
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
+				data,
+				REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
 	}
 }

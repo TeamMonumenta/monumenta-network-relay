@@ -31,13 +31,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 			throw new RuntimeException("Failed to get remote shard names", ex);
 		}
 
-		try {
-			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
-				new JsonObject(),
-				REMOTE_PLAYER_MESSAGE_TTL);
-		} catch (Exception ex) {
-			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
-		}
+		refreshRemotePlayers();
 	}
 
 	static RemotePlayerManagerBungee getInstance() {
@@ -83,10 +77,16 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		);
 	}
 
-	void refreshLocalPlayers() {
-		refreshLocalPlayers(false);
+	@Override
+	boolean refreshPlayer(UUID playerUuid) {
+		if (refreshLocalPlayer(playerUuid, false)) {
+			return true;
+		}
+		refreshRemotePlayer(playerUuid);
+		return false;
 	}
 
+	@Override
 	void refreshLocalPlayers(boolean forceBroadcast) {
 		for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
 			refreshLocalPlayer(player, forceBroadcast);
@@ -94,17 +94,13 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	@Override
-	boolean refreshLocalPlayer(UUID uuid) {
+	boolean refreshLocalPlayer(UUID uuid, boolean forceBroadcast) {
 		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(uuid);
 		if (localPlayer != null && localPlayer.isConnected()) {
-			refreshLocalPlayer(localPlayer);
+			refreshLocalPlayer(localPlayer, forceBroadcast);
 			return true;
 		}
 		return false;
-	}
-
-	void refreshLocalPlayer(ProxiedPlayer player) {
-		refreshLocalPlayer(player, false);
 	}
 
 	// Run this on local players whenever their information is out of date
@@ -152,12 +148,6 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return localPlayer != null && localPlayer.isConnected();
 	}
 
-	@Override
-	void refreshLocalPlayerWithDelay(UUID uuid) {
-		// TODO: was lazy and didn't add a delay for the proxy since we can't switch proxies until transfer packets
-		refreshLocalPlayer(uuid);
-	}
-
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void destOnlineEvent(DestOnlineEventBungee event) {
 		String remoteShardName = event.getDest();
@@ -177,14 +167,14 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerConnectEvent(PostLoginEvent event) {
 		ProxiedPlayer player = event.getPlayer();
-		refreshLocalPlayer(player);
+		refreshLocalPlayer(player, true);
 	}
 
 	// This is when the player connects or reconnects to a shard on the proxy
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void playerChangedServerEvent(ServerSwitchEvent event) {
 		ProxiedPlayer player = event.getPlayer();
-		refreshLocalPlayer(player);
+		refreshLocalPlayer(player, true);
 	}
 
 	// This is when the player disconnects from the proxy
@@ -197,7 +187,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 			return;
 		}
 		RemotePlayerProxy localPlayer = fromLocal(player, false);
-		if (updateLocalPlayer(localPlayer, false)) {
+		if (updateLocalPlayer(localPlayer, false, true)) {
 			localPlayer.broadcast();
 		}
 	}
@@ -217,7 +207,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 				break;
 			}
 			case REMOTE_PLAYER_REFRESH_CHANNEL: {
-				refreshLocalPlayers(true);
+				@Nullable JsonObject data = event.getData();
+				remotePlayerRefresh(data);
 				break;
 			}
 			default: {
