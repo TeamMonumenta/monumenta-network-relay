@@ -1,4 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.palantir.gradle.gitversion.VersionDetails
+import groovy.lang.Closure
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
 import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
@@ -45,11 +47,15 @@ dependencies {
 }
 
 group = "com.playmonumenta"
-val gitVersion: groovy.lang.Closure<String> by extra
-version = gitVersion()
+
+val gitVersion: Closure<String> by extra
+val versionDetails: Closure<VersionDetails> by extra
+val version = gitVersion() + (if(versionDetails().isCleanTag) "" else "-SNAPSHOT")
+
 description = "monumenta-network-relay"
 java.sourceCompatibility = JavaVersion.VERSION_17
 java.targetCompatibility = JavaVersion.VERSION_17
+
 pmd {
     isConsoleOutput = true
     toolVersion = "7.2.0"

@@ -2,8 +2,8 @@ name: Build and deploy master
 
 on:
   push:
-    branches:
-    - master
+    tags:
+    - '*'
 
 jobs:
   deploy:
@@ -37,6 +37,9 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
-    - name: Build
+    - name: Publish to Monumenta Maven
+      env:
+        USERNAME: monumenta
+        TOKEN: ${{ secrets.MAVEN_TOKEN }}
       run: |
-        ./gradlew build
+        ./gradlew publish
