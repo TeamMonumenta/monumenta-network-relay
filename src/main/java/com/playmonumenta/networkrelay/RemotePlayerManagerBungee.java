@@ -78,8 +78,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	@Override
-	boolean refreshPlayer(UUID playerUuid) {
-		if (refreshLocalPlayer(playerUuid, false)) {
+	boolean refreshPlayer(UUID playerUuid, boolean forceBroadcast) {
+		if (refreshLocalPlayer(playerUuid, forceBroadcast)) {
 			return true;
 		}
 		refreshRemotePlayer(playerUuid);
@@ -140,12 +140,20 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	@Override
-	boolean checkIfLocalPlayer(RemotePlayerAbstraction player) {
+	boolean playerShouldBeRefreshed(RemotePlayerAbstraction player) {
+		if (player.mIsOnline) {
+			return false;
+		}
 		if (!player.getServerType().equals(RemotePlayerProxy.SERVER_TYPE)) {
 			return false;
 		}
 		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
 		return localPlayer != null && localPlayer.isConnected();
+	}
+
+	@Override
+	void refreshLocalPlayerWithDelay(UUID uuid) {
+		refreshPlayer(uuid, true);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -184,6 +192,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		String playerProxy = getPlayerProxy(player.getUniqueId());
 		if (playerProxy != null && !playerProxy.equals(getServerId())) {
 			MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another proxy");
+			refreshRemotePlayer(player.getUniqueId());
 			return;
 		}
 		RemotePlayerProxy localPlayer = fromLocal(player, false);

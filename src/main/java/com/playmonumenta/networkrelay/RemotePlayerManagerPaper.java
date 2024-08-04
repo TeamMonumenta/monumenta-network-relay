@@ -104,8 +104,8 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	@Override
-	boolean refreshPlayer(UUID playerUuid) {
-		if (refreshLocalPlayer(playerUuid, false)) {
+	boolean refreshPlayer(UUID playerUuid, boolean forceBroadcast) {
+		if (refreshLocalPlayer(playerUuid, forceBroadcast)) {
 			return true;
 		}
 		refreshRemotePlayer(playerUuid);
@@ -166,12 +166,22 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	@Override
-	boolean checkIfLocalPlayer(RemotePlayerAbstraction player) {
+	boolean playerShouldBeRefreshed(RemotePlayerAbstraction player) {
+		if (player.mIsOnline) {
+			return false;
+		}
 		if (!player.getServerType().equals(RemotePlayerMinecraft.SERVER_TYPE)) {
 			return false;
 		}
 		@Nullable Player localPlayer = Bukkit.getPlayer(player.mUuid);
 		return localPlayer != null && localPlayer.isOnline();
+	}
+
+	@Override
+	void refreshLocalPlayerWithDelay(UUID uuid) {
+		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
+			refreshPlayer(uuid, true);
+		}, 1L);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -211,18 +221,19 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerQuitEvent(PlayerQuitEvent event) {
 		// Run this with a 1 tick delay since a player can switch shards, since players can take a bit to switch
-		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
-			Player player = event.getPlayer();
-			String playerShard = getPlayerShard(player.getUniqueId());
-			if (playerShard != null && !playerShard.equals(getServerId())) {
-				MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
-				return;
-			}
-			RemotePlayerMinecraft localPlayer = fromLocal(player, false);
-			if (updateLocalPlayer(localPlayer, false, true)) {
-				localPlayer.broadcast();
-			}
-		}, 1L);
+		// Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
+		Player player = event.getPlayer();
+		String playerShard = getPlayerShard(player.getUniqueId());
+		if (playerShard != null && !playerShard.equals(getServerId())) {
+			MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
+			refreshRemotePlayer(player.getUniqueId());
+			return;
+		}
+		RemotePlayerMinecraft localPlayer = fromLocal(player, false);
+		if (updateLocalPlayer(localPlayer, false, true)) {
+			localPlayer.broadcast();
+		}
+		// }, 1L);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

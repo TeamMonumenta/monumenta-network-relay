@@ -178,6 +178,8 @@ public abstract class RemotePlayerManagerAbstraction {
 			if (!uuidString.equals("*")) {
 				UUID uuid = UUID.fromString(uuidString);
 				refreshLocalPlayer(uuid, true);
+			} else {
+				refreshLocalPlayers(true);
 			}
 		} else {
 			refreshLocalPlayers(true);
@@ -188,7 +190,7 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	abstract String getServerId();
 
-	abstract boolean refreshPlayer(UUID playerUuid);
+	abstract boolean refreshPlayer(UUID playerUuid, boolean forceBroadcast);
 
 	/**
 	 * Refresh the local player if online
@@ -197,6 +199,8 @@ public abstract class RemotePlayerManagerAbstraction {
 	abstract boolean refreshLocalPlayer(UUID playerUuid, boolean forceBroadcast);
 
 	abstract void refreshLocalPlayers(boolean forceBroadcast);
+
+	abstract void refreshLocalPlayerWithDelay(UUID playerUuid);
 
 	// Call respective events on minecraft/proxy platforms
 	abstract void callPlayerLoadEvent(RemotePlayerAbstraction player);
@@ -209,10 +213,10 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	/**
 	 * Check if this remote player is on our shard
-	 * @see #refreshLocalPlayer
+	 * @see #refreshLocalPlayerWithDelay
 	 * @return boolean that indicates if the player is online locally
 	 */
-	abstract boolean checkIfLocalPlayer(RemotePlayerAbstraction player);
+	abstract boolean playerShouldBeRefreshed(RemotePlayerAbstraction player);
 
 	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
 		return updateLocalPlayer(player, isRemote, false);
@@ -249,31 +253,30 @@ public abstract class RemotePlayerManagerAbstraction {
 			return true;
 		}
 
-		if (isRemote && this.checkIfLocalPlayer(player)) {
-			// Player logged off on remote shard, but is locally online.
-			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			refreshPlayer(player.mUuid);
-			return false;
-		}
-
+		boolean shouldBroadcast = false;
 		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
 			this.callPlayerUnloadEvent(player);
 			MMLog.fine(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
+			shouldBroadcast = true;
 		} else if (!player.isSimilar(oldPlayer)) {
 			this.callPlayerUpdatedEvent(player);
 			MMLog.fine(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
+			shouldBroadcast = true;
 		} else if (!isRemote && forceBroadcast) {
 			// Broadcast local data, regardless of if data changed or not
 			MMLog.fine(() -> "Broadcasted player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		} else {
-			// TODO: add more granular logging to see differences
-			MMLog.fine(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			shouldBroadcast = true;
 		}
-		return false;
+
+		if (isRemote && this.playerShouldBeRefreshed(player)) {
+			// Player logged off on remote shard, but 	is locally online.
+			// This can happen if the remote shard was not notified the player logged in here in time.
+			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			this.refreshLocalPlayerWithDelay(player.mUuid);
+			return false;
+		}
+
+		return shouldBroadcast;
 	}
 
 	protected void updatePlayer(RemotePlayerAbstraction playerServerData) {
