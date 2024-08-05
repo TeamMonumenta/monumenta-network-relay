@@ -119,6 +119,14 @@ public abstract class RemotePlayerAbstraction {
 		return mName;
 	}
 
+	public boolean isOnline() {
+		return mIsOnline;
+	}
+
+	public boolean isHidden() {
+		return mIsHidden;
+	}
+
 	/** Broadcast this player's data to other servers */
 	protected void broadcast() {
 		JsonObject playerData = toJson();
