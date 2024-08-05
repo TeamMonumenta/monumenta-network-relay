@@ -141,6 +141,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 
 	@Override
 	boolean playerShouldBeRefreshed(RemotePlayerAbstraction player) {
+		// TODO: NetworkChat only refreshes if the player is offline
 		if (player.mIsOnline) {
 			return false;
 		}

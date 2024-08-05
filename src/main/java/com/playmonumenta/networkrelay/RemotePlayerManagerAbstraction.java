@@ -269,7 +269,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 
 		if (isRemote && this.playerShouldBeRefreshed(player)) {
-			// Player logged off on remote shard, but 	is locally online.
+			// Player logged off on remote shard, but is locally online.
 			// This can happen if the remote shard was not notified the player logged in here in time.
 			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			this.refreshLocalPlayerWithDelay(player.mUuid);
@@ -298,7 +298,6 @@ public abstract class RemotePlayerManagerAbstraction {
 		if (allPlayerData == null) {
 			MMLog.fine(() -> "Player: " + playerName + " was previously offline network-wide");
 			if (isOnline) {
-				// TODO Add event for player logging in anywhere on the network, just the UUID/Name available so far
 				allPlayerData = new RemotePlayerData(playerId, playerName);
 				mRemotePlayersByUuid.put(playerId, allPlayerData);
 				mRemotePlayersByName.put(playerName, allPlayerData);
