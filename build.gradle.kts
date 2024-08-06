@@ -50,7 +50,7 @@ group = "com.playmonumenta"
 
 val gitVersion: Closure<String> by extra
 val versionDetails: Closure<VersionDetails> by extra
-val version = gitVersion() + (if(versionDetails().isCleanTag) "" else "-SNAPSHOT")
+version = gitVersion() + (if(versionDetails().isCleanTag) "" else "-SNAPSHOT")
 
 description = "monumenta-network-relay"
 java.sourceCompatibility = JavaVersion.VERSION_17
