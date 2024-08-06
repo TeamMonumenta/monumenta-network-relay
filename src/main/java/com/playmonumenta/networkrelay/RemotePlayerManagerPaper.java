@@ -98,15 +98,21 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		boolean cachedResult = isPlayerVisible(player.getUniqueId());
 		boolean currentResult = !internalPlayerHiddenTest(player);
 		if (cachedResult ^ currentResult) {
-			refreshLocalPlayer(player);
+			refreshLocalPlayer(player, false);
 		}
 		return currentResult;
 	}
 
-	void refreshLocalPlayers() {
-		refreshLocalPlayers(false);
+	@Override
+	boolean refreshPlayer(UUID playerUuid, boolean forceBroadcast) {
+		if (refreshLocalPlayer(playerUuid, forceBroadcast)) {
+			return true;
+		}
+		refreshRemotePlayer(playerUuid);
+		return false;
 	}
 
+	@Override
 	void refreshLocalPlayers(boolean forceBroadcast) {
 		for (Player player : Bukkit.getOnlinePlayers()) {
 			refreshLocalPlayer(player, forceBroadcast);
@@ -114,17 +120,13 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	@Override
-	boolean refreshLocalPlayer(UUID uuid) {
+	boolean refreshLocalPlayer(UUID uuid, boolean forceBroadcast) {
 		@Nullable Player localPlayer = Bukkit.getPlayer(uuid);
 		if (localPlayer != null && localPlayer.isOnline()) {
-			refreshLocalPlayer(localPlayer);
+			refreshLocalPlayer(localPlayer, forceBroadcast);
 			return true;
 		}
 		return false;
-	}
-
-	void refreshLocalPlayer(Player player) {
-		refreshLocalPlayer(player, false);
 	}
 
 	// Run this on local players whenever their information is out of date
@@ -164,7 +166,11 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	@Override
-	boolean checkIfLocalPlayer(RemotePlayerAbstraction player) {
+	boolean playerShouldBeRefreshed(RemotePlayerAbstraction player) {
+		// TODO: NetworkChat only refreshes if the player is offline
+		if (player.mIsOnline) {
+			return false;
+		}
 		if (!player.getServerType().equals(RemotePlayerMinecraft.SERVER_TYPE)) {
 			return false;
 		}
@@ -172,18 +178,11 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		return localPlayer != null && localPlayer.isOnline();
 	}
 
-
-	private Set<UUID> mRefreshPlayerList = new HashSet<>();
-
 	@Override
 	void refreshLocalPlayerWithDelay(UUID uuid) {
-		if (!mRefreshPlayerList.add(uuid)) {
-			return;
-		}
 		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
-			mRefreshPlayerList.remove(uuid);
-			refreshLocalPlayer(uuid);
-		}, 2L);
+			refreshPlayer(uuid, true);
+		}, 1L);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -204,19 +203,20 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	// Player ran a command
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
+		Player player = event.getPlayer();
 		String command = event.getMessage();
 
 		if (command.startsWith("/pv ")
 			|| "/pv".equals(command)
 			|| command.contains("vanish")) {
-			Bukkit.getScheduler().runTask(NetworkRelay.getInstance(), () -> refreshLocalPlayers());
+			Bukkit.getScheduler().runTask(NetworkRelay.getInstance(), () -> refreshLocalPlayer(player, false));
 		}
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerJoinEvent(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		refreshLocalPlayer(player);
+		refreshLocalPlayer(player, true);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -227,10 +227,11 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			String playerShard = getPlayerShard(player.getUniqueId());
 			if (playerShard != null && !playerShard.equals(getServerId())) {
 				MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
+				refreshRemotePlayer(player.getUniqueId());
 				return;
 			}
 			RemotePlayerMinecraft localPlayer = fromLocal(player, false);
-			if (updateLocalPlayer(localPlayer, false)) {
+			if (updateLocalPlayer(localPlayer, false, true)) {
 				localPlayer.broadcast();
 			}
 		}, 1L);
@@ -239,7 +240,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerChangedWorldEvent(PlayerChangedWorldEvent event) {
 		Player player = event.getPlayer();
-		refreshLocalPlayer(player);
+		refreshLocalPlayer(player, false);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -257,7 +258,8 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 				break;
 			}
 			case REMOTE_PLAYER_REFRESH_CHANNEL: {
-				refreshLocalPlayers(true);
+				@Nullable JsonObject data = event.getData();
+				remotePlayerRefresh(data);
 				break;
 			}
 			default: {

@@ -172,15 +172,33 @@ public abstract class RemotePlayerManagerAbstraction {
 		updateLocalPlayer(player, true, false);
 	}
 
+	protected void remotePlayerRefresh(JsonObject data) {
+		if (data != null && data.has("uuid")) {
+			String uuidString = data.get("uuid").getAsString();
+			if (!uuidString.equals("*")) {
+				UUID uuid = UUID.fromString(uuidString);
+				refreshLocalPlayer(uuid, true);
+			} else {
+				refreshLocalPlayers(true);
+			}
+		} else {
+			refreshLocalPlayers(true);
+		}
+	}
+
 	abstract String getServerType();
 
 	abstract String getServerId();
+
+	abstract boolean refreshPlayer(UUID playerUuid, boolean forceBroadcast);
 
 	/**
 	 * Refresh the local player if online
 	 * @return true if the player was online, false if not
 	 */
-	abstract boolean refreshLocalPlayer(UUID playerUuid);
+	abstract boolean refreshLocalPlayer(UUID playerUuid, boolean forceBroadcast);
+
+	abstract void refreshLocalPlayers(boolean forceBroadcast);
 
 	abstract void refreshLocalPlayerWithDelay(UUID playerUuid);
 
@@ -198,7 +216,7 @@ public abstract class RemotePlayerManagerAbstraction {
 	 * @see #refreshLocalPlayerWithDelay
 	 * @return boolean that indicates if the player is online locally
 	 */
-	abstract boolean checkIfLocalPlayer(RemotePlayerAbstraction player);
+	abstract boolean playerShouldBeRefreshed(RemotePlayerAbstraction player);
 
 	boolean updateLocalPlayer(RemotePlayerAbstraction player, boolean isRemote) {
 		return updateLocalPlayer(player, isRemote, false);
@@ -235,31 +253,30 @@ public abstract class RemotePlayerManagerAbstraction {
 			return true;
 		}
 
-		if (isRemote && this.checkIfLocalPlayer(player)) {
+		boolean shouldBroadcast = false;
+		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
+			this.callPlayerUnloadEvent(player);
+			MMLog.fine(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			shouldBroadcast = true;
+		} else if (!player.isSimilar(oldPlayer)) {
+			this.callPlayerUpdatedEvent(player);
+			MMLog.fine(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			shouldBroadcast = true;
+		} else if (!isRemote && forceBroadcast) {
+			// Broadcast local data, regardless of if data changed or not
+			MMLog.fine(() -> "Broadcasted player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			shouldBroadcast = true;
+		}
+
+		if (isRemote && this.playerShouldBeRefreshed(player)) {
 			// Player logged off on remote shard, but is locally online.
 			// This can happen if the remote shard was not notified the player logged in here in time.
-			MMLog.fine(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
+			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			this.refreshLocalPlayerWithDelay(player.mUuid);
 			return false;
 		}
 
-		if (!player.mIsOnline && (oldPlayer == null || oldPlayer.mIsOnline)) {
-			this.callPlayerUnloadEvent(player);
-			MMLog.fine(() -> "Unloaded player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		} else if (!player.isSimilar(oldPlayer)) {
-			this.callPlayerUpdatedEvent(player);
-			MMLog.fine(() -> "Updated player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		} else if (!isRemote && forceBroadcast) {
-			// Broadcast local data, regardless of if data changed or not
-			MMLog.fine(() -> "Broadcasted player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-			return true;
-		} else {
-			// TODO: add more granular logging to see differences
-			MMLog.fine(() -> "Ignored player: " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
-		}
-		return false;
+		return shouldBroadcast;
 	}
 
 	protected void updatePlayer(RemotePlayerAbstraction playerServerData) {
@@ -281,7 +298,6 @@ public abstract class RemotePlayerManagerAbstraction {
 		if (allPlayerData == null) {
 			MMLog.fine(() -> "Player: " + playerName + " was previously offline network-wide");
 			if (isOnline) {
-				// TODO Add event for player logging in anywhere on the network, just the UUID/Name available so far
 				allPlayerData = new RemotePlayerData(playerId, playerName);
 				mRemotePlayersByUuid.put(playerId, allPlayerData);
 				mRemotePlayersByName.put(playerName, allPlayerData);
@@ -344,5 +360,29 @@ public abstract class RemotePlayerManagerAbstraction {
 			updateLocalPlayer(oldPlayerData.asOffline(), isRemote);
 		}
 		return true;
+	}
+
+	protected void refreshRemotePlayer(UUID uuid) {
+		JsonObject data = new JsonObject();
+		data.addProperty("uuid", uuid.toString());
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
+				data,
+				REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
+	}
+
+	protected void refreshRemotePlayers() {
+		JsonObject data = new JsonObject();
+		data.addProperty("uuid", "*");
+		try {
+			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
+				data,
+				REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
 	}
 }
