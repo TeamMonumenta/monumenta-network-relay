@@ -123,7 +123,7 @@ public abstract class RemotePlayerAbstraction {
 		return mIsOnline;
 	}
 
-	public boolean isHidden() {
+	public @Nullable Boolean isHidden() {
 		return mIsHidden;
 	}
 
