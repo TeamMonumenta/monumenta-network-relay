@@ -44,6 +44,11 @@ dependencies {
     compileOnly("me.clip:placeholderapi:2.10.4")
     errorprone("com.google.errorprone:error_prone_core:2.29.1")
     errorprone("com.uber.nullaway:nullaway:0.10.18")
+    compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+    annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+
+    // temp from velocity
+    implementation("org.slf4j:jul-to-slf4j:1.7.36")
 }
 
 group = "com.playmonumenta"
