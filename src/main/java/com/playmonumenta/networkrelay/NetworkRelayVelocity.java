@@ -93,7 +93,7 @@ public class NetworkRelayVelocity {
 			mRabbitMQManager.setServerFinishedStarting();
 		}).delay(5, TimeUnit.SECONDS).schedule();
 
-		this.mServer.getCommandManager().register("whereisvelocity", new WhereIsCommandVelocity());
+		this.mServer.getCommandManager().register(this.mServer.getCommandManager().metaBuilder("whereisv").plugin(this).build(), new WhereIsCommandVelocity());
 	}
 
 	@Subscribe(order = PostOrder.NORMAL)

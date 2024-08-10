@@ -180,9 +180,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@Override
 	void refreshLocalPlayerWithDelay(UUID uuid) {
-		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
-			refreshPlayer(uuid, true);
-		}, 1L);
+		refreshPlayer(uuid, true);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -221,20 +219,17 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerQuitEvent(PlayerQuitEvent event) {
-		// Run this with a 1 tick delay since a player can switch shards, since players can take a bit to switch
-		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
-			Player player = event.getPlayer();
-			String playerShard = getPlayerShard(player.getUniqueId());
-			if (playerShard != null && !playerShard.equals(getServerId())) {
-				MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
-				refreshRemotePlayer(player.getUniqueId());
-				return;
-			}
-			RemotePlayerMinecraft localPlayer = fromLocal(player, false);
-			if (updateLocalPlayer(localPlayer, false, true)) {
-				localPlayer.broadcast();
-			}
-		}, 1L);
+		Player player = event.getPlayer();
+		RemotePlayerAbstraction remotePlayer = getRemotePlayerShard(getRemotePlayer(player.getUniqueId()));
+		if (remotePlayer != null && remotePlayer.mIsOnline && !remotePlayer.mServerId.equals(getServerId())) {
+			MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
+			refreshRemotePlayer(player.getUniqueId());
+			return;
+		}
+		RemotePlayerMinecraft localPlayer = fromLocal(player, false);
+		if (updateLocalPlayer(localPlayer, false, true)) {
+			localPlayer.broadcast();
+		}
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

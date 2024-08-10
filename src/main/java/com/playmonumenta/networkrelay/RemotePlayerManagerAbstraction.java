@@ -273,7 +273,6 @@ public abstract class RemotePlayerManagerAbstraction {
 			// This can happen if the remote shard was not notified the player logged in here in time.
 			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			this.refreshLocalPlayerWithDelay(player.mUuid);
-			return false;
 		}
 
 		return shouldBroadcast;
@@ -383,6 +382,18 @@ public abstract class RemotePlayerManagerAbstraction {
 				REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception ex) {
 			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
+	}
+
+	protected void shutdown() {
+		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.get(getServerId());
+		String serverType = getServerType();
+		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
+			RemotePlayerAbstraction oldPlayerData = allPlayerData.get(serverType);
+			if (oldPlayerData == null) {
+				continue;
+			}
+			updateLocalPlayer(oldPlayerData.asOffline(), false, true);
 		}
 	}
 }
