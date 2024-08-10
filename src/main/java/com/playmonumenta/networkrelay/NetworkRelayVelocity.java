@@ -56,6 +56,9 @@ public class NetworkRelayVelocity {
 		loadConfig();
 		saveConfig();
 
+		// init RabbitMQ single thread mimic - usb
+		NetworkRelayVelocityExecutor.getInstance();
+
 		// TODO: remove this when we migrate completely to slf4j
 		java.util.logging.Logger julLogger = java.util.logging.Logger.getLogger("MonumentaNetworkRelay");
 		julLogger.addHandler(new SLF4JBridgeHandler());
@@ -95,6 +98,7 @@ public class NetworkRelayVelocity {
 
 	@Subscribe(order = PostOrder.NORMAL)
 	public void onProxyShutdown(ProxyShutdownEvent event) {
+		NetworkRelayVelocityExecutor.getInstance().stop();
 		if (mRabbitMQManager != null) {
 			mRabbitMQManager.stop();
 		}

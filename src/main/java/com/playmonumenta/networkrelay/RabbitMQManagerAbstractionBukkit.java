@@ -60,4 +60,9 @@ public class RabbitMQManagerAbstractionBukkit implements RabbitMQManagerAbstract
 		DestOfflineEvent event = new DestOfflineEvent(dest);
 		Bukkit.getPluginManager().callEvent(event);
 	}
+
+	@Override
+	public void sendNetworkMessage(String destination, String channel, JsonObject data, com.rabbitmq.client.AMQP.BasicProperties properties) throws Exception {
+		RabbitMQManager.getInstance().sendNetworkMessage(destination, channel, data, properties);
+	}
 }

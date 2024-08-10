@@ -69,6 +69,11 @@ public class RabbitMQManagerAbstractionGeneric implements RabbitMQManagerAbstrac
 		mPlugin.callEvent(event);
 	}
 
+	@Override
+	public void sendNetworkMessage(String destination, String channel, JsonObject data, com.rabbitmq.client.AMQP.BasicProperties properties) throws Exception {
+		RabbitMQManager.getInstance().sendNetworkMessage(destination, channel, data, properties);
+	}
+
 	private TimerTask getNewHeartbeatRunnable() {
 		return new TimerTask() {
 			@Override

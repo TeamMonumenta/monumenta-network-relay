@@ -411,6 +411,7 @@ public class RabbitMQManager {
 		sendExpiringNetworkMessage(destination, channel, data, mDefaultTTL);
 	}
 
+	// ! - Should only be called from the abstraction! - usb
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data, AMQP.BasicProperties properties) throws Exception {
 		JsonObject root = new JsonObject();
 		root.add("data", data);
@@ -463,7 +464,7 @@ public class RabbitMQManager {
 		AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
 			.expiration(Long.toString(ttlSeconds * 1000))
 			.build();
-		sendNetworkMessage(destination, channel, data, properties);
+		mAbstraction.sendNetworkMessage(destination, channel, data, properties);
 	}
 
 	protected Set<String> getOnlineShardNames() {

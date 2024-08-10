@@ -60,4 +60,9 @@ public class RabbitMQManagerAbstractionBungee implements RabbitMQManagerAbstract
 		DestOfflineEventBungee event = new DestOfflineEventBungee(dest);
 		mPlugin.getProxy().getPluginManager().callEvent(event);
 	}
+
+	@Override
+	public void sendNetworkMessage(String destination, String channel, JsonObject data, com.rabbitmq.client.AMQP.BasicProperties properties) throws Exception {
+		RabbitMQManager.getInstance().sendNetworkMessage(destination, channel, data, properties);
+	}
 }

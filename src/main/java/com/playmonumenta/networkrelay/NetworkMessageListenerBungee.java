@@ -177,4 +177,3 @@ public class NetworkMessageListenerBungee implements Listener {
 		ProxyServer.getInstance().getConfig().removeServerNamed(name); // Deprecation note: This whole class is deprecated to discourage use, but no other options exist
 	}
 }
-

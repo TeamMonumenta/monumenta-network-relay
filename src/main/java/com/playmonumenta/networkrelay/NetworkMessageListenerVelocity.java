@@ -1,18 +1,17 @@
 package com.playmonumenta.networkrelay;
 
-import com.google.common.base.Optional;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.playmonumenta.networkrelay.util.MMLog;
+import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
-import io.netty.channel.unix.DomainSocketAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -40,13 +39,12 @@ public class NetworkMessageListenerVelocity {
 		mAutoUnregisterInactiveServersFromBungee = autoUnregisterInactiveServersFromBungee;
 	}
 
-	@Subscribe(order = PostOrder.NORMAL)
-	public void gatherHeartbeatData(GatherHeartbeatDataEventVelocity event) {
+	@Subscribe
+	public EventTask gatherHeartbeatData(GatherHeartbeatDataEventVelocity event) {
 		JsonObject data = new JsonObject();
 		data.addProperty("server-type", "proxy");
-		GatherHeartbeatDataEventVelocity.GatherHeartbeatDataResult result = event.getResult();
-		result.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
-		event.setResult(result);
+		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
+		return null;
 	}
 
 	@Subscribe(order = PostOrder.FIRST)
