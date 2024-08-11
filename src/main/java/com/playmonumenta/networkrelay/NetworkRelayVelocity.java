@@ -90,7 +90,9 @@ public class NetworkRelayVelocity {
 		RemotePlayerAPI.init(RemotePlayerManagerVelocity.getInstance());
 
 		this.mServer.getScheduler().buildTask(this, () -> {
-			mRabbitMQManager.setServerFinishedStarting();
+			if (mRabbitMQManager != null) {
+				mRabbitMQManager.setServerFinishedStarting();
+			}
 		}).delay(5, TimeUnit.SECONDS).schedule();
 
 		this.mServer.getCommandManager().register(this.mServer.getCommandManager().metaBuilder("whereisv").plugin(this).build(), new WhereIsCommandVelocity());

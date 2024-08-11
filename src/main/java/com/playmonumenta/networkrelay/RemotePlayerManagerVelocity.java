@@ -202,7 +202,7 @@ public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstra
 
 	// This is when the player disconnects from the proxy
 	@Subscribe(order = PostOrder.LAST)
-	public EventTask playerQuitEvent(DisconnectEvent event) {
+	public @Nullable EventTask playerQuitEvent(DisconnectEvent event) {
 		Player player = event.getPlayer();
 		String playerProxy = getPlayerProxy(player.getUniqueId());
 		if (playerProxy != null && !playerProxy.equals(getServerId())) {
@@ -219,7 +219,7 @@ public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstra
 	}
 
 	@Subscribe(order = PostOrder.LAST)
-	public EventTask networkRelayMessageEventGeneric(NetworkRelayMessageEventGeneric event) {
+	public @Nullable EventTask networkRelayMessageEventGeneric(NetworkRelayMessageEventGeneric event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_UPDATE_CHANNEL: {
 				@Nullable JsonObject data = event.getData();

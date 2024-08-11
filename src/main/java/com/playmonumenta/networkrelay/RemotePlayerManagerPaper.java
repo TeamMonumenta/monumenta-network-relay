@@ -2,10 +2,8 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -80,7 +78,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			player.getUniqueId(),
 			player.getName(),
 			isOnline,
-			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
+			internalPlayerHiddenTest(player),
 			player.getWorld().getName()
 		);
 	}

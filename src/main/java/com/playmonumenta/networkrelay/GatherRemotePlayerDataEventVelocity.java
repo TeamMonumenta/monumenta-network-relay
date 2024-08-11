@@ -8,8 +8,15 @@ import java.util.Map;
 @AwaitingEvent
 public class GatherRemotePlayerDataEventVelocity {
 	private final Map<String, JsonObject> mPluginData = new HashMap<>();
+	/**
+	 * Player the plugin data is associated with
+	 */
 	public final RemotePlayerAbstraction mRemotePlayer;
 
+	/**
+	 * GatherPluginDataEventVelocity
+	 * @param remotePlayer - remotePlayer
+	 */
 	public GatherRemotePlayerDataEventVelocity(RemotePlayerAbstraction remotePlayer) {
 		mRemotePlayer = remotePlayer;
 	}
@@ -35,7 +42,7 @@ public class GatherRemotePlayerDataEventVelocity {
 	/**
 	 * Sets the plugin data that should be retrievable for this shard
 	 *
-	 * @param pluginId A unique string key identifying t			his plugin.
+	 * @param pluginId A unique string key identifying this plugin.
 	 * @param data     The data to save.
 	 */
 	public void setPluginData(String pluginId, JsonObject data) {
@@ -45,6 +52,7 @@ public class GatherRemotePlayerDataEventVelocity {
 
 	/**
 	 * Gets the already registered plugin data
+	 * @return The plugin data associated with this player
 	 */
 	public Map<String, JsonObject> getPluginData() {
 		return mPluginData;

@@ -3,7 +3,6 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.playmonumenta.networkrelay.util.MMLog;
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
@@ -68,7 +67,7 @@ public class NetworkMessageListenerVelocity {
 		if (serverTypeJson != null) {
 			String serverTypeString = serverTypeJson.getAsString();
 			if (serverTypeString != null) {
-				if (serverTypeString.equals("bungee")) {
+				if ("bungee".equals(serverTypeString)) {
 					warnLegacyServerType = true;
 				}
 				NetworkRelayAPI.ServerType commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);
@@ -183,7 +182,7 @@ public class NetworkMessageListenerVelocity {
 		}
 
 		// should be fine but who cares
-		mLogger.debug("Removing offline server '" + name + "' from proxy's list of servers");
+		mLogger.info("Removing offline server '" + name + "' from proxy's list of servers");
 
 		for (Player p : server.getPlayersConnected()) {
 			p.disconnect(Component.text("The server '" + name + "' you were connected to stopped or was otherwise disconnected from bungeecord", NamedTextColor.RED));
@@ -198,11 +197,15 @@ public class NetworkMessageListenerVelocity {
 		try {
 			uri = new URI(hostline);
 		} catch (URISyntaxException ex) {
+			// ignored
+			uri = null;
 		}
 
-		// if (uri != null && "unix".equals(uri.getScheme())) {
-		// 	return new DomainSocketAddress(uri.getPath());
-		// }
+		/*
+		if (uri != null && "unix".equals(uri.getScheme())) {
+			return new DomainSocketAddress(uri.getPath());
+		}
+		*/
 
 		if (uri == null || uri.getHost() == null) {
 			try {
@@ -216,6 +219,6 @@ public class NetworkMessageListenerVelocity {
 			throw new IllegalArgumentException("Invalid host/address: " + hostline);
 		}
 
-		return new InetSocketAddress(uri.getHost(), (uri.getPort()) == -1 ? 25565 : uri.getPort());
+		return new InetSocketAddress(uri.getHost(), uri.getPort() == -1 ? 25565 : uri.getPort());
 	}
 }

@@ -27,9 +27,9 @@ public class NetworkRelayAPI {
 		public static ServerType fromString(@Nullable String id) {
 			// TODO: remove this in the future - usb
 			if ("bungee".equals(id)) {
-				return ServerType.PROXY;
+				return PROXY;
 			}
-			for (ServerType serverType : ServerType.values()) {
+			for (ServerType serverType : values()) {
 				if (serverType.toString().equals(id)) {
 					return serverType;
 				}

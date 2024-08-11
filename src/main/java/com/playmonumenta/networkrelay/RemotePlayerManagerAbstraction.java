@@ -387,6 +387,9 @@ public abstract class RemotePlayerManagerAbstraction {
 
 	protected void shutdown() {
 		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.get(getServerId());
+		if (remotePlayers == null) {
+			return;
+		}
 		String serverType = getServerType();
 		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
 			RemotePlayerAbstraction oldPlayerData = allPlayerData.get(serverType);

@@ -33,9 +33,11 @@ public class RabbitMQManagerAbstractionVelocity implements RabbitMQManagerAbstra
 	@Override
 	public void stopHeartbeatRunnable() {
 		// ! Stopped in ProxyShutdownEvent
-		// if (mHeartbeatRunnable != null) {
-		// 	mHeartbeatRunnable.cancel(true);
-		// }
+		/*
+		if (mHeartbeatRunnable != null) {
+			mHeartbeatRunnable.cancel(true);
+		}
+		*/
 	}
 
 	@Override

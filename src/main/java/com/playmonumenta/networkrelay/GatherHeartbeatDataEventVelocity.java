@@ -18,6 +18,7 @@ public class GatherHeartbeatDataEventVelocity {
 
 	/**
 	 * Gets the plugin data that has been set by other plugins
+	 * @return The plugin data with this shard.
 	 */
 	public JsonObject getPluginData() {
 		return mPluginData;
