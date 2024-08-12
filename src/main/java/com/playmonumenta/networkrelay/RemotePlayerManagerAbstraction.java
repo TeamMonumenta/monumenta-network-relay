@@ -171,19 +171,16 @@ public abstract class RemotePlayerManagerAbstraction {
 
 		updateLocalPlayer(player, true, false);
 	}
-
 	protected void remotePlayerRefresh(JsonObject data) {
 		if (data != null && data.has("uuid")) {
 			String uuidString = data.get("uuid").getAsString();
 			if (!uuidString.equals("*")) {
 				UUID uuid = UUID.fromString(uuidString);
 				refreshLocalPlayer(uuid, true);
-			} else {
-				refreshLocalPlayers(true);
+				return;
 			}
-		} else {
-			refreshLocalPlayers(true);
 		}
+		onRefreshRequest();
 	}
 
 	abstract String getServerType();
@@ -210,6 +207,8 @@ public abstract class RemotePlayerManagerAbstraction {
 	abstract void callPlayerUpdatedEvent(RemotePlayerAbstraction player);
 
 	abstract Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player);
+
+	abstract void onRefreshRequest();
 
 	/**
 	 * Check if this remote player is on our shard
@@ -336,6 +335,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 		MMLog.fine(() -> "Registering server ID " + serverId);
 		mRemotePlayersByServer.put(serverId, new ConcurrentSkipListMap<>());
+		refreshRemotePlayers(serverId);
 		return true;
 	}
 
@@ -378,6 +378,22 @@ public abstract class RemotePlayerManagerAbstraction {
 		data.addProperty("uuid", "*");
 		try {
 			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
+				data,
+				REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
+	}
+
+	/**
+	 * Request a refresh from a specific shard
+	 * @param serverId - shard to ask
+	 */
+	protected void refreshRemotePlayers(String serverId) {
+		JsonObject data = new JsonObject();
+		data.addProperty("uuid", "*");
+		try {
+			NetworkRelayAPI.sendExpiringMessage(serverId, REMOTE_PLAYER_REFRESH_CHANNEL,
 				data,
 				REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception ex) {

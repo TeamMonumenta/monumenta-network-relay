@@ -11,23 +11,25 @@ import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.ServerConnection;
+import com.velocitypowered.api.scheduler.ScheduledTask;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstraction {
-	private static @MonotonicNonNull RemotePlayerManagerVelocity INSTANCE = null;
+	private static final RemotePlayerManagerVelocity INSTANCE = new RemotePlayerManagerVelocity();
 	private final ProxyServer mServer;
 
 	public RemotePlayerManagerVelocity() {
-
 		this.mServer = NetworkRelayVelocity.getInstance().mServer;
-		INSTANCE = this;
+		String lShard = getServerId();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
+				if (shard.equals(lShard)) {
+					continue;
+				}
 				MMLog.info(() -> "Registering shard " + shard);
 				registerServer(shard);
 			}
@@ -35,13 +37,10 @@ public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstra
 			MMLog.severe(() -> "Failed to get remote shard names");
 			throw new RuntimeException("Failed to get remote shard names", ex);
 		}
-		refreshRemotePlayers();
+		onRefreshRequest();
 	}
 
 	static RemotePlayerManagerVelocity getInstance() {
-		if (INSTANCE == null) {
-			INSTANCE = new RemotePlayerManagerVelocity();
-		}
 		return INSTANCE;
 	}
 
@@ -89,6 +88,28 @@ public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstra
 		}
 		refreshRemotePlayer(playerUuid);
 		return false;
+	}
+
+	private long mNextRefreshTime = 0L;
+	private @Nullable ScheduledTask mRefreshTimer = null;
+
+	@Override
+	public void onRefreshRequest() {
+		long now = System.currentTimeMillis();
+		if (now >= mNextRefreshTime) {
+			mNextRefreshTime = now + 1000;
+			if (mRefreshTimer != null) {
+				mRefreshTimer.cancel();
+			}
+			mRefreshTimer = null;
+			refreshLocalPlayers(true);
+		} else {
+			if (mRefreshTimer != null) {
+				return;
+			}
+
+			mRefreshTimer = mServer.getScheduler().buildTask(NetworkRelayVelocity.getInstance(), () -> refreshLocalPlayers(true)).delay(1, TimeUnit.SECONDS).schedule();
+		}
 	}
 
 	@Override
@@ -179,6 +200,9 @@ public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstra
 	@Subscribe(order = PostOrder.EARLY)
 	public void destOfflineEvent(DestOnlineEventGeneric event) {
 		String remoteShardName = event.getDest();
+		if (getServerId().equals(remoteShardName)) {
+			return;
+		}
 		unregisterServer(remoteShardName);
 	}
 

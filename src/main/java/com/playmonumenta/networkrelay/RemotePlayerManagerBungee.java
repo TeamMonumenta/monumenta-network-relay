@@ -5,24 +5,28 @@ import com.playmonumenta.networkrelay.util.MMLog;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
 import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction implements Listener {
-	private static @MonotonicNonNull RemotePlayerManagerBungee INSTANCE = null;
+	private static final RemotePlayerManagerBungee INSTANCE = new RemotePlayerManagerBungee();
 
 	private RemotePlayerManagerBungee() {
-		INSTANCE = this;
+		String lShard = getServerId();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
+				if (shard.equals(lShard)) {
+					continue;
+				}
 				MMLog.fine(() -> "Registering shard " + shard);
 				registerServer(shard);
 			}
@@ -30,14 +34,10 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 			MMLog.severe(() -> "Failed to get remote shard names");
 			throw new RuntimeException("Failed to get remote shard names", ex);
 		}
-
-		refreshRemotePlayers();
+		onRefreshRequest();
 	}
 
 	static RemotePlayerManagerBungee getInstance() {
-		if (INSTANCE == null) {
-			INSTANCE = new RemotePlayerManagerBungee();
-		}
 		return INSTANCE;
 	}
 
@@ -84,6 +84,28 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		}
 		refreshRemotePlayer(playerUuid);
 		return false;
+	}
+
+	private long mNextRefreshTime = 0L;
+	private @Nullable ScheduledTask mRefreshTimer = null;
+
+	@Override
+	public void onRefreshRequest() {
+		long now = System.currentTimeMillis();
+		if (now >= mNextRefreshTime) {
+			mNextRefreshTime = now + 1000;
+			if (mRefreshTimer != null) {
+				mRefreshTimer.cancel();
+			}
+			mRefreshTimer = null;
+			refreshLocalPlayers(true);
+		} else {
+			if (mRefreshTimer != null) {
+				return;
+			}
+
+			mRefreshTimer = ProxyServer.getInstance().getScheduler().schedule(NetworkRelayBungee.getInstance(), () -> refreshLocalPlayers(true), 1, TimeUnit.SECONDS);
+		}
 	}
 
 	@Override
@@ -169,6 +191,9 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	@EventHandler(priority = EventPriority.LOW)
 	public void destOfflineEvent(DestOfflineEventBungee event) {
 		String remoteShardName = event.getDest();
+		if (getServerId().equals(remoteShardName)) {
+			return;
+		}
 		unregisterServer(remoteShardName);
 	}
 
