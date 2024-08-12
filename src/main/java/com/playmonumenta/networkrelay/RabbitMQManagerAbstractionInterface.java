@@ -19,5 +19,7 @@ public interface RabbitMQManagerAbstractionInterface {
 
 	void sendDestOfflineEvent(String dest);
 
-	void sendNetworkMessage(String destination, String channel, JsonObject data, com.rabbitmq.client.AMQP.BasicProperties properties) throws Exception;
+	default void sendNetworkMessage(String destination, String channel, JsonObject data, com.rabbitmq.client.AMQP.BasicProperties properties) throws Exception {
+		RabbitMQManager.getInstance().sendNetworkMessage(destination, channel, data, properties);
+	}
 }
