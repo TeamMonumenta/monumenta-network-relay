@@ -228,6 +228,10 @@ public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstra
 	@Subscribe(order = PostOrder.LAST)
 	public @Nullable EventTask playerQuitEvent(DisconnectEvent event) {
 		Player player = event.getPlayer();
+		// The DisconnectEvent can fire BEFORE PostLoginEvent
+		if (!isPlayerOnline(player.getUniqueId())) {
+			return null;
+		}
 		String playerProxy = getPlayerProxy(player.getUniqueId());
 		if (playerProxy != null && !playerProxy.equals(getServerId())) {
 			MMLog.warning(() -> "Refusing to unregister player " + player.getUsername() + ": they are on another proxy");
