@@ -15,7 +15,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.Nullable;
@@ -39,58 +38,58 @@ public class NetworkMessageListenerVelocity {
 	}
 
 	@Subscribe
-	public EventTask gatherHeartbeatData(GatherHeartbeatDataEventVelocity event) {
+	public void gatherHeartbeatData(GatherHeartbeatDataEventVelocity event) {
 		JsonObject data = new JsonObject();
 		data.addProperty("server-type", "proxy");
 		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
-		return null;
 	}
 
 	@Subscribe(order = PostOrder.FIRST)
-	public void networkRelayMessageEvent(NetworkRelayMessageEventGeneric event) {
+	public EventTask networkRelayMessageEvent(NetworkRelayMessageEventGeneric event) {
 		if (!mRunReceivedCommands) {
-			return;
+			return null;
 		}
 
 		if (!event.getChannel().equals(NetworkRelayAPI.COMMAND_CHANNEL)) {
-			return;
+			return null;
 		}
 
-		JsonObject data = event.getData();
-		if (!data.has("command") || !data.get("command").isJsonPrimitive() || !data.getAsJsonPrimitive("command").isString()) {
-			mLogger.warn("Got invalid command message with no actual command");
-			return;
-		}
+		return EventTask.async(() -> {
+			JsonObject data = event.getData();
+			if (!data.has("command") || !data.get("command").isJsonPrimitive() || !data.getAsJsonPrimitive("command").isString()) {
+				mLogger.warn("Got invalid command message with no actual command");
+				return;
+			}
 
-		boolean warnLegacyServerType = false;
-		JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
-		if (serverTypeJson != null) {
-			String serverTypeString = serverTypeJson.getAsString();
-			if (serverTypeString != null) {
-				if ("bungee".equals(serverTypeString)) {
-					warnLegacyServerType = true;
-				}
-				NetworkRelayAPI.ServerType commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);
-				if (!ACCEPTED_SERVER_TYPES.contains(commandType)) {
-					return;
+			boolean warnLegacyServerType = false;
+			JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
+			if (serverTypeJson != null) {
+				String serverTypeString = serverTypeJson.getAsString();
+				if (serverTypeString != null) {
+					if ("bungee".equals(serverTypeString)) {
+						warnLegacyServerType = true;
+					}
+					NetworkRelayAPI.ServerType commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);
+					if (!ACCEPTED_SERVER_TYPES.contains(commandType)) {
+						return;
+					}
 				}
 			}
-		}
 
-		final String command = data.get("command").getAsString();
-		if (warnLegacyServerType) {
-			mLogger.warn("Executing command'" + command + "' from source '" + event.getSource() + "'; legacy server type 'bungee' was requested");
-		} else {
-			mLogger.info("Executing command'" + command + "' from source '" + event.getSource() + "'");
-		}
+			final String command = data.get("command").getAsString();
+			if (warnLegacyServerType) {
+				mLogger.warn("Executing command'" + command + "' from source '" + event.getSource() + "'; legacy server type 'bungee' was requested");
+			} else {
+				mLogger.info("Executing command'" + command + "' from source '" + event.getSource() + "'");
+			}
 
-		// TODO: we really shouldn't be using getConsoleCommandSource, fix this in the future - usb
-		try {
-			mServer.getCommandManager().executeAsync(mServer.getConsoleCommandSource(), data.get("command").getAsString()).get(5, TimeUnit.SECONDS);
-		} catch (Exception ex) {
-			mLogger.error("Timeout for 5 seconds when trying to execute a command: " + data.get("command").getAsString());
-			ex.printStackTrace();
-		}
+			// TODO: we really shouldn't be using getConsoleCommandSource, fix this in the future - usb
+			try {
+				mServer.getCommandManager().executeAsync(mServer.getConsoleCommandSource(), data.get("command").getAsString());
+			} catch (Exception ex) {
+				mLogger.error("Error occured when trying to execute" + data.get("command").getAsString(), ex);
+			}
+		});
 	}
 
 	@Subscribe(order = PostOrder.NORMAL)

@@ -111,7 +111,10 @@ public class NetworkRelayVelocity {
 		try {
 			// attempt to load from default
 			mBaseConfig = mLoader.load(); // Load from file
-			mConfig = mBaseConfig.get(ConfigurateVelocityConfig.class); // Populate object
+			ConfigurateVelocityConfig temp = mBaseConfig.get(ConfigurateVelocityConfig.class);
+			if (temp != null) {
+				mConfig = temp;
+			}
 		} catch (ConfigurateException ex) {
 			mLogger.warn("Could not load config.yaml", ex);
 		}
