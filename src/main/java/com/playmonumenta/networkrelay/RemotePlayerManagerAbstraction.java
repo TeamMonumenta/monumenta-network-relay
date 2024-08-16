@@ -171,6 +171,7 @@ public abstract class RemotePlayerManagerAbstraction {
 
 		updateLocalPlayer(player, true, false);
 	}
+
 	protected void remotePlayerRefresh(JsonObject data) {
 		if (data != null && data.has("uuid")) {
 			String uuidString = data.get("uuid").getAsString();

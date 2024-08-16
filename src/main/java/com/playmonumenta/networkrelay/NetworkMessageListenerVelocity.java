@@ -45,7 +45,7 @@ public class NetworkMessageListenerVelocity {
 	}
 
 	@Subscribe(order = PostOrder.FIRST)
-	public EventTask networkRelayMessageEvent(NetworkRelayMessageEventGeneric event) {
+	public @Nullable EventTask networkRelayMessageEvent(NetworkRelayMessageEventGeneric event) {
 		if (!mRunReceivedCommands) {
 			return null;
 		}
