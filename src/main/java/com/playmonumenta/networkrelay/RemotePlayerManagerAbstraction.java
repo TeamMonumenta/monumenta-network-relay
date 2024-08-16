@@ -178,12 +178,10 @@ public abstract class RemotePlayerManagerAbstraction {
 			if (!uuidString.equals("*")) {
 				UUID uuid = UUID.fromString(uuidString);
 				refreshLocalPlayer(uuid, true);
-			} else {
-				refreshLocalPlayers(true);
+				return;
 			}
-		} else {
-			refreshLocalPlayers(true);
 		}
+		onRefreshRequest();
 	}
 
 	abstract String getServerType();
@@ -210,6 +208,8 @@ public abstract class RemotePlayerManagerAbstraction {
 	abstract void callPlayerUpdatedEvent(RemotePlayerAbstraction player);
 
 	abstract Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player);
+
+	abstract void onRefreshRequest();
 
 	/**
 	 * Check if this remote player is on our shard
@@ -273,7 +273,6 @@ public abstract class RemotePlayerManagerAbstraction {
 			// This can happen if the remote shard was not notified the player logged in here in time.
 			MMLog.warning(() -> "Detected race condition, triggering refresh on " + player.mName + " remote=" + isRemote + " serverType=" + serverType);
 			this.refreshLocalPlayerWithDelay(player.mUuid);
-			return false;
 		}
 
 		return shouldBroadcast;
@@ -337,6 +336,7 @@ public abstract class RemotePlayerManagerAbstraction {
 		}
 		MMLog.fine(() -> "Registering server ID " + serverId);
 		mRemotePlayersByServer.put(serverId, new ConcurrentSkipListMap<>());
+		refreshRemotePlayers(serverId);
 		return true;
 	}
 
@@ -383,6 +383,37 @@ public abstract class RemotePlayerManagerAbstraction {
 				REMOTE_PLAYER_MESSAGE_TTL);
 		} catch (Exception ex) {
 			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
+	}
+
+	/**
+	 * Request a refresh from a specific shard
+	 * @param serverId - shard to ask
+	 */
+	protected void refreshRemotePlayers(String serverId) {
+		JsonObject data = new JsonObject();
+		data.addProperty("uuid", "*");
+		try {
+			NetworkRelayAPI.sendExpiringMessage(serverId, REMOTE_PLAYER_REFRESH_CHANNEL,
+				data,
+				REMOTE_PLAYER_MESSAGE_TTL);
+		} catch (Exception ex) {
+			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
+		}
+	}
+
+	protected void shutdown() {
+		ConcurrentMap<UUID, RemotePlayerData> remotePlayers = mRemotePlayersByServer.get(getServerId());
+		if (remotePlayers == null) {
+			return;
+		}
+		String serverType = getServerType();
+		for (RemotePlayerData allPlayerData : remotePlayers.values()) {
+			RemotePlayerAbstraction oldPlayerData = allPlayerData.get(serverType);
+			if (oldPlayerData == null) {
+				continue;
+			}
+			updateLocalPlayer(oldPlayerData.asOffline(), false, true);
 		}
 	}
 }

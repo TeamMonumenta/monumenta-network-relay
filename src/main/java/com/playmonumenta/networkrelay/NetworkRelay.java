@@ -75,6 +75,7 @@ public class NetworkRelay extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
+		RemotePlayerManagerPaper.getInstance().shutdown();
 		if (mRabbitMQManager != null) {
 			mRabbitMQManager.stop();
 		}

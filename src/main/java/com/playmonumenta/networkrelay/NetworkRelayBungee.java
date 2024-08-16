@@ -10,11 +10,14 @@ import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelayBungee extends Plugin {
+	private static @Nullable NetworkRelayBungee INSTANCE = null;
 	private @Nullable RabbitMQManager mRabbitMQManager = null;
 	private @Nullable CustomLogger mLogger = null;
 
 	@Override
 	public void onEnable() {
+		INSTANCE = this;
+
 		File configFile = new File(getDataFolder(), "config.yml");
 
 		BungeeConfig config =
@@ -71,5 +74,12 @@ public class NetworkRelayBungee extends Plugin {
 	public void setLogLevel(Level level) {
 		super.getLogger().info("Changing log level to: " + level.toString());
 		getLogger().setLevel(level);
+	}
+
+	public static NetworkRelayBungee getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("NetworkRelay has not been initialized yet.");
+		}
+		return INSTANCE;
 	}
 }

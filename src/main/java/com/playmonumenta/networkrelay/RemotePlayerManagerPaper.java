@@ -2,10 +2,8 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,14 +15,13 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.metadata.MetadataValue;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
+import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
 public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstraction implements Listener {
-	private static @MonotonicNonNull RemotePlayerManagerPaper INSTANCE = null;
+	private static final RemotePlayerManagerPaper INSTANCE = new RemotePlayerManagerPaper();
 
 	private RemotePlayerManagerPaper() {
-		INSTANCE = this;
 		String lShard = getServerId();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
@@ -36,22 +33,12 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 			}
 		} catch (Exception ex) {
 			MMLog.severe(() -> "Failed to get remote shard names");
-			throw new RuntimeException("Failed to get remote shard names");
+			throw new RuntimeException("Failed to get remote shard names", ex);
 		}
-
-		try {
-			NetworkRelayAPI.sendExpiringBroadcastMessage(REMOTE_PLAYER_REFRESH_CHANNEL,
-				new JsonObject(),
-				REMOTE_PLAYER_MESSAGE_TTL);
-		} catch (Exception ex) {
-			MMLog.severe(() -> "Failed to broadcast to channel " + REMOTE_PLAYER_REFRESH_CHANNEL);
-		}
+		onRefreshRequest();
 	}
 
 	static RemotePlayerManagerPaper getInstance() {
-		if (INSTANCE == null) {
-			INSTANCE = new RemotePlayerManagerPaper();
-		}
 		return INSTANCE;
 	}
 
@@ -62,7 +49,8 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@Override
 	public String getServerId() {
-		@Nullable String shardName = null;
+		@Nullable
+		String shardName = null;
 		try {
 			shardName = NetworkRelayAPI.getShardName();
 		} catch (Exception e) {
@@ -75,14 +63,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	}
 
 	static RemotePlayerMinecraft fromLocal(Player player, boolean isOnline) {
-		return new RemotePlayerMinecraft(
-			INSTANCE.getServerId(),
-			player.getUniqueId(),
-			player.getName(),
-			isOnline,
-			RemotePlayerManagerPaper.internalPlayerHiddenTest(player),
-			player.getWorld().getName()
-		);
+		return new RemotePlayerMinecraft(INSTANCE.getServerId(), player.getUniqueId(), player.getName(), isOnline, internalPlayerHiddenTest(player), player.getWorld().getName());
 	}
 
 	static boolean internalPlayerHiddenTest(Player player) {
@@ -110,6 +91,28 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 		}
 		refreshRemotePlayer(playerUuid);
 		return false;
+	}
+
+	private long mNextRefreshTime = 0L;
+	private @Nullable BukkitTask mRefreshTimer = null;
+
+	@Override
+	public void onRefreshRequest() {
+		long now = System.currentTimeMillis();
+		if (now >= mNextRefreshTime) {
+			mNextRefreshTime = now + 1000;
+			if (mRefreshTimer != null) {
+				mRefreshTimer.cancel();
+			}
+			mRefreshTimer = null;
+			refreshLocalPlayers(true);
+		} else {
+			if (mRefreshTimer != null) {
+				return;
+			}
+
+			mRefreshTimer = Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> refreshLocalPlayers(true), 20L);
+		}
 	}
 
 	@Override
@@ -180,9 +183,7 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@Override
 	void refreshLocalPlayerWithDelay(UUID uuid) {
-		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
-			refreshPlayer(uuid, true);
-		}, 1L);
+		refreshPlayer(uuid, true);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -197,6 +198,9 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
 	public void destOfflineEvent(DestOfflineEvent event) {
 		String remoteShardName = event.getDest();
+		if (getServerId().equals(remoteShardName)) {
+			return;
+		}
 		unregisterServer(remoteShardName);
 	}
 
@@ -221,20 +225,17 @@ public final class RemotePlayerManagerPaper extends RemotePlayerManagerAbstracti
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void playerQuitEvent(PlayerQuitEvent event) {
-		// Run this with a 1 tick delay since a player can switch shards, since players can take a bit to switch
-		Bukkit.getScheduler().runTaskLater(NetworkRelay.getInstance(), () -> {
-			Player player = event.getPlayer();
-			String playerShard = getPlayerShard(player.getUniqueId());
-			if (playerShard != null && !playerShard.equals(getServerId())) {
-				MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
-				refreshRemotePlayer(player.getUniqueId());
-				return;
-			}
-			RemotePlayerMinecraft localPlayer = fromLocal(player, false);
-			if (updateLocalPlayer(localPlayer, false, true)) {
-				localPlayer.broadcast();
-			}
-		}, 1L);
+		Player player = event.getPlayer();
+		RemotePlayerAbstraction remotePlayer = getRemotePlayerShard(getRemotePlayer(player.getUniqueId()));
+		if (remotePlayer != null && remotePlayer.mIsOnline && !remotePlayer.mServerId.equals(getServerId())) {
+			MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another shard");
+			refreshRemotePlayer(player.getUniqueId());
+			return;
+		}
+		RemotePlayerMinecraft localPlayer = fromLocal(player, false);
+		if (updateLocalPlayer(localPlayer, false, true)) {
+			localPlayer.broadcast();
+		}
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

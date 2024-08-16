@@ -2,32 +2,35 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonObject;
 import com.playmonumenta.networkrelay.util.MMLog;
+import com.velocitypowered.api.event.EventTask;
+import com.velocitypowered.api.event.PostOrder;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.DisconnectEvent;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
+import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.ServerConnection;
+import com.velocitypowered.api.scheduler.ScheduledTask;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.event.PlayerDisconnectEvent;
-import net.md_5.bungee.api.event.PostLoginEvent;
-import net.md_5.bungee.api.event.ServerSwitchEvent;
-import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.scheduler.ScheduledTask;
-import net.md_5.bungee.event.EventHandler;
-import net.md_5.bungee.event.EventPriority;
 import org.jetbrains.annotations.Nullable;
 
-public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstraction implements Listener {
-	private static final RemotePlayerManagerBungee INSTANCE = new RemotePlayerManagerBungee();
+public final class RemotePlayerManagerVelocity extends RemotePlayerManagerAbstraction {
+	private static final RemotePlayerManagerVelocity INSTANCE = new RemotePlayerManagerVelocity();
+	private final ProxyServer mServer;
 
-	private RemotePlayerManagerBungee() {
+	public RemotePlayerManagerVelocity() {
+		this.mServer = NetworkRelayVelocity.getInstance().mServer;
 		String lShard = getServerId();
 		try {
 			for (String shard : NetworkRelayAPI.getOnlineShardNames()) {
 				if (shard.equals(lShard)) {
 					continue;
 				}
-				MMLog.fine(() -> "Registering shard " + shard);
+				MMLog.info(() -> "Registering shard " + shard);
 				registerServer(shard);
 			}
 		} catch (Exception ex) {
@@ -37,7 +40,7 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		onRefreshRequest();
 	}
 
-	static RemotePlayerManagerBungee getInstance() {
+	static RemotePlayerManagerVelocity getInstance() {
 		return INSTANCE;
 	}
 
@@ -60,17 +63,18 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		return shardName;
 	}
 
-	static RemotePlayerProxy fromLocal(ProxiedPlayer player, boolean isOnline) {
+	static RemotePlayerProxy fromLocal(Player player, boolean isOnline) {
 		// player.getServer() has no information prior to the ServerSwitchEvent - we populate the player's information in the PostLoginEvent
-		@Nullable String targetShard = player.getServer() != null ? player.getServer().getInfo().getName() : "";
+		ServerConnection server = player.getCurrentServer().orElse(null);
+		@Nullable String targetShard = server != null ? server.getServerInfo().getName() : "";
 		return fromLocal(player, isOnline, targetShard);
 	}
 
-	static RemotePlayerProxy fromLocal(ProxiedPlayer player, boolean isOnline, String targetShard) {
+	static RemotePlayerProxy fromLocal(Player player, boolean isOnline, String targetShard) {
 		return new RemotePlayerProxy(
 			INSTANCE.getServerId(),
 			player.getUniqueId(),
-			player.getName(),
+			player.getUsername(),
 			isOnline,
 			null,
 			targetShard
@@ -104,21 +108,21 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 				return;
 			}
 
-			mRefreshTimer = ProxyServer.getInstance().getScheduler().schedule(NetworkRelayBungee.getInstance(), () -> refreshLocalPlayers(true), 1, TimeUnit.SECONDS);
+			mRefreshTimer = mServer.getScheduler().buildTask(NetworkRelayVelocity.getInstance(), () -> refreshLocalPlayers(true)).delay(1, TimeUnit.SECONDS).schedule();
 		}
 	}
 
 	@Override
 	void refreshLocalPlayers(boolean forceBroadcast) {
-		for (ProxiedPlayer player : ProxyServer.getInstance().getPlayers()) {
+		for (Player player : mServer.getAllPlayers()) {
 			refreshLocalPlayer(player, forceBroadcast);
 		}
 	}
 
 	@Override
 	boolean refreshLocalPlayer(UUID uuid, boolean forceBroadcast) {
-		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(uuid);
-		if (localPlayer != null && localPlayer.isConnected()) {
+		@Nullable Player localPlayer = mServer.getPlayer(uuid).orElse(null);
+		if (localPlayer != null && localPlayer.isActive()) {
 			refreshLocalPlayer(localPlayer, forceBroadcast);
 			return true;
 		}
@@ -126,8 +130,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 	}
 
 	// Run this on local players whenever their information is out of date
-	void refreshLocalPlayer(ProxiedPlayer player, boolean forceBroadcast) {
-		MMLog.fine(() -> "Refreshing local player " + player.getName());
+	void refreshLocalPlayer(Player player, boolean forceBroadcast) {
+		// MMLog.fine(() -> "Refreshing local player " + player.getName());
 		RemotePlayerProxy localPlayer = fromLocal(player, true);
 
 		// update local player with data
@@ -138,26 +142,31 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 
 	@Override
 	void callPlayerLoadEvent(RemotePlayerAbstraction player) {
-		RemotePlayerLoadedEventBungee remotePE = new RemotePlayerLoadedEventBungee(player);
-		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+		RemotePlayerLoadedEventGeneric remotePE = new RemotePlayerLoadedEventGeneric(player);
+		mServer.getEventManager().fireAndForget(remotePE);
 	}
 
 	@Override
 	void callPlayerUnloadEvent(RemotePlayerAbstraction player) {
-		RemotePlayerUnloadedEventBungee remotePE = new RemotePlayerUnloadedEventBungee(player);
-		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+		RemotePlayerUnloadedEventGeneric remotePE = new RemotePlayerUnloadedEventGeneric(player);
+		mServer.getEventManager().fireAndForget(remotePE);
 	}
 
 	@Override
 	void callPlayerUpdatedEvent(RemotePlayerAbstraction player) {
-		RemotePlayerUpdatedEventBungee remotePE = new RemotePlayerUpdatedEventBungee(player);
-		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+		RemotePlayerUpdatedEventGeneric remotePE = new RemotePlayerUpdatedEventGeneric(player);
+		mServer.getEventManager().fireAndForget(remotePE);
 	}
 
 	@Override
 	Map<String, JsonObject> callGatherPluginDataEvent(RemotePlayerAbstraction player) {
-		GatherRemotePlayerDataEventBungee remotePE = new GatherRemotePlayerDataEventBungee(player);
-		ProxyServer.getInstance().getPluginManager().callEvent(remotePE);
+		GatherRemotePlayerDataEventVelocity remotePE = new GatherRemotePlayerDataEventVelocity(player);
+		try {
+			mServer.getEventManager().fire(remotePE).get(5, TimeUnit.SECONDS);
+		} catch (Exception ex) {
+			MMLog.severe("Timeout for 5 seconds when gathering player plugin data");
+			ex.printStackTrace();
+		}
 		return remotePE.getPluginData();
 	}
 
@@ -170,8 +179,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		if (!player.getServerType().equals(RemotePlayerProxy.SERVER_TYPE)) {
 			return false;
 		}
-		@Nullable ProxiedPlayer localPlayer = ProxyServer.getInstance().getPlayer(player.mUuid);
-		return localPlayer != null && localPlayer.isConnected();
+		@Nullable Player localPlayer = mServer.getPlayer(player.mUuid).orElse(null);
+		return localPlayer != null && localPlayer.isActive();
 	}
 
 	@Override
@@ -179,8 +188,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		refreshPlayer(uuid, true);
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void destOnlineEvent(DestOnlineEventBungee event) {
+	@Subscribe(order = PostOrder.LAST)
+	public void destOnlineEvent(DestOnlineEventGeneric event) {
 		String remoteShardName = event.getDest();
 		if (getServerId().equals(remoteShardName)) {
 			return;
@@ -188,8 +197,8 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		registerServer(remoteShardName);
 	}
 
-	@EventHandler(priority = EventPriority.LOW)
-	public void destOfflineEvent(DestOfflineEventBungee event) {
+	@Subscribe(order = PostOrder.EARLY)
+	public void destOfflineEvent(DestOnlineEventGeneric event) {
 		String remoteShardName = event.getDest();
 		if (getServerId().equals(remoteShardName)) {
 			return;
@@ -197,58 +206,70 @@ public final class RemotePlayerManagerBungee extends RemotePlayerManagerAbstract
 		unregisterServer(remoteShardName);
 	}
 
-	// This is when the player logins into the proxy
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void playerConnectEvent(PostLoginEvent event) {
-		ProxiedPlayer player = event.getPlayer();
-		refreshLocalPlayer(player, true);
+	// // This is when the player logins into the proxy
+	@Subscribe(order = PostOrder.LAST)
+	public EventTask playerConnectEvent(PostLoginEvent event) {
+		Player player = event.getPlayer();
+		return EventTask.async(() -> {
+			refreshLocalPlayer(player, true);
+		});
 	}
 
 	// This is when the player connects or reconnects to a shard on the proxy
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void playerChangedServerEvent(ServerSwitchEvent event) {
-		ProxiedPlayer player = event.getPlayer();
-		refreshLocalPlayer(player, true);
+	@Subscribe(order = PostOrder.LAST)
+	public EventTask playerChangedServerEvent(ServerPostConnectEvent event) {
+		Player player = event.getPlayer();
+		return EventTask.async(() -> {
+			refreshLocalPlayer(player, true);
+		});
 	}
 
 	// This is when the player disconnects from the proxy
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void playerQuitEvent(PlayerDisconnectEvent event) {
-		ProxiedPlayer player = event.getPlayer();
+	@Subscribe(order = PostOrder.LAST)
+	public @Nullable EventTask playerQuitEvent(DisconnectEvent event) {
+		Player player = event.getPlayer();
+		// The DisconnectEvent can fire BEFORE PostLoginEvent
+		if (!isPlayerOnline(player.getUniqueId())) {
+			return null;
+		}
 		String playerProxy = getPlayerProxy(player.getUniqueId());
 		if (playerProxy != null && !playerProxy.equals(getServerId())) {
-			MMLog.warning(() -> "Refusing to unregister player " + player.getName() + ": they are on another proxy");
+			MMLog.warning(() -> "Refusing to unregister player " + player.getUsername() + ": they are on another proxy");
 			refreshRemotePlayer(player.getUniqueId());
-			return;
+			return null;
 		}
-		RemotePlayerProxy localPlayer = fromLocal(player, false);
-		if (updateLocalPlayer(localPlayer, false, true)) {
-			localPlayer.broadcast();
-		}
+		return EventTask.async(() -> {
+			RemotePlayerProxy localPlayer = fromLocal(player, false);
+			if (updateLocalPlayer(localPlayer, false, true)) {
+				localPlayer.broadcast();
+			}
+		});
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void networkRelayMessageEventBungee(NetworkRelayMessageEventBungee event) {
+	@Subscribe(order = PostOrder.LAST)
+	public @Nullable EventTask networkRelayMessageEventGeneric(NetworkRelayMessageEventGeneric event) {
 		switch (event.getChannel()) {
 			case REMOTE_PLAYER_UPDATE_CHANNEL: {
 				@Nullable JsonObject data = event.getData();
 				if (!Objects.equals(event.getSource(), getServerId())) {
 					if (data == null) {
 						MMLog.severe(() -> "Got " + REMOTE_PLAYER_UPDATE_CHANNEL + " channel with null data");
-						return;
+						break;
 					}
-					remotePlayerChange(data);
+					return EventTask.async(() -> remotePlayerChange(data));
 				}
 				break;
 			}
 			case REMOTE_PLAYER_REFRESH_CHANNEL: {
 				@Nullable JsonObject data = event.getData();
-				remotePlayerRefresh(data);
-				break;
+				return EventTask.async(() -> {
+					remotePlayerRefresh(data);
+				});
 			}
 			default: {
 				break;
 			}
 		}
+		return null;
 	}
 }
