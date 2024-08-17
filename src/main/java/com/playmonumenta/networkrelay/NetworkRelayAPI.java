@@ -116,12 +116,36 @@ public class NetworkRelayAPI {
 		return getInstance().getOnlineDestinationsOfType(type);
 	}
 
+	public static Set<RemotePlayerData> getOnlinePlayers() {
+		return RemotePlayerAPI.getOnlinePlayers();
+	}
+
+	public static Set<RemotePlayerData> getVisiblePlayers() {
+		return RemotePlayerAPI.getVisiblePlayers();
+	}
+
+	public static Set<RemotePlayerData> getOnlinePlayersOnServer(String serverId) {
+		return RemotePlayerAPI.getOnlinePlayersOnServer(serverId);
+	}
+
+	public static Set<RemotePlayerData> getVisiblePlayersOnServer(String serverId) {
+		return RemotePlayerAPI.getVisiblePlayersOnServer(serverId);
+	}
+
 	public static Set<String> getOnlinePlayerNames() {
 		return RemotePlayerAPI.getOnlinePlayerNames();
 	}
 
 	public static Set<String> getVisiblePlayerNames() {
 		return RemotePlayerAPI.getVisiblePlayerNames();
+	}
+
+	public static Set<UUID> getOnlinePlayerUuids() {
+		return RemotePlayerAPI.getOnlinePlayerUuids();
+	}
+
+	public static Set<UUID> getVisiblePlayerUuids() {
+		return RemotePlayerAPI.getVisiblePlayerUuids();
 	}
 
 	public static boolean isPlayerOnline(String playerName) {
