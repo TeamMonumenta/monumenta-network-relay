@@ -7,9 +7,7 @@ import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.text.Component;
 
 public class RabbitMQManagerAbstractionVelocity implements RabbitMQManagerAbstractionInterface {
-	// private @Nullable ScheduledTask mHeartbeatRunnable = null;
-	// private @Nullable ScheduledFuture<?> mHeartbeatRunnable = null;
-	// private final NetworkRelayVelocity mPlugin;
+	private final RabbitMQExecutor mThread = new RabbitMQExecutor("RabbitMQ Thread");
 	private final ProxyServer mServer;
 
 
@@ -20,28 +18,25 @@ public class RabbitMQManagerAbstractionVelocity implements RabbitMQManagerAbstra
 
 	@Override
 	public void startHeartbeatRunnable(Runnable runnable, int delaySeconds, int periodSeconds) {
-		NetworkRelayVelocityExecutor.getInstance().scheduleRepeatingTask(runnable, delaySeconds, periodSeconds, TimeUnit.SECONDS);
+		mThread.scheduleRepeatingTask(runnable, delaySeconds, periodSeconds, TimeUnit.SECONDS);
 
 	}
 
 	@Override
 	public void scheduleProcessPacket(Runnable runnable) {
 		// mServer.getScheduler().buildTask(mPlugin, runnable).schedule();
-		NetworkRelayVelocityExecutor.getInstance().schedule(runnable);
+		mThread.schedule(runnable);
 	}
 
 	@Override
 	public void stopHeartbeatRunnable() {
 		// ! Stopped in ProxyShutdownEvent
-		/*
-		if (mHeartbeatRunnable != null) {
-			mHeartbeatRunnable.cancel(true);
-		}
-		*/
+		mThread.stop();
 	}
 
 	@Override
 	public void stopServer() {
+		mThread.stop();
 		mServer.shutdown(Component.text("Bungee lost connection to network relay / rabbitmq"));
 	}
 
@@ -77,7 +72,7 @@ public class RabbitMQManagerAbstractionVelocity implements RabbitMQManagerAbstra
 
 	@Override
 	public void sendNetworkMessage(String destination, String channel, JsonObject data, com.rabbitmq.client.AMQP.BasicProperties properties) {
-		NetworkRelayVelocityExecutor.getInstance().schedule(() -> {
+		mThread.schedule(() -> {
 			try {
 				RabbitMQManager.getInstance().sendNetworkMessage(destination, channel, data, properties);
 			} catch (Exception ex) {

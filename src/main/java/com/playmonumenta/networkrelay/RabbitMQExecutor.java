@@ -8,60 +8,60 @@ import java.util.concurrent.TimeUnit;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 // Entire purpose of this class is to mimic a Bukkit/Bungee main "thread"
-public class NetworkRelayVelocityExecutor {
-	private static @MonotonicNonNull NetworkRelayVelocityExecutor INSTANCE;
-	private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("MonumentaNetworkRelay RabbitMQ Thread").build());
+public class RabbitMQExecutor {
+	private static @MonotonicNonNull RabbitMQExecutor INSTANCE;
+	private final ScheduledExecutorService mExecutor;
 
-	public NetworkRelayVelocityExecutor() {
-		INSTANCE = this;
+	public RabbitMQExecutor(String threadName) {
+		this.mExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat(threadName).build());
 	}
 
-	public static NetworkRelayVelocityExecutor getInstance() {
-		if (INSTANCE == null) {
-			INSTANCE = new NetworkRelayVelocityExecutor();
-		}
-		return INSTANCE;
+	public ScheduledExecutorService getExecutor() {
+		return mExecutor;
 	}
 
 	public void stop() {
-		executor.shutdown();
+		if (mExecutor.isShutdown()) {
+			return;
+		}
+		mExecutor.shutdown();
 		try {
-			if (executor.awaitTermination(1, TimeUnit.SECONDS)) {
-				executor.shutdownNow();
+			if (mExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+				mExecutor.shutdownNow();
 			}
 		} catch (InterruptedException ex) {
-			if (!executor.isShutdown()) {
-				executor.shutdownNow();
+			if (!mExecutor.isShutdown()) {
+				mExecutor.shutdownNow();
 			}
 		}
 	}
 
 	public void schedule(Runnable runnable) {
-		if (executor.isShutdown()) {
+		if (mExecutor.isShutdown()) {
 			return;
 		}
 		schedule(new WrappedRunnable(runnable));
 	}
 
 	public void schedule(WrappedRunnable runnable) {
-		if (executor.isShutdown()) {
+		if (mExecutor.isShutdown()) {
 			return;
 		}
-		executor.schedule(runnable, 0, TimeUnit.MILLISECONDS);
+		mExecutor.schedule(runnable, 0, TimeUnit.MILLISECONDS);
 	}
 
 	public void scheduleRepeatingTask(Runnable runnable, long delay, long period, TimeUnit unit) {
-		if (executor.isShutdown()) {
+		if (mExecutor.isShutdown()) {
 			return;
 		}
-		executor.scheduleAtFixedRate(new WrappedRunnable(runnable), delay, period, unit);
+		mExecutor.scheduleAtFixedRate(new WrappedRunnable(runnable), delay, period, unit);
 	}
 
 	public void scheduleRepeatingTask(WrappedRunnable runnable, long delay, long period, TimeUnit unit) {
-		if (executor.isShutdown()) {
+		if (mExecutor.isShutdown()) {
 			return;
 		}
-		executor.scheduleAtFixedRate(runnable, delay, period, unit);
+		mExecutor.scheduleAtFixedRate(runnable, delay, period, unit);
 	}
 
 	public static class WrappedRunnable implements Runnable {
