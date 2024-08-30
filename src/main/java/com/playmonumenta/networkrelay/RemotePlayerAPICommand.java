@@ -33,19 +33,16 @@ public abstract class RemotePlayerAPICommand {
 					sender.sendMessage(data.toString());
 				})
 			)
+			.withSubcommand(new CommandAPICommand("refreshlocalplayer")
+				.withArguments(localPlayerArg)
+				.executes((sender, args) -> {
+					Collection<Player> targetPlayers = (Collection<Player>) args.getByArgument(localPlayerArg);
+					for (Player targetPlayer : targetPlayers) {
+						RemotePlayerAPI.refreshPlayer(targetPlayer.getUniqueId());
+					}
+					return targetPlayers.size();
+				})
+			)
 			.register();
-
-		new CommandAPICommand("monumenta")
-			.withSubcommand(new CommandAPICommand("networkRelay")
-				.withSubcommand(new CommandAPICommand("refreshplayer")
-					.withArguments(localPlayerArg)
-					.executes((sender, args) -> {
-						Collection<Player> targetPlayers = (Collection<Player>) args.getByArgument(localPlayerArg);
-						for (Player targetPlayer : targetPlayers) {
-							RemotePlayerAPI.refreshPlayer(targetPlayer.getUniqueId());
-						}
-						return targetPlayers.size();
-					})
-				)).register();
 	}
 }
