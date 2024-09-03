@@ -3,6 +3,6 @@ rootProject.name = "monumenta-network-relay"
 pluginManagement {
 	repositories {
 		gradlePluginPortal()
-		mavenLocal()
+		maven("https://maven.playmonumenta.com/releases/")
 	}
 }
