@@ -10,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelay extends JavaPlugin {
+	private static @Nullable NetworkRelay INSTANCE = null;
 	private @Nullable RabbitMQManager mRabbitMQManager = null;
 	private @Nullable BroadcastCommand mBroadcastCommand = null;
 	private @Nullable CustomLogger mLogger = null;
@@ -19,10 +20,14 @@ public class NetworkRelay extends JavaPlugin {
 		mBroadcastCommand = new BroadcastCommand(this);
 		ChangeLogLevelCommand.register(this);
 		ListShardsCommand.register();
+		RemotePlayerAPICommand.register();
+		WhereIsCommand.register();
 	}
 
 	@Override
 	public void onEnable() {
+		INSTANCE = this;
+
 		File configFile = new File(getDataFolder(), "config.yml");
 
 		BukkitConfig config = new BukkitConfig(getLogger(), configFile, getClass(), "/default_config.yml");
@@ -58,17 +63,31 @@ public class NetworkRelay extends JavaPlugin {
 
 		// After a few ticks confirm the server has finished starting so messages can start being processed
 		Bukkit.getScheduler().runTaskLater(this, () -> {
-			if (mRabbitMQManager!= null) {
+			if (mRabbitMQManager != null) {
 				mRabbitMQManager.setServerFinishedStarting();
 			}
 		}, 5);
+
+		//Loaded last to avoid issues where it not being able to load the shard would cause it to fail.
+		Bukkit.getServer().getPluginManager().registerEvents(RemotePlayerManagerPaper.getInstance(), this);
+		RemotePlayerAPI.init(RemotePlayerManagerPaper.getInstance());
 	}
 
 	@Override
 	public void onDisable() {
+		RemotePlayerManagerPaper.getInstance().shutdown();
 		if (mRabbitMQManager != null) {
 			mRabbitMQManager.stop();
 		}
+		INSTANCE = null;
+		getServer().getScheduler().cancelTasks(this);
+	}
+
+	public static NetworkRelay getInstance() {
+		if (INSTANCE == null) {
+			throw new RuntimeException("NetworkRelay has not been initialized yet.");
+		}
+		return INSTANCE;
 	}
 
 	@Override

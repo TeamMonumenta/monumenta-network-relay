@@ -3,6 +3,7 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -15,12 +16,15 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 
 public class RabbitMQManager {
@@ -79,6 +83,11 @@ public class RabbitMQManager {
 	 * based on mDestinationLastHeartbeat
 	 */
 	private final Map<String, JsonObject> mDestinationHeartbeatData = new ConcurrentSkipListMap<>();
+
+	/*
+	 * The type of each server; examples include "minecraft" and "proxy", though others may appear.
+	 */
+	private final Map<String, String> mDestinationTypes = new ConcurrentSkipListMap<>();
 
 	private static class QueuedMessage {
 		final String mChannel;
@@ -140,8 +149,9 @@ public class RabbitMQManager {
 				Instant lastHeartbeat = entry.getValue();
 
 				if (timeoutThreshold.compareTo(lastHeartbeat) >= 0) {
-					mDestinationHeartbeatData.remove(dest);
 					sendDestOfflineEvent(dest);
+					mDestinationHeartbeatData.remove(dest);
+					mDestinationTypes.remove(dest);
 					iter.remove();
 				}
 			}
@@ -158,8 +168,13 @@ public class RabbitMQManager {
 
 		/* Declare a broadcast exchange which routes messages to all attached queues */
 		mChannel.exchangeDeclare(BROADCAST_EXCHANGE_NAME, "fanout");
+
+		/* Declare queue arguments */
+		Map<String, Object> queueArgs = new HashMap<String, Object>();
+		// To prevent messages from piling up while a shard is offline - delete a queue after 5 minutes
+		queueArgs.put("x-expires", 300000); // 5 minutes of inactivity (shard not responding/down) until the queue deletes itself
 		/* Declare the queue for this shard */
-		mChannel.queueDeclare(shardName, false, false, false, null);
+		mChannel.queueDeclare(shardName, false, false, false, queueArgs);
 		/* Bind the queue to the exchange */
 		mChannel.queueBind(shardName, BROADCAST_EXCHANGE_NAME, "");
 
@@ -212,12 +227,15 @@ public class RabbitMQManager {
 
 				/* Check for heartbeat data - online status */
 				boolean isDestShutdown = false;
-				if (root.has("online")) {
-					if (root.getAsJsonPrimitive("online").isBoolean() && !root.getAsJsonPrimitive("online").getAsBoolean()) {
+				JsonElement onlineJson = root.get("online");
+				if (onlineJson instanceof JsonPrimitive) {
+					JsonPrimitive onlinePrimitive = (JsonPrimitive) onlineJson;
+					if (onlinePrimitive.isBoolean() && !onlinePrimitive.getAsBoolean()) {
 						isDestShutdown = true;
+						sendDestOfflineEvent(source);
 						mDestinationLastHeartbeat.remove(source);
 						mDestinationHeartbeatData.remove(source);
-						sendDestOfflineEvent(source);
+						mDestinationTypes.remove(source);
 					}
 				}
 
@@ -228,6 +246,22 @@ public class RabbitMQManager {
 						/* This message contained heartbeat data - record it */
 						mDestinationLastHeartbeat.put(source, Instant.now());
 						mDestinationHeartbeatData.put(source, pluginDataFinal);
+
+						/* Get the server type, defaulting to "minecraft" */
+						JsonObject networkRelayPluginData
+							= pluginDataFinal.getAsJsonObject(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
+						if (networkRelayPluginData == null) {
+							networkRelayPluginData = new JsonObject();
+						}
+						JsonPrimitive serverTypeJson
+							= networkRelayPluginData.getAsJsonPrimitive("server-type");
+						String serverType;
+						if (serverTypeJson != null && serverTypeJson.isString()) {
+							serverType = serverTypeJson.getAsString();
+						} else {
+							serverType = "minecraft";
+						}
+						mDestinationTypes.put(source, serverType);
 					}
 
 					if (heartbeatDataPresent) {
@@ -252,11 +286,20 @@ public class RabbitMQManager {
 							Deque<QueuedMessage> queue = mDestinationQueuedMessages.computeIfAbsent(source, (unused) -> new ConcurrentLinkedDeque<>());
 							queue.addLast(new QueuedMessage(channel, data));
 
-							String msg = "Queued packet from " + source + " as this shard has not received heartbeat data yet. Current queue size is " + queue.size();
-							if (queue.size() > 100) {
-								mLogger.warning(msg);
+							StringBuilder msg = new StringBuilder()
+								.append("Queued packet from ")
+								.append(source)
+								.append(" as this shard ");
+							if (!mServerFinishedStarting) {
+								msg.append("is not ready to receive heartbeat data yet");
 							} else {
-								mLogger.info(msg);
+								msg.append("has not received heartbeat data yet");
+							}
+							msg.append(". Current queue size is ").append(queue.size());
+							if (queue.size() > 100) {
+								mLogger.warning(msg.toString());
+							} else {
+								mLogger.info(msg.toString());
 							}
 						} else {
 							/*
@@ -368,6 +411,7 @@ public class RabbitMQManager {
 		sendExpiringNetworkMessage(destination, channel, data, mDefaultTTL);
 	}
 
+	// ! - Should only be called from the abstraction! - usb
 	protected void sendNetworkMessage(String destination, String channel, JsonObject data, AMQP.BasicProperties properties) throws Exception {
 		JsonObject root = new JsonObject();
 		root.add("data", data);
@@ -420,13 +464,30 @@ public class RabbitMQManager {
 		AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
 			.expiration(Long.toString(ttlSeconds * 1000))
 			.build();
-		sendNetworkMessage(destination, channel, data, properties);
+		mAbstraction.sendNetworkMessage(destination, channel, data, properties);
 	}
 
 	protected Set<String> getOnlineShardNames() {
 		Set<String> newSet = Collections.newSetFromMap(new ConcurrentSkipListMap<>());
 		newSet.addAll(mDestinationLastHeartbeat.keySet());
 		return newSet;
+	}
+
+	protected Set<String> getOnlineDestinationTypes() {
+		return new HashSet<>(mDestinationTypes.values());
+	}
+
+	protected @Nullable String getOnlineDestinationType(String destination) {
+		return mDestinationTypes.get(destination);
+	}
+
+	protected Set<String> getOnlineDestinationsOfType(String type) {
+		return mDestinationTypes
+			.entrySet()
+			.stream()
+			.filter(entry -> entry.getValue().equals(type))
+			.map(Map.Entry::getKey)
+			.collect(Collectors.toSet());
 	}
 
 	protected Map<String, JsonObject> getOnlineShardHeartbeatData() {

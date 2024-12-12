@@ -3,13 +3,15 @@ package com.playmonumenta.networkrelay;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Set;
+import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
 public class NetworkRelayAPI {
 	public enum ServerType {
-		BUNGEE("bungee"),
+		PROXY("proxy"),
 		MINECRAFT("minecraft"),
-		ALL("all");
+		ALL("all"),
+		OTHER("other");
 
 		final String mId;
 
@@ -23,12 +25,16 @@ public class NetworkRelayAPI {
 		}
 
 		public static ServerType fromString(@Nullable String id) {
-			for (ServerType serverType : ServerType.values()) {
+			// TODO: remove this in the future - usb
+			if ("bungee".equals(id)) {
+				return PROXY;
+			}
+			for (ServerType serverType : values()) {
 				if (serverType.toString().equals(id)) {
 					return serverType;
 				}
 			}
-			return ALL;
+			return OTHER;
 		}
 	}
 
@@ -96,6 +102,66 @@ public class NetworkRelayAPI {
 
 	public static Set<String> getOnlineShardNames() {
 		return getInstance().getOnlineShardNames();
+	}
+
+	public static Set<String> getOnlineDestinationTypes() {
+		return getInstance().getOnlineDestinationTypes();
+	}
+
+	public static @Nullable String getOnlineDestinationType(String destination) {
+		return getInstance().getOnlineDestinationType(destination);
+	}
+
+	public static Set<String> getOnlineDestinationsOfType(String type) {
+		return getInstance().getOnlineDestinationsOfType(type);
+	}
+
+	public static Set<String> getOnlinePlayerNames() {
+		return RemotePlayerAPI.getOnlinePlayerNames();
+	}
+
+	public static Set<String> getVisiblePlayerNames() {
+		return RemotePlayerAPI.getVisiblePlayerNames();
+	}
+
+	public static boolean isPlayerOnline(String playerName) {
+		return RemotePlayerAPI.isPlayerOnline(playerName);
+	}
+
+	public static boolean isPlayerOnline(UUID playerUuid) {
+		return RemotePlayerAPI.isPlayerOnline(playerUuid);
+	}
+
+	@Nullable
+	public static String getPlayerShard(String playerName) {
+		return RemotePlayerAPI.getPlayerShard(playerName);
+	}
+
+	@Nullable
+	public static String getPlayerShard(UUID playerUuid) {
+		return RemotePlayerAPI.getPlayerShard(playerUuid);
+	}
+
+	@Nullable
+	public static RemotePlayerData getRemotePlayer(String playerName) {
+		return RemotePlayerAPI.getRemotePlayer(playerName);
+	}
+
+	@Nullable
+	public static RemotePlayerData getRemotePlayer(UUID playerUuid) {
+		return RemotePlayerAPI.getRemotePlayer(playerUuid);
+	}
+
+	public static boolean isPlayerVisible(String playerName) {
+		return RemotePlayerAPI.isPlayerVisible(playerName);
+	}
+
+	public static boolean isPlayerVisible(UUID playerUuid) {
+		return RemotePlayerAPI.isPlayerVisible(playerUuid);
+	}
+
+	public static boolean refreshPlayer(UUID playerUuid) {
+		return RemotePlayerAPI.refreshPlayer(playerUuid);
 	}
 
 	/**

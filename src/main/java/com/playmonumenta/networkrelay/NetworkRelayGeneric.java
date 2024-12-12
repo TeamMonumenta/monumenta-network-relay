@@ -21,7 +21,7 @@ public class NetworkRelayGeneric {
 	 * @param configFile          Path to the NetworkRelay config YAML file for your Java application
 	 * @param defaultOwnerClass   A class in the JAR containing the default NetworkRelay config for your plugin
 	 * @param resourcePath        The path to the default NetworkRelay config within the JAR for defaultOwnerClass
-	 * @param serverType          A string identifier, such as "minecraft", "bungee", or "logger"
+	 * @param serverType          A string identifier, such as "minecraft", "proxy", or "logger"
 	 * @param registerEventMethod Method provided by your Java application to register event consumers.
 	 *                               Accepts a priority and an event consumer.
 	 *                               Higher priority values run first.
@@ -65,6 +65,12 @@ public class NetworkRelayGeneric {
 			throw new RuntimeException("Attempted to get NetworkRelay instance before initialized");
 		}
 		return INSTANCE;
+	}
+
+	public void setServerFinishedStarting() {
+		if (mRabbitMQManager != null) {
+			mRabbitMQManager.setServerFinishedStarting();
+		}
 	}
 
 	public void onDisable() {

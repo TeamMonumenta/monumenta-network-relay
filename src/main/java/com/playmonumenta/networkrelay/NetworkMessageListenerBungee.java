@@ -19,7 +19,7 @@ import net.md_5.bungee.event.EventPriority;
 public class NetworkMessageListenerBungee implements Listener {
 	private static final List<NetworkRelayAPI.ServerType> ACCEPTED_SERVER_TYPES = Arrays.asList(
 		NetworkRelayAPI.ServerType.ALL,
-		NetworkRelayAPI.ServerType.BUNGEE
+		NetworkRelayAPI.ServerType.PROXY
 	);
 
 	private final Logger mLogger;
@@ -37,7 +37,7 @@ public class NetworkMessageListenerBungee implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void gatherHeartbeatData(GatherHeartbeatDataEventBungee event) {
 		JsonObject data = new JsonObject();
-		data.addProperty("server-type", "bungee");
+		data.addProperty("server-type", "proxy");
 		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
 	}
 
@@ -59,12 +59,16 @@ public class NetworkMessageListenerBungee implements Listener {
 			return;
 		}
 
+		boolean warnLegacyServerType = false;
 		JsonPrimitive serverTypeJson = data.getAsJsonPrimitive("server_type");
 		if (serverTypeJson != null) {
 			String serverTypeString = serverTypeJson.getAsString();
 			if (serverTypeString != null) {
-				NetworkRelayAPI.ServerType commandType;
-				commandType = NetworkRelayAPI.ServerType.fromString(serverTypeString);
+				if (serverTypeString.equals("bungee")) {
+					warnLegacyServerType = true;
+				}
+				NetworkRelayAPI.ServerType commandType
+					= NetworkRelayAPI.ServerType.fromString(serverTypeString);
 				if (!ACCEPTED_SERVER_TYPES.contains(commandType)) {
 					return;
 				}
@@ -72,7 +76,11 @@ public class NetworkMessageListenerBungee implements Listener {
 		}
 
 		final String command = data.get("command").getAsString();
-		mLogger.fine("Executing command'" + command + "' from source '" + event.getSource() + "'");
+		if (warnLegacyServerType) {
+			mLogger.warning("Executing command'" + command + "' from source '" + event.getSource() + "'; legacy server type 'bungee' was requested");
+		} else {
+			mLogger.fine("Executing command'" + command + "' from source '" + event.getSource() + "'");
+		}
 
 		ProxyServer.getInstance().getPluginManager().dispatchCommand(ProxyServer.getInstance().getConsole(), data.get("command").getAsString());
 	}
@@ -169,4 +177,3 @@ public class NetworkMessageListenerBungee implements Listener {
 		ProxyServer.getInstance().getConfig().removeServerNamed(name); // Deprecation note: This whole class is deprecated to discourage use, but no other options exist
 	}
 }
-
