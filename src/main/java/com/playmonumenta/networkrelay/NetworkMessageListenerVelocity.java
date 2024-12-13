@@ -6,10 +6,13 @@ import com.google.gson.JsonPrimitive;
 import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.plugin.PluginManager;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
+import com.viaversion.viaversion.api.Via;
+import com.viaversion.viaversion.api.ViaAPI;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,6 +45,20 @@ public class NetworkMessageListenerVelocity {
 		JsonObject data = new JsonObject();
 		data.addProperty("server-type", "proxy");
 		event.setPluginData(NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER, data);
+	}
+
+	@Subscribe
+	public void gatherRemotePlayerData(GatherRemotePlayerDataEventVelocity event) {
+		JsonObject data = new JsonObject();
+
+		PluginManager pluginManager = NetworkRelayVelocity.getInstance().mServer.getPluginManager();
+		if (pluginManager.isLoaded("viaversion")) {
+
+			int protocolVersionNumber = Via.getAPI().getPlayerVersion(event.mRemotePlayer.mUuid);
+			data.addProperty("protocol_version", protocolVersionNumber);
+		}
+
+		event.setPluginData("networkrelay", data);
 	}
 
 	@Subscribe(order = PostOrder.FIRST)

@@ -7,6 +7,7 @@ plugins {
 repositories {
 	mavenCentral()
 	maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+	maven("https://repo.viaversion.com")
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
 	compileOnly(libs.commandapi)
 	compileOnly(libs.placerholderapi)
 	compileOnly(libs.velocity)
+	compileOnly(libs.viaversion)
 	annotationProcessor(libs.velocity)
 	implementation(libs.slf4j)
 }
