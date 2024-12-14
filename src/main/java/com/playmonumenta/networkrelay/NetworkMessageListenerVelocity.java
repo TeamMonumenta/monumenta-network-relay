@@ -12,7 +12,6 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.viaversion.viaversion.api.Via;
-import com.viaversion.viaversion.api.ViaAPI;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
