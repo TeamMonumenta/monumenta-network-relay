@@ -52,7 +52,6 @@ public class NetworkMessageListenerVelocity {
 
 		PluginManager pluginManager = NetworkRelayVelocity.getInstance().mServer.getPluginManager();
 		if (pluginManager.isLoaded("viaversion")) {
-
 			int protocolVersionNumber = Via.getAPI().getPlayerVersion(event.mRemotePlayer.mUuid);
 			data.addProperty("protocol_version", protocolVersionNumber);
 		}
