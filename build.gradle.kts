@@ -7,6 +7,7 @@ plugins {
 repositories {
 	mavenCentral()
 	maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+	maven("https://repo.viaversion.com")
 }
 
 dependencies {
@@ -18,6 +19,7 @@ dependencies {
 	compileOnly(libs.commandapi)
 	compileOnly(libs.placerholderapi)
 	compileOnly(libs.velocity)
+	compileOnly(libs.viaversion)
 	annotationProcessor(libs.velocity)
 	implementation(libs.slf4j)
 }
@@ -27,7 +29,10 @@ monumenta {
 	paper(
 		"com.playmonumenta.networkrelay.NetworkRelay", BukkitPluginDescription.PluginLoadOrder.POSTWORLD, "1.18",
 		depends = listOf("CommandAPI"),
-		softDepends = listOf("PlaceholderAPI")
+		softDepends = listOf(
+			"PlaceholderAPI",
+			"ViaVersion"
+		)
 	)
 	waterfall("com.playmonumenta.networkrelay.NetworkRelayBungee", "1.18")
 }
