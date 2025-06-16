@@ -22,28 +22,34 @@ public class ListShardsCommand {
 					senderProxy = null;
 				}
 
-				TreeSet<String> shardNames = new TreeSet<>(NetworkRelayAPI.getOnlineShardNames());
+				for (String serverType : new TreeSet<>(NetworkRelayAPI.getOnlineDestinationTypes())) {
+					String pluralServerType = switch (serverType) {
+						case "minecraft" -> "shards";
+						case "proxy" -> "proxies";
+						default -> serverType + "s";
+					};
 
-				List<Component> shardComponents = new ArrayList<>();
-				for (String shardName : shardNames) {
-					if (senderProxy == null) {
-						shardComponents.add(Component.text(shardName));
-					} else {
-						Long pingMs = NetworkRelayAPI.getProxyToShardPingMs(senderProxy, shardName);
-						Component pingComponent;
-						if (pingMs == null) {
-							pingComponent = Component.text("Timed Out (" + senderProxy + ")");
+					List<Component> shardComponents = new ArrayList<>();
+					for (String serverName : new TreeSet<>(NetworkRelayAPI.getOnlineDestinationsOfType(serverType))) {
+						if (senderProxy == null || !"minecraft".equals(serverType)) {
+							shardComponents.add(Component.text(serverName));
 						} else {
-							pingComponent = Component.text(pingMs + " ms (" + senderProxy + ")");
+							Long pingMs = NetworkRelayAPI.getProxyToShardPingMs(senderProxy, serverName);
+							Component pingComponent;
+							if (pingMs == null) {
+								pingComponent = Component.text("Timed Out (" + senderProxy + ")");
+							} else {
+								pingComponent = Component.text(pingMs + " ms (" + senderProxy + ")");
+							}
+							shardComponents.add(Component.text(serverName)
+								.hoverEvent(pingComponent));
 						}
-						shardComponents.add(Component.text(shardName)
-							.hoverEvent(pingComponent));
 					}
-				}
 
-				sender.sendMessage(Component.text("Online shards: ", NamedTextColor.GOLD)
-					.append(Component.join(JoinConfiguration.commas(true), shardComponents))
-				);
+					sender.sendMessage(Component.text("Online " + pluralServerType + ": ", NamedTextColor.GOLD)
+						.append(Component.join(JoinConfiguration.commas(true), shardComponents))
+					);
+				}
 			});
 
 		// Register first under the monumenta -> networkRelay namespace
