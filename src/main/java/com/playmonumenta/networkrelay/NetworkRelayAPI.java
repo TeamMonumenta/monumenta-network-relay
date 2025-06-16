@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.util.Set;
 import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
@@ -181,6 +182,25 @@ public class NetworkRelayAPI {
 			if (element != null && element.isJsonObject()) {
 				return element.getAsJsonObject();
 			}
+		}
+		return null;
+	}
+
+	/**
+	 * Gets the ping between a proxy and a shard
+	 * @param proxy The string ID for the proxy to be checked
+	 * @param shard The string ID for the Minecraft shard to be checked
+	 * @return The ping in milliseconds between the proxy and the shard, or null if the connection timed out
+	 */
+	public static @Nullable Long getProxyToShardPingMs(String proxy, String shard) {
+		JsonObject proxyHeartbeat = getHeartbeatPluginData(proxy, NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
+		if (
+			proxyHeartbeat != null
+				&& proxyHeartbeat.get("shard-pings") instanceof JsonObject shardPingsJson
+				&& shardPingsJson.get(shard) instanceof JsonPrimitive shardPingJson
+				&& shardPingJson.isNumber()
+		) {
+			return shardPingJson.getAsLong();
 		}
 		return null;
 	}
