@@ -56,7 +56,7 @@ public class NetworkRelayAPI {
 
 	public static void sendCommand(String destination, String command, ServerType serverType) throws Exception {
 		JsonObject data = new JsonObject();
-		data.addProperty("server_type", serverType.toString());
+		data.addProperty("server-type", serverType.toString());
 		data.addProperty("command", command);
 		sendMessage(destination, COMMAND_CHANNEL, data);
 	}
@@ -83,7 +83,7 @@ public class NetworkRelayAPI {
 
 	public static void sendExpiringCommand(String destination, String command, long ttlSeconds, ServerType serverType) throws Exception {
 		JsonObject data = new JsonObject();
-		data.addProperty("server_type", serverType.toString());
+		data.addProperty("server-type", serverType.toString());
 		data.addProperty("command", command);
 		sendExpiringMessage(destination, COMMAND_CHANNEL, data, ttlSeconds);
 	}

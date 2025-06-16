@@ -1,5 +1,6 @@
 package com.playmonumenta.networkrelay;
 
+import com.google.gson.JsonObject;
 import com.velocitypowered.api.proxy.server.PingOptions;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import java.time.Duration;
@@ -23,6 +24,20 @@ public class VelocityShardPingManager {
 
 	public static @Nullable Duration getShardPing(String shard) {
 		return mShardPings.get(shard);
+	}
+
+	public static JsonObject getShardPingsJson() {
+		JsonObject result = new JsonObject();
+		for (Map.Entry<String, @Nullable Duration> shardPingEntry : mShardPings.entrySet()) {
+			String shardName = shardPingEntry.getKey();
+			Duration ping = shardPingEntry.getValue();
+			if (ping == null) {
+				result.add(shardName, null);
+			} else {
+				result.addProperty(shardName, ping.toMillis());
+			}
+		}
+		return result;
 	}
 
 	protected static void schedulePingUpdates(NetworkRelayVelocity plugin) {
@@ -66,12 +81,6 @@ public class VelocityShardPingManager {
 				Map<String, @Nullable Duration> result = new HashMap<>();
 				for (CompletableFuture<NamedPingData> shardPingFuture : pingFutures) {
 					NamedPingData pingData = shardPingFuture.join();
-					Duration pingDuration = pingData.pingDuration();
-					if (pingDuration == null) {
-						plugin.mLogger.info(String.format("The %s shard ping exceeded %7.3f ms", pingData.shard(), PING_TIMEOUT.get(ChronoUnit.NANOS) * 0.000001f));
-					} else {
-						plugin.mLogger.info(String.format("The %s shard is %7.3f ms", pingData.shard(), pingDuration.get(ChronoUnit.NANOS) * 0.000001f));
-					}
 					result.put(pingData.shard(), pingData.pingDuration());
 				}
 
