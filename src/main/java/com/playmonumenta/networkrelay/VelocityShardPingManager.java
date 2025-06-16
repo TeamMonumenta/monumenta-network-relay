@@ -68,9 +68,9 @@ public class VelocityShardPingManager {
 					NamedPingData pingData = shardPingFuture.join();
 					Duration pingDuration = pingData.pingDuration();
 					if (pingDuration == null) {
-						plugin.mLogger.info(String.format("The %s shard ping exceeded %7.3f ms", pingData.shard(), PING_TIMEOUT.get(ChronoUnit.MICROS) * 0.001f));
+						plugin.mLogger.info(String.format("The %s shard ping exceeded %7.3f ms", pingData.shard(), PING_TIMEOUT.get(ChronoUnit.NANOS) * 0.000001f));
 					} else {
-						plugin.mLogger.info(String.format("The %s shard is %7.3f ms", pingData.shard(), pingDuration.get(ChronoUnit.MICROS) * 0.001f));
+						plugin.mLogger.info(String.format("The %s shard is %7.3f ms", pingData.shard(), pingDuration.get(ChronoUnit.NANOS) * 0.000001f));
 					}
 					result.put(pingData.shard(), pingData.pingDuration());
 				}
