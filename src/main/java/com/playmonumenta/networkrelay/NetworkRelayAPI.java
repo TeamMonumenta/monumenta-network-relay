@@ -193,7 +193,7 @@ public class NetworkRelayAPI {
 	 * @return The ping in milliseconds between the proxy and the shard, or null if the connection timed out
 	 */
 	public static @Nullable Long getProxyToShardPingMs(String proxy, String shard) {
-		JsonObject proxyHeartbeat = getHeartbeatPluginData(proxy, NetworkRelayAPI.NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
+		JsonObject proxyHeartbeat = getHeartbeatPluginData(proxy, NETWORK_RELAY_HEARTBEAT_IDENTIFIER);
 		if (
 			proxyHeartbeat != null
 				&& proxyHeartbeat.get("shard-pings") instanceof JsonObject shardPingsJson
