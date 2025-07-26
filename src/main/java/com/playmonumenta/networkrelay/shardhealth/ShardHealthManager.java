@@ -23,9 +23,9 @@ public class ShardHealthManager {
 	public static final int MAX_TICKS_FOR_AVERAGES = 60 * 20;
 	private static final long TICK_EXPECTED_NANOS = 50_000_000L;
 
-	private static final double HEAP_DUMP_MEMORY_HEALTH_THRESHOLD = 0.15;
-	private static final int HEAP_DUMP_AFTER_TICKS = 20 * 60 * 20;
-	private static boolean mCreatedAutoHeapDump = false;
+	private static final double LOW_MEMORY_EVENT_HEALTH_THRESHOLD = 0.15;
+	private static final int LOW_MEMORY_EVENT_AFTER_TICKS = 20 * 60 * 20;
+	private static boolean mSentLowMemoryEvent = false;
 
 	public static final G1Listener G1_LISTENER = new G1Listener();
 
@@ -242,7 +242,7 @@ public class ShardHealthManager {
 		}
 
 		mRunnable = new BukkitRunnable() {
-			int mTicksUntilHeapDump = HEAP_DUMP_AFTER_TICKS;
+			int mTicksUntilHeapDump = LOW_MEMORY_EVENT_AFTER_TICKS;
 
 			@Override
 			public void run() {
@@ -267,26 +267,16 @@ public class ShardHealthManager {
 					mRotatingShardHealthLastUpdate = writeIndex;
 				}
 
-				// Memory check for automated heap dumps
-				if (instantHealth.memoryHealth() >= HEAP_DUMP_MEMORY_HEALTH_THRESHOLD) {
-					mTicksUntilHeapDump = HEAP_DUMP_AFTER_TICKS;
+				// Memory check for automated low memory handling
+				if (instantHealth.memoryHealth() >= LOW_MEMORY_EVENT_HEALTH_THRESHOLD) {
+					mTicksUntilHeapDump = LOW_MEMORY_EVENT_AFTER_TICKS;
 				} else {
 					mTicksUntilHeapDump--;
-					if (mTicksUntilHeapDump == 0 && !mCreatedAutoHeapDump) {
-						mCreatedAutoHeapDump = true;
+					if (mTicksUntilHeapDump == 0 && !mSentLowMemoryEvent) {
+						mSentLowMemoryEvent = true;
 
 						LowMemoryEvent event = new LowMemoryEvent();
 						Bukkit.getPluginManager().callEvent(event);
-
-						/* TODO Either handle these here, or listen for the event in the main plugin and handle them there
-						Bukkit.getServer().dispatchCommand(
-							Bukkit.getServer().getConsoleSender(),
-							"spark heapdump"
-						);
-						MonumentaNetworkRelayIntegration.sendAdminMessage("<" + NetworkRelayAPI.getShardName() + "> Automatic heap dump due to low memory");
-
-						// TODO Schedule a restart; details not yet determined, but we don't want to kick people from strikes by accident
-						*/
 					}
 				}
 			}
