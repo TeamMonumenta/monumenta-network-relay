@@ -74,13 +74,21 @@ public class ShardHealthManager {
 				sender.sendMessage(Component.text("", NamedTextColor.GOLD).append(shardHealth));
 			});
 
-		new CommandAPICommand("shardhealth")
+		CommandAPICommand shardHealthCommand = new CommandAPICommand("shardhealth")
 			.withPermission("monumenta.command.shardhealth")
 			.withSubcommand(instantSubcommand)
 			.withSubcommand(averageSubcommand)
 			.withSubcommand(averageDebugSubcommand)
-			.withSubcommand(remoteSubcommand)
-			.register();
+			.withSubcommand(remoteSubcommand);
+
+		// Register first under the monumenta -> networkRelay namespace
+		new CommandAPICommand("monumenta")
+			.withSubcommand(new CommandAPICommand("networkRelay")
+				.withSubcommand(shardHealthCommand)
+			).register();
+
+		// Then directly, for convenience
+		shardHealthCommand.register();
 	}
 
 	/**
