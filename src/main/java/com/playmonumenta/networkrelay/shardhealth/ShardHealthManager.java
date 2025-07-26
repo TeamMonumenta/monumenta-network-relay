@@ -2,6 +2,7 @@ package com.playmonumenta.networkrelay.shardhealth;
 
 import com.playmonumenta.networkrelay.NetworkRelay;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
+import com.playmonumenta.networkrelay.events.LowMemoryEvent;
 import com.playmonumenta.networkrelay.shardhealth.g1.G1Listener;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
@@ -267,13 +268,18 @@ public class ShardHealthManager {
 					mRotatingShardHealthLastUpdate = writeIndex;
 				}
 
-				/* TODO Memory check for automated heap dumps
+				// Memory check for automated heap dumps
 				if (instantHealth.memoryHealth() >= HEAP_DUMP_MEMORY_HEALTH_THRESHOLD) {
 					mTicksUntilHeapDump = HEAP_DUMP_AFTER_TICKS;
 				} else {
 					mTicksUntilHeapDump--;
 					if (mTicksUntilHeapDump == 0 && !mCreatedAutoHeapDump) {
 						mCreatedAutoHeapDump = true;
+
+						LowMemoryEvent event = new LowMemoryEvent();
+						Bukkit.getPluginManager().callEvent(event);
+
+						/* TODO Either handle these here, or listen for the event in the main plugin and handle them there
 						Bukkit.getServer().dispatchCommand(
 							Bukkit.getServer().getConsoleSender(),
 							"spark heapdump"
@@ -281,9 +287,9 @@ public class ShardHealthManager {
 						MonumentaNetworkRelayIntegration.sendAdminMessage("<" + NetworkRelayAPI.getShardName() + "> Automatic heap dump due to low memory");
 
 						// TODO Schedule a restart; details not yet determined, but we don't want to kick people from strikes by accident
+						*/
 					}
 				}
-				*/
 			}
 		};
 
