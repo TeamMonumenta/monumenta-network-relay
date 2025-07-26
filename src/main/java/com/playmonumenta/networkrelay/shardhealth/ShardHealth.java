@@ -3,9 +3,12 @@ package com.playmonumenta.networkrelay.shardhealth;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.playmonumenta.networkrelay.shardhealth.g1.G1GcHealth;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
+import org.bukkit.Bukkit;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,11 +18,21 @@ public class ShardHealth implements ComponentLike {
 	private double mMemoryHealth;
 	private double mTickHealth;
 	private @Nullable G1GcHealth mGcHealth;
+	private final Map<String, JsonObject> mPluginData;
+	private final Map<String, Double> mPluginHealth;
 
-	protected ShardHealth(double memoryHealth, double tickHealth, @Nullable G1GcHealth gcHealth) {
+	protected ShardHealth(
+		double memoryHealth,
+		double tickHealth,
+		@Nullable G1GcHealth gcHealth,
+		Map<String, JsonObject> pluginData,
+		Map<String, Double> pluginHealth
+	) {
 		mMemoryHealth = memoryHealth;
 		mTickHealth = tickHealth;
 		mGcHealth = gcHealth;
+		mPluginData = pluginData;
+		mPluginHealth = pluginHealth;
 	}
 
 	/**
@@ -42,49 +55,84 @@ public class ShardHealth implements ComponentLike {
 		Iterator<ShardHealth> previousHealthIt = ShardHealthManager.previousInstantHealthIterator();
 		int remainingTicks = ticks;
 		int actualTicks = 0;
+
 		ShardHealth averageHealth = zeroHealth();
+		Map<String, JsonObject> allPluginDataSampleCounts = new HashMap<>();
+
 		while (remainingTicks > 0 && previousHealthIt.hasNext()) {
 			remainingTicks--;
 			actualTicks++;
 			ShardHealth prevHealth = previousHealthIt.next();
-			averageHealth.add(prevHealth);
+			averageHealth.add(prevHealth, allPluginDataSampleCounts);
 		}
 
 		if (actualTicks <= 0) {
 			actualTicks = 1;
 		}
 
-		averageHealth.divide(actualTicks);
+		averageHealth.divide(actualTicks, allPluginDataSampleCounts);
 
 		return averageHealth;
 	}
 
 	/**
 	 * Gets a shard's current health from the latest tick's available information.
+	 * Always run on the main thread.
 	 *
 	 * @return The latest ShardHealth for the current tick
 	 */
 	public static ShardHealth instantHealth() {
+		GatherShardHealthDataEvent gatherDataEvent = new GatherShardHealthDataEvent();
+		Bukkit.getPluginManager().callEvent(gatherDataEvent);
+		Map<String, JsonObject> allPluginData = gatherDataEvent.getPluginData();
+
+		Map<String, Double> pluginHealthFactors = new HashMap<>();
+		for (Map.Entry<String, JsonObject> pluginDataEntry : allPluginData.entrySet()) {
+			String pluginIdentifier = pluginDataEntry.getKey();
+			GetPluginHealthFactorsEvent pluginHealthFactorsEvent = new GetPluginHealthFactorsEvent(pluginIdentifier, pluginDataEntry.getValue());
+			Bukkit.getPluginManager().callEvent(pluginHealthFactorsEvent);
+			pluginHealthFactors.put(pluginIdentifier, pluginHealthFactorsEvent.getPluginHealthFactor());
+		}
+
 		return new ShardHealth(
 			ShardHealthManager.unallocatedMemoryPercent(),
 			ShardHealthManager.lastTickUnusedPercent(),
-			ShardHealthManager.G1_LISTENER.getHealth()
+			ShardHealthManager.G1_LISTENER.getHealth(),
+			allPluginData,
+			pluginHealthFactors
 		);
 	}
 
+	/**
+	 * Returns the default target used by ShardHealthManager::awaitShardHealth
+	 * and missing values for remote shards. May be called sync or async.
+	 *
+	 * @return The default target health
+	 */
 	public static ShardHealth defaultTargetHealth() {
 		return new ShardHealth(
 			0.3,
 			0.7,
-			G1GcHealth.defaultTargetHealth()
+			G1GcHealth.defaultTargetHealth(),
+			new HashMap<>(),
+			new HashMap<>()
 		);
 	}
 
+	/**
+	 * Returns the worst health status, even if that cannot be reached.
+	 * Used for average health and shards that do not report health status.
+	 * May be called sync or async.
+	 *
+	 * @return The impossibly bad zero health status
+	 */
 	public static ShardHealth zeroHealth() {
 		return new ShardHealth(
 			0.0,
 			0.0,
-			G1GcHealth.zeroHealth()
+			G1GcHealth.zeroHealth(),
+			new HashMap<>(),
+			new HashMap<>()
 		);
 	}
 
@@ -131,23 +179,65 @@ public class ShardHealth implements ComponentLike {
 		return result;
 	}
 
-	protected void add(ShardHealth other) {
-		mMemoryHealth += other.mMemoryHealth;
-		mTickHealth += other.mTickHealth;
-		if (other.mGcHealth != null) {
+	protected void add(
+		ShardHealth sample,
+		Map<String, JsonObject> allPluginDataSampleCounts
+	) {
+		mMemoryHealth += sample.mMemoryHealth;
+		mTickHealth += sample.mTickHealth;
+
+		if (sample.mGcHealth != null) {
 			if (mGcHealth == null) {
-				mGcHealth = other.mGcHealth;
+				mGcHealth = sample.mGcHealth;
 			} else {
-				mGcHealth = mGcHealth.add(other.mGcHealth);
+				mGcHealth = mGcHealth.add(sample.mGcHealth);
 			}
 		} // else GcHealth is the same anyways
+
+		for (Map.Entry<String, JsonObject> sampleDataEntry : sample.mPluginData.entrySet()) {
+			String pluginIdentifier = sampleDataEntry.getKey();
+			JsonObject samplePluginData = sampleDataEntry.getValue();
+			JsonObject runningTotalPluginData = mPluginData.get(pluginIdentifier);
+			JsonObject dataSampleCounts = allPluginDataSampleCounts
+				.computeIfAbsent(pluginIdentifier, k -> new JsonObject());
+
+			AverageShardHealthDataAddSampleEvent addSampleEvent = new AverageShardHealthDataAddSampleEvent(
+				pluginIdentifier,
+				runningTotalPluginData,
+				samplePluginData,
+				dataSampleCounts
+			);
+			Bukkit.getPluginManager().callEvent(addSampleEvent);
+
+			mPluginData.put(pluginIdentifier, addSampleEvent.runningPluginDataTotal());
+		}
 	}
 
-	protected void divide(int divisor) {
+	protected void divide(
+		int divisor,
+		Map<String, JsonObject> allPluginDataSampleCounts
+	) {
 		mMemoryHealth /= divisor;
 		mTickHealth /= divisor;
+
 		if (mGcHealth != null) {
 			mGcHealth = mGcHealth.divide(divisor);
+		}
+
+		for (Map.Entry<String, JsonObject> sampleDataEntry : new HashMap<>(mPluginData).entrySet()) {
+			String pluginIdentifier = sampleDataEntry.getKey();
+			JsonObject runningTotalPluginData = sampleDataEntry.getValue().deepCopy();
+			JsonObject dataSampleCounts = allPluginDataSampleCounts
+				.computeIfAbsent(pluginIdentifier, k -> new JsonObject());
+
+			AverageShardHealthDataDivideSamplesEvent divideSamplesEvent = new AverageShardHealthDataDivideSamplesEvent(
+				pluginIdentifier,
+				runningTotalPluginData,
+				dataSampleCounts
+			);
+			Bukkit.getPluginManager().callEvent(divideSamplesEvent);
+
+			mPluginData.put(pluginIdentifier, divideSamplesEvent.averagePluginData());
 		}
 	}
 
@@ -190,6 +280,32 @@ public class ShardHealth implements ComponentLike {
 	@Nullable
 	public G1GcHealth gcHealth() {
 		return mGcHealth;
+	}
+
+	public @Nullable JsonObject pluginData(String pluginIdentifier) {
+		return mPluginData.get(pluginIdentifier);
+	}
+
+	public void pluginData(String pluginIdentifier, JsonObject pluginData) {
+		mPluginData.put(pluginIdentifier, pluginData);
+	}
+
+	public double pluginHealth() {
+		double allPluginHealth = 1.0;
+		for (Double pluginHealth : mPluginHealth.values()) {
+			if (pluginHealth != null) {
+				allPluginHealth *= pluginHealth;
+			}
+		}
+		return allPluginHealth;
+	}
+
+	public @Nullable Double pluginHealth(String pluginIdentifier) {
+		return mPluginHealth.get(pluginIdentifier);
+	}
+
+	public void pluginHealth(String pluginIdentifier, double pluginHealth) {
+		mPluginHealth.put(pluginIdentifier, pluginHealth);
 	}
 
 	@Override

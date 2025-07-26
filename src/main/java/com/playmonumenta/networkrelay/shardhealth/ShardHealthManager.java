@@ -2,7 +2,6 @@ package com.playmonumenta.networkrelay.shardhealth;
 
 import com.playmonumenta.networkrelay.NetworkRelay;
 import com.playmonumenta.networkrelay.NetworkRelayAPI;
-import com.playmonumenta.networkrelay.events.LowMemoryEvent;
 import com.playmonumenta.networkrelay.shardhealth.g1.G1Listener;
 import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
